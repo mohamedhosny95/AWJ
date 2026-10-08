@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { join, relative, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import "./generate-media-manifest.mjs";
 import { generateHealthData } from "./generate-health-data.mjs";
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));

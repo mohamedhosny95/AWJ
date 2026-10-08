@@ -168,6 +168,8 @@ const motionGuide = {
   walk:["Easy stride · Natural arms",300], inclinewalk:["Upright · Short sentences",1500], stretch:["Ease in · Hold · No bounce",30]
 };
 
+const motionCycleSeconds={march:2,catcow:6,kneel:6,floor:5,birddog:6,plank:6,breathe:6,kegel:10,grip:4,bike:3,legpress:3,hinge:3,chestpress:3,row:3,pulldown:3,walk:3,inclinewalk:3,stretch:6};
+
 const motionAtlasRows = { legpress:0, hinge:1, chestpress:2, row:3, pulldown:4, floor:5, birddog:6 };
 
 const cinematicMedia = {
@@ -316,20 +318,6 @@ const cinematicMediaFront = {
   "Easy Cooldown + Stretch":"assets/cinematic/treadmill-cooldown-front.webp"
 };
 
-const cinematicMotionMedia = {
-  inclinedbpress:"assets/cinematic/chest-press.webp",
-  latpulldown:"assets/cinematic/lat-pulldown.webp",
-  backextension:"assets/cinematic/back-extension.webp",
-  legpress:"assets/cinematic/leg-press.webp"
-};
-
-const cinematicMotionMediaFront = {
-  inclinedbpress:"assets/cinematic/chest-press-front.webp",
-  latpulldown:"assets/cinematic/lat-pulldown-front.webp",
-  backextension:"assets/cinematic/back-extension-front.webp",
-  legpress:"assets/cinematic/leg-press-front.webp"
-};
-
 const cinematicMotionFrames = {
   "Brisk Marching in Place":["assets/cinematic/home-march-neutral.webp","assets/cinematic/home-march.webp","assets/cinematic/home-march-opposite.webp"],
   "Plank":["assets/cinematic/home-plank-inhale.webp","assets/cinematic/home-plank.webp","assets/cinematic/home-plank-exhale.webp"],
@@ -362,6 +350,8 @@ const cinematicMotionFramesFront = {
   "Incline Treadmill Walk":["assets/cinematic/treadmill-incline-front.webp","assets/cinematic/treadmill-incline-mid-front.webp","assets/cinematic/treadmill-incline-opposite-front.webp"]
 };
 
+window.REP_EXERCISES.configure(sessions,{side:cinematicMedia,front:cinematicMediaFront,frames:cinematicMotionFrames,framesFront:cinematicMotionFramesFront});
+
 function categoryLabel(category){return category;}
 
 const exerciseMuscleTargets = {
@@ -385,16 +375,11 @@ function motionPhaseRail(){
 }
 
 function cinematicAssetFor(item,view=state.viewMode){
-  const key=item?.baseName||item?.name;
-  if(view==="front")return cinematicMediaFront[key]||cinematicMotionMediaFront[item?.motion]||null;
-  return cinematicMedia[key]||cinematicMotionMedia[item?.motion]||null;
-}
-function cinematicFramesFor(item,view=state.viewMode){
-  const asset=cinematicAssetFor(item,view);
-  const framesMap=view==="front"?cinematicMotionFramesFront:cinematicMotionFrames;
-  return framesMap[item?.baseName||item?.name]||(asset?[asset]:[]);
+  const definition=window.REP_EXERCISES.get(item?.name);
+  return definition?(view==="front"?definition.photoFront:definition.photo):null;
 }
 function targetMusclesFor(item){
+  if(item.targetMuscles)return item.targetMuscles;
   const custom=exerciseMuscleTargets[item?.baseName||item?.name];
   if(custom)return custom[0];
   const entry=anatomy[item?.motion];
@@ -403,16 +388,7 @@ function targetMusclesFor(item){
 }
 
 function primeUpcomingCinematicMedia(session,index){
-  document.querySelectorAll("link[data-rep-media-preload]").forEach(link=>link.remove());
-  const next=session?.exercises?.[index+1];
-  if(!next)return;
-  const item=currentItem(next),src=cinematicFramesFor(item)[0];
-  if(!src)return;
-  const link=document.createElement("link"),started=performance.now();
-  link.rel="preload";link.as="image";link.href=src;link.fetchPriority="low";link.dataset.repMediaPreload="next";
-  link.addEventListener("load",()=>window.REP_TELEMETRY?.recordMedia?.({exercise:item.name,frame:1,stage:"next-preload",loadMs:performance.now()-started,decodeMs:0,ok:true}),{once:true});
-  link.addEventListener("error",()=>window.REP_TELEMETRY?.recordMedia?.({exercise:item.name,frame:1,stage:"next-preload",loadMs:performance.now()-started,decodeMs:0,ok:false}),{once:true});
-  document.head.appendChild(link);
+  const next=session?.exercises?.[index+1];if(next)window.REP_MEDIA_PLAYER.preloadNext(currentItem(next));
 }
 
 function observeCinematicMedia(root,item){
@@ -421,6 +397,7 @@ function observeCinematicMedia(root,item){
     const started=performance.now();
     const finish=async ok=>{
       if(recorded)return;recorded=true;
+      if(!ok)showMediaFallback(root,item);
       const decodeStarted=performance.now();
       if(ok&&typeof img.decode==="function")try{await img.decode();}catch{}
       const decodeMs=performance.now()-decodeStarted;
@@ -432,31 +409,33 @@ function observeCinematicMedia(root,item){
   });
 }
 
-function exerciseVisual(item,{preview=false}={}){
-  const frames=cinematicFramesFor(item);
-  if(!frames.length)return anatomyVisual(item.motion);
-  const asset=cinematicAssetFor(item)||frames[0];
-  const guide=motionGuide[item.motion]||motionGuide.march;
-  const mediaKey=asset.split("/").pop().replace(/\.webp$/,""),scene=mediaKey.split("-")[0];
-  const frameMarkup=frames.map((src,index)=>`<img class="cinematic-frame cinematic-frame-${index+1}" data-cinematic-frame="${index+1}" src="${src}" alt="" ${preview?'loading="lazy" fetchpriority="low"':index===0?'fetchpriority="high"':'loading="eager" fetchpriority="low"'} decoding="async">`).join("");
-  return `<div class="cinematic-motion motion-${item.motion} scene-${scene} media-${mediaKey} ${frames.length>1?"is-multi-frame":""} ${state.paused?"is-paused":""} ${state.muscles?"":"muscles-off"}" style="--loop-speed:${8/state.speed}s" data-frame-count="${frames.length}">
-    ${frameMarkup}
-    <span class="cinematic-light" aria-hidden="true"></span>
-    <span class="phase-pill"><i></i> ${"BIOMECHANICS"}</span>
-    <span class="guide-callout">${guide[0]}</span>
-    ${motionPhaseRail()}
-  </div>`;
+function showMediaFallback(root,item){
+  const photo=root?.querySelector(".cinematic-motion");if(!photo||root.querySelector("[data-retry-media]"))return;
+  const host=document.createElement("div");host.className="media-fallback";
+  host.innerHTML=REP_SAFE_DOM.sanitize(`${techniqueVisual(window.REP_EXERCISES.resolve(item))}<div class="media-fallback-note" role="status">Photo unavailable · technique guide shown <button type="button" data-retry-media>Retry photo</button></div>`);
+  photo.replaceWith(host);const caption=root.querySelector(".motion-tempo");if(caption)caption.textContent="Male technique guide · photo unavailable";window.REP_TECHNIQUE.attach();
+  host.querySelector("[data-retry-media]").onclick=()=>{const replacement=document.createElement("div");replacement.innerHTML=REP_SAFE_DOM.sanitize(exerciseVisual(item));host.replaceWith(replacement.firstElementChild);if(caption)caption.textContent=mediaDescription(item);observeCinematicMedia(root,item);window.REP_TECHNIQUE.attach();};
+}
+function exerciseVisual(item,{preview=false,context=preview?"preview":"main"}={}){
+  return window.REP_MEDIA_PLAYER.markup(item,{preview,context});
 }
 
+function techniqueVisual(item){
+  if(item.atlas){const html=anatomyVisual(item.atlas);return item.isHold?html.replace("anatomy-motion ","anatomy-motion is-paused is-hold "):html;}
+  if(window.REP_TECHNIQUE.guideFor(item))return window.REP_TECHNIQUE.render(item,{paused:state.paused,speed:state.speed,muscles:state.muscles});
+  return `<div class="media-text-guide"><strong>${esc(item.isHold?"Hold / activity guide":"Technique guide")}</strong><p>${esc(item.execution)}</p><small>${esc(item.cues)}</small></div>`;
+}
+function mediaDescription(item){const m=window.REP_MEDIA_PLAYER.media(item);return m.views.some(v=>v.videos.length)?"Male movement demonstration":m.views.length?"Exercise position reference":"Technique cues";}
 function anatomyVisual(motion) {
-  const [atlas,size,a,b,musclesEn,flip] = anatomy[motion] || anatomy.march;
+  if(!anatomy[motion])return `<div class="media-text-guide"><strong>Technique guide unavailable</strong><p>Review this exercise’s instructions before starting.</p></div>`;
+  const [atlas,size,a,b,musclesEn,flip] = anatomy[motion];
   const muscles = musclesEn;
   const ratios = { gym:"1 / 1", mobility:"3 / 5", core:"8 / 9", cardio:"1 / 1" };
   const u=UI_STRINGS, guide=motionGuide[motion]||motionGuide.march;
   const phaseRail=motionPhaseRail();
   if(motion in motionAtlasRows && state.viewMode!=="front"){
     const row=motionAtlasRows[motion], y=(row/6*100).toFixed(3);
-    return `<div class="anatomy-motion sprite-motion motion-${motion} ${state.paused?"is-paused":""} ${state.muscles?"":"muscles-off"}" style="--row:${y}%;--loop-speed:${3.6/state.speed}s">
+    return `<div class="anatomy-motion sprite-motion motion-${motion} ${state.paused?"is-paused":""} ${state.muscles?"":"muscles-off"}" style="--row:${y}%;--loop-speed:${(motionCycleSeconds[motion]||4)/state.speed}s">
       <span class="media-ambient" aria-hidden="true"><i class="sprite-frame"></i></span><i class="sprite-frame media-focus-frame" aria-hidden="true"></i><span class="motion-path" aria-hidden="true"><i></i></span><span class="range-warning" aria-hidden="true"></span>
       <span class="muscle-callout"><b>${u.active}</b>${muscles}</span><span class="phase-pill"><i></i> 6 ${"KEY FRAMES"}</span>
       <span class="guide-callout">${guide[0]}</span>${phaseRail}
@@ -465,7 +444,7 @@ function anatomyVisual(motion) {
   const atlasFile=`assets/${atlas}-anatomy${state.viewMode==="front"?"-front":""}-atlas.webp`;
   const crop=state.viewMode==="front"?anatomyFrontCrop[motion]:null;
   const [cellSize,cellA,cellB]=crop||[size,a,b];
-  return `<div class="anatomy-motion motion-${motion} ${flip?"flip-b":""} ${state.paused?"is-paused":""} ${state.muscles?"":"muscles-off"}" style="--atlas-size:${cellSize};--cell-ratio:${ratios[atlas]};--loop-speed:${4/state.speed}s">
+  return `<div class="anatomy-motion motion-${motion} ${flip?"flip-b":""} ${state.paused?"is-paused":""} ${state.muscles?"":"muscles-off"}" style="--atlas-size:${cellSize};--cell-ratio:${ratios[atlas]};--loop-speed:${(motionCycleSeconds[motion]||4)/state.speed}s">
     <span class="media-ambient" aria-hidden="true"><i class="anatomy-frame frame-a" style="background-image:url('${atlasFile}');background-position:${cellA}"></i><i class="anatomy-frame frame-b" style="background-image:url('${atlasFile}');background-position:${cellB}"></i></span>
     <i class="anatomy-frame frame-a media-focus-frame" style="background-image:url('${atlasFile}');background-position:${cellA}"></i><i class="anatomy-frame frame-b media-focus-frame" style="background-image:url('${atlasFile}');background-position:${cellB}"></i>
     <span class="motion-path" aria-hidden="true"><i></i></span><span class="range-warning" aria-hidden="true"></span>
@@ -492,7 +471,7 @@ const saved = window.REP_HYDRATED_STATE || JSON.parse(localStorage.getItem(stora
 const state = {
   view: "home", activeTab:saved.activeTab||"home", session: saved.session || null, index: saved.index || 0,
   completed: saved.completed || {}, muted: saved.muted || false,
-  speed:saved.speed||1, paused:saved.paused||false, muscles:saved.muscles!==false, viewMode:saved.viewMode||"side",
+  programReview:saved.programReview||null, customRoutines:Array.isArray(saved.customRoutines)?window.REP_EXERCISES.normalizeRoutines(saved.customRoutines):null, mediaMode:"photo", mediaQuality:["auto","720","1080"].includes(saved.mediaQuality)?saved.mediaQuality:"auto", speed:saved.speed||1, paused:saved.paused||false, muscles:saved.muscles!==false, viewMode:saved.viewMode||"side",
   logs:saved.logs||{}, swaps:saved.swaps||{}, history:saved.history||[], sessionStartedAt:saved.sessionStartedAt||null,
   reviews:saved.reviews||{}, fieldTest:saved.fieldTest||{}, voice:saved.voice!==false,
   syncQueue:saved.syncQueue||[], syncState:"idle", recoveryCheckins:saved.recoveryCheckins||[],
@@ -510,22 +489,14 @@ const state = {
 };
 window.state=state;
 window.sessions=sessions;
+window.REP_EXERCISES.registerRoutines(state.customRoutines,sessions);
 const syncKeyStorage="rep-notion-pairing-key-v1";
 const repAuth=window.REP_AUTH;
 const app = document.querySelector("#app");
-let enterRaf = null;
-new MutationObserver(()=>{
-  if(enterRaf) return;
-  enterRaf = requestAnimationFrame(()=>{
-    enterRaf = null;
-    app.classList.remove("view-enter");
-    void app.offsetWidth;
-    app.classList.add("view-enter");
-  });
-}).observe(app,{childList:true});
 const timerDock = document.querySelector("#timerDock");
 const timerNextPreview = document.querySelector("#timerNextPreview");
 let exerciseTransitioning = false;
+let exerciseDirection=1;
 
 let previewSnapshot = null;
 function togglePreviewMode(){
@@ -602,7 +573,7 @@ function updatePreviewUI(){
 
 function persist() {
   if (state.previewMode) return;
-  window.REP_STORE?.persist(storageKey,{ version:6, guideVersion:REP_HEALTH_GUIDE.version, activeTab:state.activeTab, session: state.session, index: state.index, completed: state.completed, muted: state.muted, checkin: saved.checkin || {}, speed:state.speed, paused:state.paused, muscles:state.muscles, viewMode:state.viewMode, logs:state.logs, swaps:state.swaps, history:state.history, sessionStartedAt:state.sessionStartedAt, reviews:state.reviews, fieldTest:state.fieldTest, voice:state.voice, syncQueue:state.syncQueue, recoveryCheckins:state.recoveryCheckins, daily:state.daily, habitOrder:state.habitOrder, cardioDraft:state.cardioDraft, programStart:state.programStart, foodEntries:state.foodEntries, water:state.water, foodNote:state.foodNote, foodMealType:state.foodMealType, foodLogMethod:state.foodLogMethod, lastBackupAt:state.lastBackupAt, backupSnoozedUntil:state.backupSnoozedUntil, bodyWeights:state.bodyWeights, mealTemplates:state.mealTemplates, sleepLogs:state.sleepLogs, healthMetrics:state.healthMetrics, vitalsImportRuns:state.vitalsImportRuns, pushTime:state.pushTime, pushEndpoint:state.pushEndpoint, activeEnergy:state.activeEnergy, lastVitalsImportDate:state.lastVitalsImportDate, lastVitalsImportAt:state.lastVitalsImportAt });
+  window.REP_STORE?.persist(storageKey,{ version:6, programReview:state.programReview, customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines), mediaMode:state.mediaMode,mediaQuality:state.mediaQuality, guideVersion:REP_HEALTH_GUIDE.version, activeTab:state.activeTab, session: state.session, index: state.index, completed: state.completed, muted: state.muted, checkin: saved.checkin || {}, speed:state.speed, paused:state.paused, muscles:state.muscles, viewMode:state.viewMode, logs:state.logs, swaps:state.swaps, history:state.history, sessionStartedAt:state.sessionStartedAt, reviews:state.reviews, fieldTest:state.fieldTest, voice:state.voice, syncQueue:state.syncQueue, recoveryCheckins:state.recoveryCheckins, daily:state.daily, habitOrder:state.habitOrder, cardioDraft:state.cardioDraft, programStart:state.programStart, foodEntries:state.foodEntries, water:state.water, foodNote:state.foodNote, foodMealType:state.foodMealType, foodLogMethod:state.foodLogMethod, lastBackupAt:state.lastBackupAt, backupSnoozedUntil:state.backupSnoozedUntil, bodyWeights:state.bodyWeights, mealTemplates:state.mealTemplates, sleepLogs:state.sleepLogs, healthMetrics:state.healthMetrics, vitalsImportRuns:state.vitalsImportRuns, pushTime:state.pushTime, pushEndpoint:state.pushEndpoint, activeEnergy:state.activeEnergy, lastVitalsImportDate:state.lastVitalsImportDate, lastVitalsImportAt:state.lastVitalsImportAt });
 }
 let persistTimer=null;
 function persistDebounced(){
@@ -623,7 +594,7 @@ const UI_STRINGS={
   swapHip:"Use Hip Thrust", swapBack:"Use Back Extension", startTimer:"Start exercise timer", stopTimer:"Stop timer", wake:"Keep awake",
   restTitle:"REST", nextSet:"Next set", skip:"Skip", breatheReset:"breathe and reset", sessionComplete:"Session complete", thatCounts:"That counts.",
   completeSub:"is in the books. Recover well and come back consistent.", backSessions:"Back to sessions", reset:"Reset this checklist",
-  autoNext:"All sets complete · advancing", noPrevious:"No previous session yet", offlineReady:"Offline ready", offlineMode:"Offline mode", add15Seconds:"Add 15 seconds",
+  autoNext:"All sets complete · advancing", noPrevious:"No previous session yet", offlineReady:"App available offline", offlineMode:"Offline · local logging", add15Seconds:"Add 15 seconds",
   history:"Workout history",historyDesc:"Sessions, personal bests, and next-weight guidance.",openHistory:"View progress →",install:"Install app",installDesc:"Add Rep to your home screen for the best offline experience.",installNow:"Install",elapsed:"Elapsed",exitQuestion:"End this workout?",stay:"Keep training",exit:"Exit workout",addWeight:"Ready to add weight",holdWeight:"Keep this weight",noHistory:"Complete a workout to see your history.",updateReady:"A new offline version is ready.",reload:"Update now"
 };
 function U(){return UI_STRINGS;}
@@ -645,9 +616,9 @@ function recoveryGate(){const c=latestRecovery();if(!c)return {flags:0,hold:fals
 function programStatus(){
   const week=Math.max(1,Math.floor((Date.now()-new Date(state.programStart).getTime())/604800000)+1),gym=state.history.filter(h=>h.session==="gym").slice(0,2),stalled=[];
   if(gym.length===2){const names=["Leg Press","Back Extension","Hip Thrust Machine","Chest Press","Seated Cable Row","Lat Pulldown"];for(const name of names){const score=h=>Math.max(0,...setsFromLog(h.loads?.[name]).map(s=>(Number(s.weight)||0)*(Number(s.reps)||0)));if(score(gym[0])&&score(gym[0])<=score(gym[1]))stalled.push(name);}}
-  return {week,stalled,review:week>=REP_HEALTH_GUIDE.rules.reviewWeek||stalled.length>=2};
+  return {week,stalled,review:(week>=REP_HEALTH_GUIDE.rules.reviewWeek||stalled.length>=2)&&Number(state.programReview?.week||0)<week};
 }
-function healthStatusStrip(){const gate=recoveryGate(),program=programStatus();let label="Progress available",tone="good";if(gate.pause||gate.illness){label="Illness reported · pause training";tone="hold";}else if(gate.hold){label=`${gate.flags} red flags · hold load`;tone="hold";}else if(program.review){label="Program review due";tone="review";}return `<section class="health-status ${tone}"><div><small>${"TODAY'S GATE"}</small><strong>${label}</strong></div><span>${`Week ${program.week}`} · v${REP_HEALTH_GUIDE.version}</span></section>`;}
+function healthStatusStrip(){const gate=recoveryGate(),program=programStatus();let label="Progress available",tone="good";if(gate.pause||gate.illness){label="Illness reported · pause training";tone="hold";}else if(gate.hold){label=`${gate.flags} red flags · hold load`;tone="hold";}else if(program.review){label="Program review due";tone="review";}return `<section class="health-status ${tone}"><div><small>${"TODAY'S GATE"}</small><strong>${label}</strong></div><span>${`Week ${program.week}`} · v${REP_HEALTH_GUIDE.version}</span>${program.review?`<button type="button" data-program-review>Review program →</button>`:""}</section>`;}
 
 function hasMeaningfulData(){return state.history.length>0||state.foodEntries.length>0||state.recoveryCheckins.length>0||state.bodyWeights.length>0||state.mealTemplates.length>0||state.sleepLogs.length>0||Object.keys(state.logs||{}).length>0||Object.keys(state.daily?.hygiene||{}).length>0||Object.keys(state.daily?.habits||{}).length>0;}
 function notionProtected(){return Boolean(localStorage.getItem(syncKeyStorage))&&!["failed","auth"].includes(state.syncState);}
@@ -824,8 +795,8 @@ function renderInsights(){
   document.querySelectorAll("[data-trend-horizon]").forEach(btn=>{btn.onclick=()=>{state.trendHorizon=btn.dataset.trendHorizon;persist();renderInsights();};});
 }
 function updatePrimaryTabs(){document.querySelectorAll("[data-app-tab]").forEach(button=>{const tab=button.dataset.appTab,active=tab==="health"?["care","vitals","health"].includes(state.activeTab):tab===state.activeTab;button.setAttribute("aria-current",active?"page":"false");const labels={home:"Today",train:"Training",food:"Nutrition",health:"Health",insights:"Insights"};button.querySelector("span").textContent=labels[tab]||tab;});const paletteLabel=document.querySelector("#commandPaletteButton span");if(paletteLabel)paletteLabel.textContent="Command palette";const previewLabel=document.querySelector("#previewModeButton span");if(previewLabel)previewLabel.textContent="Preview mode";}
-function focusViewHeading(){
-  requestAnimationFrame(()=>{const heading=app.querySelector("h1");if(!heading)return;heading.tabIndex=-1;heading.focus({preventScroll:true});scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});});
+function focusViewHeading({scroll=true}={}){
+  requestAnimationFrame(()=>{const heading=app.querySelector("h1");if(!heading)return;heading.tabIndex=-1;heading.focus({preventScroll:true});if(scroll)scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});});
 }
 function vibrateGym(type="set"){
   if(!navigator.vibrate)return;
@@ -907,7 +878,7 @@ function showPlateCalculator(initialWeight=60,onApply=null){
     </div>
   `);
   document.body.appendChild(overlay);
-  overlay.querySelector("[data-plate-close]").onclick=()=>overlay.remove();
+  overlay.querySelector("[data-plate-close]").onclick=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
 
   function updateMath(){
     const total=Number(overlay.querySelector("[data-plate-total]").value)||0;
@@ -1013,21 +984,22 @@ function renderOverview(){
   app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="hero home-hero"><p class="eyebrow">${"TODAY"}${day==="Friday"?(" · Surat Al-Kahf Day"):""}</p><h1>${greetingLine()}</h1><p>${recovery?(recovery.calibrating?("Recovery is still calibrating — keep logging daily."):recovery.band==="green"?("Recovery looks good. Today's a day to push."):recovery.band==="yellow"?("Recovery is moderate — adjust load accordingly."):("Recovery is low — prioritize rest today.")):("Log sleep to see today's readiness.")}</p></section>
     ${streak>=1?`<div class="streak-badge"><i>${ICONS.flame}</i><strong>${streak}</strong><span>${"day streak"}</span></div>`:""}
     <section class="today-strip home-today-card"><div><span>${day}</span><strong>${todayPlan(day)}</strong></div><button data-goto-train type="button">${resume?("Resume session →"):("Review today's plan →")}</button></section>
+    <div class="today-secondary-actions" style="display:flex;gap:8px;margin:-4px 0 14px;">
+      <button data-today-bad-day type="button" style="flex:1;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(217,179,255,.08);color:#d9b3ff;font-size:11px;font-weight:850;cursor:pointer;">⚡ ${"Low Energy? Fallback (15m)"}</button>
+      <button data-today-log-act type="button" style="min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font-size:11px;font-weight:850;cursor:pointer;">+ ${"Log Activity"}</button>
+    </div>
+    ${todayFuelSnippet()}
     ${strainRecoveryCard()}
     <div class="today-vitals-sync-bar" style="display:flex;align-items:center;justify-content:space-between;margin:-6px 0 12px;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,.03);font-size:11px;">
       <span style="color:var(--muted);">${esc(vitalsImportText)}</span>
       <button data-check-watch-vitals type="button" style="border:0;background:transparent;color:var(--acid);font-size:11px;font-weight:850;cursor:pointer;">↻ ${"Check sync"}</button>
     </div>
     <section class="bedtime-card"><div class="bedtime-row"><span>${"BEDTIME TONIGHT"}</span><strong>${bedtime.time}</strong></div><small>${`For your ${bedtime.wakeTime} wake-up · ${bedtime.need}h needed`}</small></section>
-    <div class="today-secondary-actions" style="display:flex;gap:8px;margin:-4px 0 14px;">
-      <button data-today-bad-day type="button" style="flex:1;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(217,179,255,.08);color:#d9b3ff;font-size:11px;font-weight:850;cursor:pointer;">⚡ ${"Low Energy? Fallback (15m)"}</button>
-      <button data-today-log-act type="button" style="min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font-size:11px;font-weight:850;cursor:pointer;">+ ${"Log Activity"}</button>
-    </div>
-    ${todayFuelSnippet()}
     ${note?`<section class="insights-card home-note"><div class="insights-head"><small>${"TODAY'S NOTE"}</small></div><p class="insight insight-${note.tone}">${esc(note.text)}</p></section>`:""}`);
   document.querySelector("[data-check-watch-vitals]")?.addEventListener("click",()=>fetchPendingVitals(true));
   document.querySelector("[data-goto-train]")?.addEventListener("click",()=>{
-    if(resume||!window.REP_APPLY_ADAPTIVE_TODAY)setPrimaryTab("train");
+    if(resume)showSessionPreview(state.session);
+    else if(!window.REP_APPLY_ADAPTIVE_TODAY)setPrimaryTab("train");
     else window.REP_APPLY_ADAPTIVE_TODAY();
   });
   document.querySelector("[data-goto-fuel]")?.addEventListener("click",()=>setPrimaryTab("food"));
@@ -1051,7 +1023,7 @@ function renderHome() {
     ${healthStatusStrip()}
     ${reminderStrip("train")}
     <section class="session-grid" aria-label="Choose a session">
-      ${Object.entries(sessions).filter(([id])=>!["bad","gymLite"].includes(id)).map(([id,s]) => sessionCard(id,s,REP_TRAINING_SESSION.isResumableWorkout(state,sessions,id))).join("")}
+      ${Object.entries(sessions).filter(([id])=>!["bad","gymLite"].includes(id)&&!id.startsWith("custom-")).map(([id,s]) => sessionCard(id,s,REP_TRAINING_SESSION.isResumableWorkout(state,sessions,id))).join("")}
       <button class="session-card" data-log-activity style="--card-accent:#ffd36a"><span><small>${"PADEL · FOOTBALL · MORE"}</small><h2>${"Log an activity"}</h2></span><span class="session-icon">${ICONS.plus}</span><p>${"Unstructured sports — duration and calories burned from your Apple Watch."}</p><small>${"Log now →"}</small></button>
     </section>
     ${window.REP_CUSTOM_WORKOUTS ? window.REP_CUSTOM_WORKOUTS.renderRoutinesSection() : ""}
@@ -1081,6 +1053,7 @@ function renderHome() {
   document.querySelector("[data-history]").addEventListener("click", ()=>window.REP_NAVIGATION?.navigate("training-history")||renderHistory());
   document.querySelector("[data-bad-day]").addEventListener("click", renderBadDay);
   document.querySelector("[data-review]").addEventListener("click", renderReview);
+  document.querySelector("[data-program-review]")?.addEventListener("click",renderProgramReview);
   document.querySelector("[data-install]").addEventListener("click", installApp);
   document.querySelectorAll("[data-reminder-tab]").forEach(button=>button.addEventListener("click",()=>setPrimaryTab(button.dataset.reminderTab)));
   document.querySelector("[data-reminder-toggle]")?.addEventListener("click",e=>{const t=e.currentTarget.dataset.reminderToggle;state.reminderExpanded[t]=!state.reminderExpanded[t];renderHome();});
@@ -1107,19 +1080,24 @@ function showSessionPreview(id,openIndices=new Set()){
     const item=currentItem(base);
     return `<details class="preview-row" ${openIndices.has(i)?"open":""}><summary><span>${i+1}</span><div><strong>${esc(item.name)}</strong><small>${esc(item.prescription)}${item.intensity?` · ${esc(item.intensity)}`:""}</small></div></summary>
       <div class="preview-row-body">
-        <div class="visual-wrap anatomy-wrap" role="img" aria-label="Exercise demonstration of ${esc(item.name)}"><span class="visual-label">${esc(categoryLabel(item.category))}</span>${exerciseVisual(item,{preview:true})}<span class="motion-tempo">${u.anatomyLoop}</span></div>
-        ${motionControls()}
+        <div class="visual-wrap anatomy-wrap" role="group" aria-label="Exercise demonstration of ${esc(item.name)}"><span class="visual-label">${esc(categoryLabel(item.category))}</span>${exerciseVisual(item,{preview:true,context:`preview:${id}:${i}`})}<span class="motion-tempo">${mediaDescription(item)}</span></div>
+        ${motionControls(item)}
         <div class="cue-body">${item.optional?`<p><strong>${"Optional"}:</strong> ${"Skip this step whenever it is not useful today."}</p>`:""}<p><strong>${u.setup}:</strong> ${esc(item.setup)}</p><p><strong>${u.move}:</strong> ${esc(item.execution)}</p><p><strong>${u.cue}:</strong> ${esc(item.cues)}</p><p><strong>${u.avoid}:</strong> ${esc(item.avoid)}</p></div>
       </div>
     </details>`;
   }).join("");
   app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="preview-container">${moduleHeader(ls.name,"Preview the plan and each move's technique before you start.",ls.description)}
     <section class="preview-meta"><span>${ls.meta}</span><span>${s.exercises.length} ${u.steps}</span></section>
+    ${window.REP_WORKOUT_MEDIA.card()}
     <section class="preview-list">${rows}</section>
     <nav class="bottom-nav preview-actions"><button class="nav-button" data-cancel-preview type="button">${"← Back"}</button><button class="nav-button primary" data-start-session type="button">${continuing?("Resume workout →"):("Start workout →")}</button></nav></section>`);
+  window.REP_WORKOUT_MEDIA.bind(app,s,currentItem);
+  window.REP_MEDIA_PLAYER.mount();
+  document.querySelectorAll(".preview-row").forEach((row,i)=>{row.addEventListener("toggle",()=>{if(row.open){observeCinematicMedia(row,currentItem(s.exercises[i]));window.REP_TECHNIQUE.attach();}});if(row.open)observeCinematicMedia(row,currentItem(s.exercises[i]));});
+  window.REP_TECHNIQUE.attach();
   document.querySelector("[data-start-session]").onclick=()=>startSession(id);
   document.querySelector("[data-cancel-preview]").onclick=renderHome;
-  document.querySelectorAll("[data-motion-action]").forEach(b=>b.addEventListener("click",()=>motionAction(b.dataset.motionAction)));
+  document.querySelectorAll("[data-motion-action]").forEach(b=>b.onclick=()=>motionAction(b.dataset.motionAction));
 }
 function startSession(id) {
   REP_TRAINING_SESSION.startWorkout(state,id,sessions);
@@ -1133,13 +1111,11 @@ function resetWorkoutScroll(){
 }
 
 function currentItem(base){
-  const selected=state.exerciseSubstitutions?.[base.name]||(base.name==="Back Extension"&&state.swaps.backExtension?"Hip Thrust Machine":null);
-  if(!selected)return localizedItem(base);
-  const overrides=selected==="Hip Thrust Machine"?{motion:"floor",setup:"Shoulders against the machine pad, feet flat and hip-width.",execution:"Drive through the heels, lift the hips, squeeze the glutes, then lower with control.",cues:"Keep ribs down and finish with the glutes, not the lower back.",avoid:"Overarching the back or pushing through the toes."}:{};
-  return localizedItem({...base,...overrides,name:selected});
+  const selected=state.exerciseSubstitutions?.[base.name]||(base.name==="Back Extension"&&state.swaps.backExtension?"Hip Thrust Machine":base.name);
+  return localizedItem(window.REP_EXERCISES.resolve(base,selected));
 }
-function isLoadExercise(item){return ["legpress","hinge","floor","chestpress","row","pulldown"].includes(item.motion)&&["gym","gymLite"].includes(state.session);}
-function exerciseId(base){return state.exerciseSubstitutions?.[base.name]||(base.name==="Back Extension"&&state.swaps.backExtension?"Hip Thrust Machine":base.name);}
+function isLoadExercise(item){return ["weighted","bodyweight"].includes(window.REP_EXERCISES.get(item.name)?.logMode);}
+function exerciseId(base){return currentItem(base).name;}
 function normalizedLog(id,sets=3){return REP_TRAINING_SESSION.normalizedLog(state.logs,id,sets);}
 function setsFromLog(log){return REP_TRAINING_SESSION.setsFromLog(log);}
 function progressionAdvice(id){return REP_TRAINING_SESSION.progressionAdvice({logs:state.logs,history:state.history,id,recoveryGate:recoveryGate()});}
@@ -1224,7 +1200,7 @@ function cardioPanel(item){
   return `<section class="load-panel cardio-panel"><div class="set-log-head"><strong>${"Cardio log"}</strong><span>${"3–4 week gate"}</span></div><div class="metric-grid"><label><span>${"Minutes"}</span><input data-cardio="minutes" type="number" min="0" max="60" value="${esc(d.minutes||25)}"></label><label><span>RPE</span><input data-cardio="rpe" type="number" min="1" max="10" step="0.5" value="${esc(d.rpe||6)}"></label><label><span>${"Incline %"}</span><input data-cardio="incline" type="number" min="0" max="20" step="0.5" value="${esc(d.incline||5)}"></label><label><span>${"Pace km/h"}</span><input data-cardio="pace" type="number" min="0" max="15" step="0.1" value="${esc(d.pace||"")}"></label></div><div class="progression-callout">${advice}</div></section>`;
 }
 function cardioAdvice(){return REP_TRAINING_SESSION.cardioAdvice(state.history);}
-function motionControls(){const u=U();return `<div class="motion-controls" aria-label="${"Animation controls"}"><button data-motion-action="play" aria-pressed="${!state.paused}"><b>${state.paused?"▶":"Ⅱ"}</b><span>${state.paused?"Loop":"Looping"}</span></button><button data-motion-action="speed"><b>${state.speed}×</b><span>${u.speed}</span></button><button data-motion-action="view"><b>◫</b><span>${state.viewMode==="front"?u.front:u.side}</span></button><button data-motion-action="muscles" aria-pressed="${state.muscles}"><b>◉</b><span>${u.muscles}</span></button></div>`;}
+function motionControls(item){return `<div class="motion-controls reference-note"><small>${esc(mediaDescription(item))} · follow the technique cues below</small></div>`;}
 
 function quickSetEntry(base,item,setIndex){
   if(!isLoadExercise(item)||setIndex===undefined)return "";
@@ -1250,7 +1226,7 @@ function openWorkoutChoiceSheet(kind){
   overlay.setAttribute("aria-labelledby","workoutChoiceTitle");
   overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="rep-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"MOTION DISPLAY"}</small><h2 id="workoutChoiceTitle">${isSpeed?("Playback speed"):("View angle")}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-choice-grid">${options.map(option=>`<button type="button" data-choice="${option.value}" class="${option.active?"is-active":""}" aria-pressed="${option.active}"><span>${option.label}</span>${option.active?"<b>✓</b>":""}</button>`).join("")}</div></section>`);
   document.body.appendChild(overlay);
-  const close=()=>overlay.remove();
+  const close=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
   overlay.querySelector("[data-choice-close]").onclick=close;
   overlay.addEventListener("click",event=>{if(event.target===overlay)close();});
   overlay.querySelectorAll("[data-choice]").forEach(button=>button.onclick=()=>{
@@ -1272,7 +1248,7 @@ function openWorkoutUtilitySheet(){
   overlay.setAttribute("aria-labelledby","workoutUtilityTitle");
   overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="rep-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"ACTIVE SESSION"}</small><h2 id="workoutUtilityTitle">${"Workout options"}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-utility-list"><button type="button" data-workout-utility="wake" ${wakeSupported?"":"disabled"}><span>☼</span><div><strong>${"Keep screen awake"}</strong><small>${state.wakeLock?("On"):("Off")}</small></div></button><button type="button" data-workout-utility="sound"><span>${state.muted?"×":"◖"}</span><div><strong>${"Timer sound"}</strong><small>${state.muted?("Muted"):("On")}</small></div></button>${window.REP_HEART_RATE?`<button type="button" data-workout-utility="heart"><span>♥</span><div><strong>${"Heart rate"}</strong><small>${"Connect or view sensor"}</small></div></button>`:""}<button type="button" class="is-danger" data-workout-utility="exit"><span>×</span><div><strong>${"Exit workout"}</strong><small>${"Confirmation required"}</small></div></button></div></section>`);
   document.body.appendChild(overlay);
-  const close=()=>overlay.remove();
+  const close=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
   overlay.querySelector("[data-choice-close]").onclick=close;
   overlay.addEventListener("click",event=>{if(event.target===overlay)close();});
   overlay.querySelectorAll("[data-workout-utility]").forEach(button=>button.onclick=()=>{
@@ -1292,8 +1268,8 @@ function showSwapModal(exerciseName){
   overlay.className="timed-mode";
   overlay.innerHTML=REP_SAFE_DOM.sanitize(`<div class="workout-preflight-panel" style="max-width:400px;margin:auto;"><button class="dialog-close" data-swap-close aria-label="Close">×</button><small style="color:var(--acid);font-weight:900;">${"EQUIPMENT-AWARE SUBSTITUTIONS"}</small><h2 style="margin:6px 0 14px;">${esc(exerciseName)}</h2><p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${curated.length?("Only options matching your setup are shown."):("Review equipment availability before selecting an alternative.")}</p><div style="display:grid;gap:8px;"><button class="quiet-setting" data-select-swap="">${"Use original movement"}</button>${subs.map(sub=>`<button class="settings-primary" data-select-swap="${esc(sub.name)}" style="text-align:left;padding:12px 14px;border-radius:12px;font-size:14px;">${esc(sub.name)}${sub.equipment.length?` · ${esc(sub.equipment.join(", "))}`:""}</button>`).join("")}</div></div>`);
   document.body.appendChild(overlay);
-  overlay.querySelector("[data-swap-close]").onclick=()=>overlay.remove();
-  overlay.querySelectorAll("[data-select-swap]").forEach(btn=>{btn.onclick=()=>{const chosen=btn.dataset.selectSwap;state.exerciseSubstitutions=state.exerciseSubstitutions||{};if(chosen)state.exerciseSubstitutions[exerciseName]=chosen;else delete state.exerciseSubstitutions[exerciseName];persist();overlay.remove();renderExercise();showToast(chosen?`Swapped to ${chosen}`:"Original movement restored");};});
+  overlay.querySelector("[data-swap-close]").onclick=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+  overlay.querySelectorAll("[data-select-swap]").forEach(btn=>{btn.onclick=()=>{const chosen=btn.dataset.selectSwap;state.exerciseSubstitutions=state.exerciseSubstitutions||{};if(chosen)state.exerciseSubstitutions[exerciseName]=chosen;else delete state.exerciseSubstitutions[exerciseName];persist();(window.REP_MOTION?.dismiss(overlay)||overlay.remove());renderExercise();showToast(chosen?`Swapped to ${chosen}`:"Original movement restored");};});
 }
 
 function startTempoCoach(base, item){
@@ -1314,8 +1290,8 @@ function startTempoCoach(base, item){
       <div style="text-align:start;"><span style="color:var(--acid);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;">⏱️ ${"TEMPO COACH"}</span><h2 style="margin:2px 0 0;font-size:18px;">${esc(item.name)}</h2></div>
       <button class="round-button" data-tempo-close aria-label="${"Close"}" style="width:40px;height:40px;font-size:20px;">×</button>
     </div>
-    <div class="visual-wrap anatomy-wrap" role="img" aria-label="Demonstration of ${esc(item.name)}" style="width:100%;height:180px;min-height:180px;margin-bottom:6px;border-radius:18px;">
-      ${exerciseVisual(item,{preview:true})}
+    <div class="visual-wrap anatomy-wrap" role="group" aria-label="Demonstration of ${esc(item.name)}" style="width:100%;height:180px;min-height:180px;margin-bottom:6px;border-radius:18px;">
+      ${exerciseVisual(item,{preview:true,context:"tempo"})}
     </div>
     <div style="margin:6px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
       <div class="tempo-ring" style="width:100px;height:100px;border-radius:50%;border:4px solid var(--acid);display:flex;align-items:center;justify-content:center;transition:all 0.3s ease;transform:scale(1);">
@@ -1332,8 +1308,11 @@ function startTempoCoach(base, item){
     </div>
   </div>`);
   document.body.appendChild(overlay);
+  window.REP_MEDIA_PLAYER.mount();
+  observeCinematicMedia(overlay.querySelector(".visual-wrap"),item);
+  window.REP_TECHNIQUE.attach();
   
-  const close=()=>{clearInterval(tick);overlay.remove();window.speechSynthesis?.cancel();};
+  const close=()=>{clearInterval(tick);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());window.speechSynthesis?.cancel();};
   overlay.querySelector("[data-tempo-close]").onclick=close;
   overlay.querySelector("[data-tempo-finish]").onclick=()=>{vibrateGym("pr");triggerConfetti();close();};
   overlay.querySelector("[data-tempo-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?u.resume:u.pause;};
@@ -1394,6 +1373,8 @@ function startVoiceSetLogger(base,item){
   rec.start();
 }
 
+function bindPlayerAction(selector,handler){const button=document.querySelector(selector);if(button)button.onclick=handler;}
+
 function renderExercise() {
   const session = sessions[state.session];
   if (!session) return renderHome();
@@ -1411,12 +1392,14 @@ function renderExercise() {
   const focusSet=isAllDone?item.sets:(nextSetIndex+1);
   const focusLabel=isAllDone?(state.index===session.exercises.length-1?("Ready to finish"):("Ready for next move")):(`Set ${focusSet} of ${item.sets}`);
   const progressDots=Array.from({length:item.sets},(_,i)=>`<i class="${done.includes(i)?"is-done":i===nextSetIndex?"is-current":""}" aria-hidden="true"></i>`).join("");
-  const hasCinematicMedia=Boolean(cinematicAssetFor(item));
+  const hasCinematicMedia=false;
   const identityHtml=`<div class="exercise-info workout-identity"><div class="exercise-title-row"><h1>${esc(item.name)}</h1>${swapBtn}</div><p>${"Target"}: <strong>${esc(targetMuscles)}</strong></p><div class="chips"><span class="chip primary">${esc(item.prescription)}</span><span class="chip">${esc(item.intensity)}</span>${item.optional?`<span class="chip optional-chip">${"OPTIONAL"}</span>`:""}${item.rest?`<span class="chip">${item.rest}s ${u.rest}</span>`:""}</div></div>`;
   const exerciseTransitionClass=exerciseTransitioning?" is-exercise-entering":"";
   exerciseTransitioning=false;
   const primaryButtonLabel = isAllDone ? (state.index===session.exercises.length-1?u.finish:u.next) : (item.sets===1?u.markDone:(`✓ Log Set ${nextSetIndex+1} (Rest ${item.rest||90}s)`));
-  app.innerHTML = REP_SAFE_DOM.sanitize(`<section class="player workout-player${exerciseTransitionClass}${hasCinematicMedia?" has-cinematic-media":""}" data-swipe>
+  const renderedPlayer=document.querySelector(".workout-player");
+  const sameExercise=renderedPlayer?.dataset.exerciseIdentity===`${state.session}:${state.index}:${item.name}`;
+  const playerMarkup=REP_SAFE_DOM.sanitize(`<section class="player workout-player${exerciseTransitionClass}${hasCinematicMedia?" has-cinematic-media":""}" data-swipe>
     <div class="player-header workout-header">
       <button class="round-button workout-back" data-prev aria-label="${"Previous exercise"}" ${state.index===0?"disabled":""}>‹</button>
       <div class="player-progress"><small>${"ACTIVE WORKOUT"}</small><strong>${ls.name}</strong><span>${"Exercise"} ${state.index+1} ${u.of} ${session.exercises.length} · <b id="sessionElapsed">0:00</b></span></div>
@@ -1425,12 +1408,12 @@ function renderExercise() {
     <div class="progress-bar workout-progress"><i style="width:${((state.index+1)/session.exercises.length)*100}%"></i></div>
     <article class="exercise-card">
       <div class="exercise-hero ${hasCinematicMedia?"is-cinematic":""}">
-        <div class="visual-wrap anatomy-wrap exercise-hero-stage" role="img" aria-label="${hasCinematicMedia?("Cinematic demonstration"):("Animated anatomical demonstration")} ${esc(item.name)}"><span class="visual-label">${esc(categoryLabel(item.category))} · ${esc(item.intensity)}</span>${exerciseVisual(item)}<span class="motion-tempo">${u.anatomyLoop}</span></div>
+        <div class="visual-wrap anatomy-wrap exercise-hero-stage" role="group" aria-label="${mediaDescription(item)} ${esc(item.name)}"><span class="visual-label">${esc(categoryLabel(item.category))} · ${esc(item.intensity)}</span>${exerciseVisual(item)}<span class="motion-tempo">${mediaDescription(item)}</span></div>
         <div class="hero-muscle-label"><small>${"TARGET MUSCLES"}</small><strong>${esc(targetMuscles)}</strong></div>
         ${hasCinematicMedia?identityHtml:""}
       </div>
       ${hasCinematicMedia?"":identityHtml}
-      <section class="current-set-card" aria-label="${"Current set"}">
+      <section class="current-set-card" data-focus-set="${nextSetIndex??"done"}" aria-label="${"Current set"}">
         <div class="current-set-copy"><small>${"CURRENT"}</small><strong>${focusLabel}</strong><span>${isAllDone?("All sets logged"):esc(item.prescription)}</span></div>
         <div class="set-progress-dots">${progressDots}</div>
         ${quickSetEntry(base,item,nextSetIndex)}
@@ -1438,7 +1421,7 @@ function renderExercise() {
         ${item.motion==="activity"?`<button type="button" class="exercise-timer-button" data-open-activity-log><span>${"Log your activity now"}</span><strong aria-hidden="true">📋</strong></button>`:""}
       </section>
       <div class="workout-action-band"><button class="workout-primary-action" data-next><span>${primaryButtonLabel}</span><b aria-hidden="true">→</b></button>${item.optional&&!isAllDone?`<button class="workout-skip-optional" data-skip-optional type="button">${"Skip optional step"}</button>`:""}</div>
-      ${motionControls()}
+      ${motionControls(item)}
       <div class="superset-bar">
         <span><small>${"QUICK MOVE"}</small><strong>${"Change exercise order"}</strong></span>
         ${state.index < session.exercises.length - 1 ? `<button type="button" data-jump-exercise="${state.index+1}">${"Next move ↻"}</button>` : (state.index > 0 ? `<button type="button" data-jump-exercise="${state.index-1}">${"Previous ↺"}</button>` : "")}
@@ -1448,6 +1431,13 @@ function renderExercise() {
       <section class="set-checklist-panel"><div class="set-checklist-head"><small>${"SET PROGRESS"}</small><strong>${done.length}/${item.sets} ${"complete"}</strong></div><div class="set-tracker" aria-label="${"Set checklist"}">${Array.from({length:item.sets},(_,i)=>`<button class="set-button ${done.includes(i)?"is-done":""}" data-set="${i}" aria-pressed="${done.includes(i)}">${done.includes(i)?`✓ ${u.done}`:item.sets===1?u.markDone:`${u.set} ${i+1}`}</button>`).join("")}</div></section>
       <details class="cue-details"><summary>${u.technique}</summary><div class="cue-body"><p><strong>${u.setup}:</strong> ${esc(item.setup)}</p><p><strong>${u.move}:</strong> ${esc(item.execution)}</p><p><strong>${u.cue}:</strong> ${esc(item.cues)}</p><p><strong>${u.avoid}:</strong> ${esc(item.avoid)}</p></div></details>
     </article></section>`);
+  if(sameExercise){
+    const temporary=document.createElement("div");temporary.innerHTML=REP_SAFE_DOM.sanitize(playerMarkup);
+    const fresh=temporary.querySelector(".workout-player");
+    for(const selector of [".current-set-card",".workout-action-band",".set-checklist-panel"]){const prior=renderedPlayer.querySelector(selector),next=fresh.querySelector(selector);if(!prior||!next)continue;if(selector===".current-set-card"&&prior.dataset.focusSet===next.dataset.focusSet){prior.querySelector(".set-progress-dots")?.replaceWith(next.querySelector(".set-progress-dots"));continue;}prior.replaceWith(next);}
+    renderedPlayer.querySelectorAll(".set-card-row").forEach((row,i)=>{const complete=done.includes(i);row.classList.toggle("is-completed",complete);row.querySelector(".set-badge")?.classList.toggle("is-done",complete);const check=row.querySelector(".set-check-btn");if(check){check.classList.toggle("is-done",complete);check.textContent=complete?"✓":"○";}});
+  }else{app.innerHTML=REP_SAFE_DOM.sanitize(playerMarkup);const player=document.querySelector(".workout-player");player.dataset.exerciseIdentity=`${state.session}:${state.index}:${item.name}`;window.REP_MOTION.animate(player.querySelector(".exercise-hero"),"exercise",exerciseDirection);}
+  window.REP_MEDIA_PLAYER.mount();
   const progressBar=document.querySelector(".workout-progress i");
   if(progressBar&&prevProgressWidth&&prevProgressWidth!==progressBar.style.width){
     const targetWidth=progressBar.style.width;
@@ -1456,21 +1446,21 @@ function renderExercise() {
     requestAnimationFrame(()=>{progressBar.style.width=targetWidth;});
   }
   observeCinematicMedia(document.querySelector(".exercise-hero-stage"),item);
-  document.querySelectorAll("[data-prev]").forEach(b => b.addEventListener("click", prev));
-  document.querySelector("[data-next]").addEventListener("click", ()=>{if(nextSetIndex!==undefined&&!done.includes(nextSetIndex))toggleSet(nextSetIndex);else next();});
-  document.querySelector("[data-skip-optional]")?.addEventListener("click",next);
-  document.querySelector("[data-workout-more]")?.addEventListener("click",openWorkoutUtilitySheet);
-  document.querySelector("[data-open-hr-modal]")?.addEventListener("click", ()=>window.REP_HEART_RATE?.openHrModal());
-  document.querySelectorAll("[data-jump-exercise]").forEach(btn=>{btn.onclick=()=>{cancelRestTimer();state.index=Number(btn.dataset.jumpExercise);exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();};});
-  document.querySelectorAll("[data-set]").forEach(b => b.addEventListener("click", () => toggleSet(Number(b.dataset.set))));
-  document.querySelectorAll("[data-motion-action]").forEach(b=>b.addEventListener("click",()=>motionAction(b.dataset.motionAction)));
-  document.querySelector("[data-swap]")?.addEventListener("click",()=>{state.swaps.backExtension=!state.swaps.backExtension;persist();renderExercise();});
-  document.querySelectorAll("[data-swap-modal]").forEach(b=>b.addEventListener("click",()=>showSwapModal(b.dataset.swapModal)));
-  document.querySelector("[data-tempo-coach]")?.addEventListener("click",()=>startTempoCoach(base,item));
-  document.querySelector("[data-plate-math]")?.addEventListener("click",e=>showPlateCalculator(Number(e.currentTarget.dataset.plateMath)||60));
-  document.querySelector("[data-voice-set-log]")?.addEventListener("click",()=>startVoiceSetLogger(base,item));
-  document.querySelector("[data-exercise-timer]")?.addEventListener("click",()=>toggleExerciseTimer(item.motion));
-  document.querySelector("[data-open-activity-log]")?.addEventListener("click",()=>showLogActivity(state.session==="football"||state.session==="padel"?state.session:undefined));
+  document.querySelectorAll("[data-prev]").forEach(b => b.onclick=prev);
+  document.querySelector("[data-next]").onclick=()=>{if(nextSetIndex!==undefined&&!done.includes(nextSetIndex))toggleSet(nextSetIndex);else next();};
+  bindPlayerAction("[data-skip-optional]",next);
+  bindPlayerAction("[data-workout-more]",openWorkoutUtilitySheet);
+  bindPlayerAction("[data-open-hr-modal]", ()=>window.REP_HEART_RATE?.openHrModal());
+  document.querySelectorAll("[data-jump-exercise]").forEach(btn=>{btn.onclick=()=>{cancelRestTimer();exerciseDirection=Number(btn.dataset.jumpExercise)>state.index?1:-1;state.index=Number(btn.dataset.jumpExercise);exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();};});
+  document.querySelectorAll("[data-set]").forEach(b => b.onclick=()=>toggleSet(Number(b.dataset.set)));
+  document.querySelectorAll("[data-motion-action]").forEach(b=>b.onclick=()=>motionAction(b.dataset.motionAction));
+  bindPlayerAction("[data-swap]",()=>{state.swaps.backExtension=!state.swaps.backExtension;persist();renderExercise();});
+  document.querySelectorAll("[data-swap-modal]").forEach(b=>b.onclick=()=>showSwapModal(b.dataset.swapModal));
+  bindPlayerAction("[data-tempo-coach]",()=>startTempoCoach(base,item));
+  bindPlayerAction("[data-plate-math]",e=>showPlateCalculator(Number(e.currentTarget.dataset.plateMath)||60));
+  bindPlayerAction("[data-voice-set-log]",()=>startVoiceSetLogger(base,item));
+  bindPlayerAction("[data-exercise-timer]",()=>toggleExerciseTimer(item.motion));
+  bindPlayerAction("[data-open-activity-log]",()=>showLogActivity(state.session==="football"||state.session==="padel"?state.session:undefined));
   document.querySelectorAll("[data-clone-set]").forEach(btn=>{
     btn.onclick=()=>{
       const i=Number(btn.dataset.cloneSet), id=exerciseId(base), log=normalizedLog(id,item.sets);
@@ -1502,11 +1492,11 @@ function renderExercise() {
       if(window.vibrateGym) window.vibrateGym("set");
     };
   });
-  document.querySelectorAll("[data-log]").forEach(input=>input.addEventListener("input",()=>{
+  document.querySelectorAll("[data-log]").forEach(input=>input.oninput=()=>{
     const field=input.dataset.log,setIndex=input.dataset.logSet;
     document.querySelectorAll(`input[data-log="${field}"][data-log-set="${setIndex}"]`).forEach(peer=>{if(peer!==input)peer.value=input.value;});
     saveLog(base,item);
-  }));
+  });
   document.querySelectorAll("[data-live-reps-step]").forEach(button=>button.onclick=()=>{
     const input=document.querySelector("[data-live-log][data-log='reps']");
     if(!input)return;
@@ -1523,6 +1513,7 @@ function motionAction(action){
   if(action==="play")state.paused=!state.paused;
   if(action==="speed")return openWorkoutChoiceSheet("speed");
   if(action==="view")return openWorkoutChoiceSheet("view");
+  if(action==="media")state.mediaMode=state.mediaMode==="photo"?"technique":"photo";
   if(action==="muscles")state.muscles=!state.muscles;
   persist();
   if(state.view==="preview"){
@@ -1542,7 +1533,7 @@ function toggleExerciseTimer(motion){
   overlay.setAttribute("aria-labelledby","timedExerciseTitle");
   overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="timed-workout-card">
     <header class="timed-workout-head"><div><small>${esc(categoryLabel(item.category))} · ${"TIMED EXERCISE"}</small><h2 id="timedExerciseTitle">${esc(item.name)}</h2></div><button class="round-button" data-timed-close aria-label="${"Close"}">×</button></header>
-    <div class="timed-workout-visual visual-wrap anatomy-wrap" role="img" aria-label="Demonstration of ${esc(item.name)}">${exerciseVisual(item,{preview:true})}<span>${esc(targetMuscles)}</span></div>
+    <div class="timed-workout-visual visual-wrap anatomy-wrap" role="group" aria-label="Demonstration of ${esc(item.name)}">${exerciseVisual(item,{preview:true,context:"timed"})}<span>${esc(targetMuscles)}</span></div>
     <div class="timed-workout-focus">
       <div class="timed-ring" data-timed-ring style="--progress:100%"><div><strong data-timed-value>${formatClock(total)}</strong><small data-timed-total>/ ${formatClock(total)}</small></div></div>
       <div class="timed-workout-status"><small>${`SET ${(nextSet??0)+1} OF ${item.sets}`}</small><strong data-timed-phase>${"MOVE WITH CONTROL"}</strong><span>${sided?("A cue will signal the side change"):("Keep a controlled rhythm")}</span></div>
@@ -1552,6 +1543,9 @@ function toggleExerciseTimer(motion){
     <div class="timed-cue"><small>${u.cue}</small><p>${esc(item.cues)}</p></div>
   </section>`);
   document.body.appendChild(overlay);
+  window.REP_MEDIA_PLAYER.mount();
+  observeCinematicMedia(overlay.querySelector(".visual-wrap"),item);
+  window.REP_TECHNIQUE.attach();
   overlay.querySelector("[data-timed-close]").onclick=stopExerciseClock;
   overlay.querySelector("[data-timed-skip]").onclick=finishExerciseTimer;
   overlay.querySelector("[data-timed-add]").onclick=()=>{const t=state.exerciseTimer;if(!t)return;t.remaining+=15;t.total+=15;if(!t.paused)t.targetEndTime=Date.now()+t.remaining*1000;updateExerciseTimer();};
@@ -1681,13 +1675,13 @@ function toggleSet(setIndex) {
   persist();
   const allSetsDone=!already && state.completed[key].length===item.sets;
   if(allSetsDone){
-    triggerConfetti({subtle:true});
+    window.REP_MOTION?.animate(document.querySelector(".set-progress-dots"),"set");
   }
   if (!already && item.rest) startTimer(item.rest, setIndex);
   renderExercise();
   if(!already){
     const btn=document.querySelector(`[data-set="${setIndex}"]`);
-    if(btn){btn.classList.add("is-just-checked");setTimeout(()=>btn.classList.remove("is-just-checked"),400);}
+    if(btn){btn.classList.add("is-just-checked");setTimeout(()=>btn.classList.remove("is-just-checked"),160);}
   }
   if(!already&&!item.rest&&allSetsDone){
     const completedSession=state.session,completedIndex=state.index;
@@ -1696,9 +1690,9 @@ function toggleSet(setIndex) {
     },650);
   }
 }
-function prev(){ stopExerciseClock();cancelRestTimer();if(REP_TRAINING_SESSION.previousExercise(state).moved){exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();} }
+function prev(){ exerciseDirection=-1;stopExerciseClock();cancelRestTimer();if(REP_TRAINING_SESSION.previousExercise(state).moved){exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();} }
 function next(){
-  stopExerciseClock();cancelRestTimer();
+  exerciseDirection=1;stopExerciseClock();cancelRestTimer();
   const res=REP_TRAINING_SESSION.advanceExercise(state,sessions,{weightKg:latestWeightKg(),motionDurations:Object.fromEntries(Object.entries(motionGuide).map(([k,v])=>[k,v[2]]))});
   if(res.completed&&res.record){window.REP_PRODUCT_SUITE?.trackEvent(state,"workout_completed",{session:res.record.session||state.session});queueWorkout(res.record);}
   exerciseTransitioning=!res.completed;persist();resetWorkoutScroll();renderExercise();
@@ -1709,16 +1703,18 @@ function next(){
 // place if the drag didn't cross the threshold. touchend used a simple
 // distance check before this with no visual feedback during the gesture.
 function bindWorkoutSwipe(swipe){
-  if(!swipe)return;
+  if(!swipe||swipe.dataset.swipeReady)return;swipe.dataset.swipeReady="true";
+  const surface=swipe.querySelector(".exercise-hero")||swipe;
   let startX=0,startY=0,gesture=null;
   const threshold=55;
   const reduceMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   swipe.addEventListener("touchstart",e=>{
+    if(e.target.closest("button,input,select,textarea,label,a")){gesture=null;return;}
     startX=e.changedTouches[0].clientX;startY=e.changedTouches[0].clientY;gesture="pending";
-    swipe.style.transition="none";
+    surface.style.transition="none";
   },{passive:true});
   swipe.addEventListener("touchmove",e=>{
-    if(gesture==="vertical")return;
+    if(!gesture||gesture==="vertical")return;
     const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;
     if(gesture==="pending"){
       if(Math.abs(dx)<10&&Math.abs(dy)<10)return;
@@ -1727,7 +1723,7 @@ function bindWorkoutSwipe(swipe){
     }
     e.preventDefault();
     const draggingBack=dx>0,canGoBack=state.index>0;
-    swipe.style.transform=`translateX(${draggingBack&&!canGoBack?dx*0.25:dx}px)`;
+    surface.style.transform=reduceMotion?"none":`translateX(${draggingBack&&!canGoBack?dx*0.25:dx}px)`;
   },{passive:false});
   swipe.addEventListener("touchend",e=>{
     if(gesture!=="horizontal"){gesture=null;return;}
@@ -1737,13 +1733,10 @@ function bindWorkoutSwipe(swipe){
     const goingNext=dx<0,canGoBack=state.index>0;
     if(passed&&(goingNext||canGoBack)){
       if(reduceMotion){goingNext?next():prev();return;}
-      const exitX=dx<0?-swipe.getBoundingClientRect().width:swipe.getBoundingClientRect().width;
-      swipe.style.transition=`transform .18s var(--ease-out)`;
-      swipe.style.transform=`translateX(${exitX}px)`;
-      setTimeout(()=>{goingNext?next():prev();},180);
+      surface.style.transform="none";goingNext?next():prev();
     }else{
-      swipe.style.transition=reduceMotion?"none":`transform .22s var(--ease-spring)`;
-      swipe.style.transform="translateX(0)";
+      surface.style.transition=reduceMotion?"none":`transform .22s var(--ease-out)`;
+      surface.style.transform="translateX(0)";
     }
   },{passive:true});
   swipe.addEventListener("touchcancel",()=>{
@@ -1751,6 +1744,7 @@ function bindWorkoutSwipe(swipe){
     swipe.style.transition=reduceMotion?"none":"transform .18s ease";
     swipe.style.transform="translateX(0)";
   },{passive:true});
+  swipe.addEventListener("touchcancel",()=>{gesture=null;surface.style.transform="none";},{passive:true});
 }
 function stopExerciseClock(){if(state.exerciseTimer?.interval)clearInterval(state.exerciseTimer.interval);state.exerciseTimer=null;document.querySelector(".timed-mode")?.remove();window.speechSynthesis?.cancel();}
 function startSessionClock(){stopSessionClock();state.sessionClock=setInterval(updateSessionClock,1000);updateSessionClock();}
@@ -1764,7 +1758,7 @@ function abandonSession(){
   REP_TRAINING_SESSION.abandonWorkout(state);
 }
 function showExitConfirm(){
-  if(document.querySelector(".exit-confirm"))return;const u=U(),box=document.createElement("div");box.className="exit-confirm";box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${u.exitQuestion}</strong><button data-stay>${u.stay}</button><button class="danger" data-leave>${u.exit}</button>`);document.body.appendChild(box);box.querySelector("[data-stay]").onclick=()=>box.remove();box.querySelector("[data-leave]").onclick=()=>{box.remove();cancelRestTimer();abandonSession();persist();renderHome();};
+  if(document.querySelector(".exit-confirm"))return;const u=U(),box=document.createElement("div");box.className="exit-confirm";box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${u.exitQuestion}</strong><button data-stay>${u.stay}</button><button class="danger" data-leave>${u.exit}</button>`);document.body.appendChild(box);box.querySelector("[data-stay]").onclick=()=>box.remove();box.querySelector("[data-leave]").onclick=()=>{(window.REP_MOTION?.dismiss(box)||box.remove());cancelRestTimer();abandonSession();persist();renderHome();};
 }
 // MET (metabolic equivalent) per session type, used only for a rough estimate -
 // there's no heart-rate or wearable data source here, so this is duration x
@@ -1891,6 +1885,13 @@ const reviewExercises=["Leg Press","Back Extension","Chest Press","Seated Cable 
 const fieldChecks=[
   ["bright","Readable in bright gym lighting"],["dim","Readable in dim lighting"],["hands","Usable with sweaty hands"],["onehand","Core actions work one-handed"],["airplane","Full workout works in airplane mode"],["muted","Visual/haptic cues work while muted"],["resume","Resumes correctly after phone lock"],["small","No clipping on a small phone"]
 ];
+function renderProgramReview(){
+  state.view="program-review";state.activeTab="train";document.body.classList.remove("workout-mode");updatePrimaryTabs();
+  const program=programStatus(),gate=recoveryGate(),summary=window.REP_PRODUCT_SUITE?.weeklySummary(state),action=gate.hold?"Prioritize recovery and hold progression.":program.stalled.length>=2?"Review loads and technique for the stalled lifts before progressing.":"Keep the current program if progress and recovery are good.";
+  app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("PROGRAM CHECKPOINT",`Review week ${program.week}`,"Week 8 is a review checkpoint, not the program’s expiry date.")}<section class="settings-card"><h2>${esc(action)}</h2><p>${summary?esc(summary.nextAction):"Review your recent logged workouts."}</p><p>${program.stalled.length?`Lifts to review: ${program.stalled.map(esc).join(", ")}.`:"No repeated stalls detected in the available gym records."}</p><p>Check recovery, technique, and whether the schedule still fits your week. If those are good, change nothing.</p><button type="button" class="settings-primary" data-complete-program-review>Mark program reviewed</button><button type="button" class="quiet-setting" data-program-review-back>Back to Training</button></section>`);
+  document.querySelector("[data-complete-program-review]").onclick=()=>{state.programReview={week:program.week,reviewedAt:new Date().toISOString()};persist();renderHome();showToast("Program review saved. Check again next week, or sooner if symptoms change.");};
+  document.querySelector("[data-program-review-back]").onclick=renderHome;
+}
 function renderReview(){
   state.view="review";state.activeTab="train";persist();updatePrimaryTabs();document.body.classList.remove("workout-mode");const r=state.reviews,complete=reviewExercises.filter(x=>r[x]?.signed).length;
   app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="recovery-head"><p class="eyebrow">${"SAFETY & QUALITY"}</p><h1>${"Human review, documented."}</h1><p>${"The visuals and cues are educational, not medical diagnosis. Sign-off below must be completed by a certified trainer or physiotherapist after inspection."}</p></section>
@@ -2550,7 +2551,7 @@ async function startLiveBarcodeScanner(){
   document.body.appendChild(overlay);
   let stream=null,scanInterval=null;
   const video=overlay.querySelector("video");
-  const close=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());if(scanInterval)clearInterval(scanInterval);overlay.remove();};
+  const close=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());if(scanInterval)clearInterval(scanInterval);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());};
   overlay.querySelector("[data-close-barcode]").onclick=close;
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
@@ -2655,7 +2656,7 @@ function showLogActivity(presetType){
   };
 }
 function renderBadDay(){const gate=recoveryGate();state.view="badDay";state.activeTab="train";persist();updatePrimaryTabs();app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("BAD DAY MODE","Protect the streak.","Choose the smallest version you can do safely. Your normal program stays untouched.")}${gate.hold?`<section class="decision-card hold"><div><small>${"RECOVERY GATE"}</small><h2>${"Light is the correct call today"}</h2><p>${gate.flags} ${"red flags"}</p></div></section>`:""}<section class="fallback-grid"><button data-fallback="bad"><span>01</span><small>5–7 MIN</small><h2>${"The floor"}</h2><p>${"3 minutes marching + Kegels 3 × 10."}</p><strong>${"Start now →"}</strong></button><button data-fallback="gymLite"><span>02</span><small>25–30 MIN</small><h2>${"Reduced gym"}</h2><p>Leg Press · Chest Press · Seated Row</p><strong>${"Start now →"}</strong></button><button data-active-recovery><span>03</span><small>5 MIN</small><h2>${"Recovery only"}</h2><p>${"Legs up the wall with slow breathing."}</p><strong>${"Start timer →"}</strong></button></section>`);document.querySelectorAll("[data-fallback]").forEach(b=>b.onclick=()=>startSession(b.dataset.fallback));document.querySelector("[data-active-recovery]").onclick=()=>startGuideTimer("Legs up the wall",300);}
-function startGuideTimer(label,seconds){let remaining=seconds,paused=false;const overlay=document.createElement("div");overlay.className="timed-mode";overlay.innerHTML=REP_SAFE_DOM.sanitize(`<button class="timed-close" aria-label="${"Close"}">×</button><p>${esc(label)}</p><strong data-guide-value>${formatClock(remaining)}</strong><span>${"BREATHE SLOWLY · STAY COMFORTABLE"}</span><div class="timed-progress"><i data-guide-progress></i></div><div class="timed-actions"><button data-guide-pause>${U().pause}</button><button data-guide-finish>${U().skip}</button></div>`);document.body.appendChild(overlay);const close=()=>{clearInterval(tick);overlay.remove();};overlay.querySelector(".timed-close").onclick=close;overlay.querySelector("[data-guide-finish]").onclick=()=>{signalEnd();close();};overlay.querySelector("[data-guide-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?U().resume:U().pause;};const tick=setInterval(()=>{if(paused)return;remaining--;overlay.querySelector("[data-guide-value]").textContent=formatClock(Math.max(0,remaining));overlay.querySelector("[data-guide-progress]").style.width=`${Math.max(0,remaining/seconds*100)}%`;if(remaining<=0){signalEnd();close();}},1000);}
+function startGuideTimer(label,seconds){let remaining=seconds,paused=false;const overlay=document.createElement("div");overlay.className="timed-mode";overlay.innerHTML=REP_SAFE_DOM.sanitize(`<button class="timed-close" aria-label="${"Close"}">×</button><p>${esc(label)}</p><strong data-guide-value>${formatClock(remaining)}</strong><span>${"BREATHE SLOWLY · STAY COMFORTABLE"}</span><div class="timed-progress"><i data-guide-progress></i></div><div class="timed-actions"><button data-guide-pause>${U().pause}</button><button data-guide-finish>${U().skip}</button></div>`);document.body.appendChild(overlay);const close=()=>{clearInterval(tick);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());};overlay.querySelector(".timed-close").onclick=close;overlay.querySelector("[data-guide-finish]").onclick=()=>{signalEnd();close();};overlay.querySelector("[data-guide-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?U().resume:U().pause;};const tick=setInterval(()=>{if(paused)return;remaining--;overlay.querySelector("[data-guide-value]").textContent=formatClock(Math.max(0,remaining));overlay.querySelector("[data-guide-progress]").style.width=`${Math.max(0,remaining/seconds*100)}%`;if(remaining<=0){signalEnd();close();}},1000);}
 
 function clearRestPreview(){
   timerDock.classList.remove("has-next-preview");
@@ -2669,7 +2670,7 @@ function renderRestPreview(){
   const nextBase=item&&t&&t.set>=item.sets-1?session.exercises[state.index+1]:null;
   if(!nextBase){clearRestPreview();return;}
   const nextItem=currentItem(nextBase);
-  document.querySelector("#timerPreviewVisual").innerHTML=REP_SAFE_DOM.sanitize(exerciseVisual(nextItem,{preview:true}));
+  document.querySelector("#timerPreviewVisual").innerHTML=REP_SAFE_DOM.sanitize(exerciseVisual(nextItem,{preview:true,context:"rest"}));
   document.querySelector("#timerPreviewLabel").textContent="UP NEXT";
   document.querySelector("#timerPreviewName").textContent=nextItem.name;
   document.querySelector("#timerPreviewMeta").textContent=`${nextItem.prescription} · ${nextItem.intensity}`;
@@ -2679,6 +2680,9 @@ function renderRestPreview(){
   timerNextPreview.classList.remove("is-hidden");
   timerNextPreview.setAttribute("aria-hidden","false");
   timerDock.classList.add("has-next-preview");
+  observeCinematicMedia(document.querySelector("#timerPreviewVisual"),nextItem);
+  window.REP_MEDIA_PLAYER.mount();
+  window.REP_TECHNIQUE.attach();
 }
 
 function cancelRestTimer({notify=false}={}){
@@ -2821,7 +2825,7 @@ addEventListener("online",()=>{network();fetchPendingVitals();});addEventListene
 async function registerServiceWorker(){
   if(!("serviceWorker" in navigator)||!location.protocol.startsWith("http"))return;
   const reg=await navigator.serviceWorker.register(`./sw.js?v=${window.REP_BUILD_VERSION||"dev"}`);
-  reg.addEventListener("updatefound",()=>{const worker=reg.installing;worker?.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){const bar=document.createElement("div");bar.className="update-bar";bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);document.body.appendChild(bar);bar.querySelector("button").onclick=()=>location.reload();}});});
+  reg.addEventListener("updatefound",()=>{const worker=reg.installing;worker?.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){const bar=document.createElement("div");bar.className="update-bar";bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);document.body.appendChild(bar);bar.querySelector("button").onclick=async()=>{persist();await window.REP_STORE?.flush();if(reg.waiting){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload(),{once:true});reg.waiting.postMessage({type:"SKIP_WAITING"});}else location.reload();};}});});
   reg.update().catch(()=>{});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{});});
   addEventListener("pageshow",()=>reg.update().catch(()=>{}));

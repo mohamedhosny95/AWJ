@@ -56,6 +56,8 @@
       if(window.persistDebounced) window.persistDebounced();
       else if(window.persist) window.persist();
     }
+    window.state.customRoutines=window.REP_EXERCISES.normalizeRoutines(window.state.customRoutines);
+    window.REP_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
     return window.state.customRoutines;
   }
 
@@ -64,26 +66,14 @@
     const routine = routines.find(r => r.id === routineId);
     if(!routine || !routine.exercises.length) return;
 
-    // Register into sessions registry dynamically
-    if(window.sessions){
-      window.sessions[routine.id] = {
-        name: routine.title,
-        duration: `${routine.exercises.length * 8} min`,
-        exercises: routine.exercises.map(ex => ({
-          ...ex,
-          setup: "Standard biomechanical setup with stable bracing.",
-          execution: "Full active range of motion with 2-3s controlled eccentric.",
-          cues: "Control the stretch; drive explosively with intent.",
-          avoid: "Rushing the negative or bouncing out of the bottom."
-        }))
-      };
-    }
+    window.REP_EXERCISES.registerRoutines(routines,window.sessions);
     if(window.startSession){
-      window.startSession(routine.id);
+      window.showSessionPreview(routine.id);
     }
   }
 
   function openRoutineBuilderModal(existingId = null){
+    if(existingId&&window.REP_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,existingId)){window.showToast("Finish or exit this workout before editing its routine.");return;}
     if(document.querySelector(".routine-builder-modal")) return;
     const routines = getCustomRoutines();
     const routine = existingId ? routines.find(r => r.id === existingId) : {
@@ -110,8 +100,8 @@
           <h2 style="margin:4px 0 12px;">${existingId ? ("Edit Routine") : ("New Custom Routine")}</h2>
           
           <div style="display:grid;grid-template-columns:50px 1fr;gap:8px;margin-bottom:12px;">
-            <input data-routine-emoji type="text" value="${draft.emoji}" style="height:44px;text-align:center;font-size:20px;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);">
-            <input data-routine-title type="text" value="${esc(draft.title)}" placeholder="${"Routine Title"}" style="height:44px;padding:0 12px;font-size:14px;font-weight:900;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);">
+            <input aria-label="Routine icon" data-routine-emoji type="text" value="${esc(draft.emoji)}" style="height:44px;text-align:center;font-size:20px;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);">
+            <input aria-label="Routine title" data-routine-title type="text" value="${esc(draft.title)}" placeholder="${"Routine Title"}" style="height:44px;padding:0 12px;font-size:14px;font-weight:900;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);">
           </div>
 
           <div class="builder-exercise-list" style="display:grid;gap:8px;margin-bottom:14px;">
@@ -122,23 +112,23 @@
                   <small style="color:var(--muted);font-size:10px;">${ex.sets} sets · ${esc(ex.prescription)} · ${ex.rest}s rest</small>
                 </div>
                 <div style="display:flex;gap:4px;">
-                  <button type="button" data-move-ex="${i}" data-dir="-1" style="width:28px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);cursor:pointer;" ${i===0?"disabled":""}>↑</button>
-                  <button type="button" data-move-ex="${i}" data-dir="1" style="width:28px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);cursor:pointer;" ${i===draft.exercises.length-1?"disabled":""}>↓</button>
+                  <button type="button" aria-label="Move ${esc(ex.name)} up" data-move-ex="${i}" data-dir="-1" style="width:44px;height:44px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);cursor:pointer;" ${i===0?"disabled":""}>↑</button>
+                  <button type="button" aria-label="Move ${esc(ex.name)} down" data-move-ex="${i}" data-dir="1" style="width:44px;height:44px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);cursor:pointer;" ${i===draft.exercises.length-1?"disabled":""}>↓</button>
                 </div>
-                <button type="button" data-remove-ex="${i}" style="width:28px;height:28px;border:1px solid rgba(244,63,94,.3);border-radius:6px;background:rgba(244,63,94,.08);color:#f43f5e;cursor:pointer;">×</button>
+                <button type="button" aria-label="Remove ${esc(ex.name)}" data-remove-ex="${i}" style="width:44px;height:44px;border:1px solid rgba(244,63,94,.3);border-radius:6px;background:rgba(244,63,94,.08);color:#f43f5e;cursor:pointer;">×</button>
               </div>
             `).join("")}
           </div>
 
           <div style="margin-bottom:14px;">
-            <select data-add-ex-select style="width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);font:inherit;font-size:13px;">
+            <select aria-label="Add exercise" data-add-ex-select style="width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#131715;color:var(--text);font:inherit;font-size:13px;">
               <option value="">${"+ Add exercise from library…"}</option>
               ${MASTER_EXERCISES.map(m => `<option value="${m.name}">${m.name} (${m.category})</option>`).join("")}
             </select>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button class="settings-primary" data-save-routine style="background:var(--acid);color:var(--acid-ink);">
+            <button class="settings-primary" data-save-routine ${draft.exercises.length?"":"disabled"} style="background:var(--acid);color:var(--acid-ink);">
               ✓ ${"Save Routine"}
             </button>
             <button class="settings-primary" data-builder-cancel style="background:var(--panel-2);color:var(--text);border:1px solid var(--line);">
@@ -151,8 +141,10 @@
     }
 
     function bindEvents(){
-      overlay.querySelector("[data-builder-close]").onclick = () => overlay.remove();
-      overlay.querySelector("[data-builder-cancel]").onclick = () => overlay.remove();
+      overlay.querySelector("[data-routine-title]").oninput=event=>{draft.title=event.target.value;};
+      overlay.querySelector("[data-routine-emoji]").oninput=event=>{draft.emoji=event.target.value;};
+      overlay.querySelector("[data-builder-close]").onclick = () => (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+      overlay.querySelector("[data-builder-cancel]").onclick = () => (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
       
       overlay.querySelector("[data-add-ex-select]").onchange = e => {
         const name = e.target.value;
@@ -207,9 +199,10 @@
         } else {
           routines.push(draft);
         }
-        window.state.customRoutines = routines;
+        window.state.customRoutines = window.REP_EXERCISES.normalizeRoutines(routines);
+        window.REP_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
         if(window.persist) window.persist();
-        overlay.remove();
+        (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
         if(window.showToast) window.showToast( "Custom routine saved.");
         if(window.renderHome && window.state.view === "home") window.renderHome();
       };
@@ -245,9 +238,9 @@
               </div>
               <div style="display:flex;gap:6px;">
                 <button class="settings-primary" data-launch-custom="${r.id}" style="padding:8px 14px;font-size:12px;font-weight:900;background:var(--acid);color:var(--acid-ink);">
-                  ${"Start"} ▶
+                  ${window.REP_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,r.id)?"Resume":"Start"} ▶
                 </button>
-                <button class="quiet-setting" data-edit-custom="${r.id}" style="padding:8px 10px;font-size:12px;border:1px solid var(--line);border-radius:10px;">
+                <button aria-label="Edit ${esc(r.title)}" class="quiet-setting" data-edit-custom="${r.id}" style="padding:8px 10px;font-size:12px;border:1px solid var(--line);border-radius:10px;">
                   ✏️
                 </button>
               </div>
@@ -260,6 +253,7 @@
 
   function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  getCustomRoutines();
   window.REP_CUSTOM_WORKOUTS = {
     getCustomRoutines,
     launchRoutine,

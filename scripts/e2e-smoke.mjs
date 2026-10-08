@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..", "dist", "client");
 const port = 8934;
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp" };
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".mp4": "video/mp4" };
 
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent(req.url.split("?")[0]);
@@ -19,8 +19,10 @@ const server = http.createServer((req, res) => {
   if (!filePath.startsWith(root) || !existsSync(filePath) || statSync(filePath).isDirectory()) {
     res.writeHead(404); res.end("not found"); return;
   }
-  res.writeHead(200, { "content-type": MIME[extname(filePath)] || "application/octet-stream" });
-  createReadStream(filePath).pipe(res);
+  const length=statSync(filePath).size,headers={"content-type":MIME[extname(filePath)]||"application/octet-stream","accept-ranges":"bytes"};
+  const range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range||"");
+  if(range){const start=Number(range[1]),end=range[2]?Math.min(Number(range[2]),length-1):length-1;if(start>=length||end<start){res.writeHead(416,{...headers,"content-range":`bytes */${length}`});res.end();return;}res.writeHead(206,{...headers,"content-range":`bytes ${start}-${end}/${length}`,"content-length":end-start+1});createReadStream(filePath,{start,end}).pipe(res);return;}
+  res.writeHead(200,{...headers,"content-length":length});if(req.method==="HEAD")res.end();else createReadStream(filePath).pipe(res);
 });
 
 const failures = [];
@@ -119,6 +121,8 @@ try {
   assertTrue(backupCheck.tamperRejected,"Encrypted backup rejects a tampered version header");
   const expectedHabits = new Date().getDay() === 5 ? 12 : 11;
   assertTrue(await page.locator("[data-habit-id]").count() === expectedHabits, `Today shows the requested daily habits (${expectedHabits})`);
+  assertTrue(!(await page.locator(".habit-tracker").evaluate(el=>el.open)),"Daily habits start collapsed so quick logging stays prominent");
+  await page.locator(".habits-summary").click();
   await page.click('[data-habit-id="sleep"]');
   assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "A habit can be checked off");
   await page.evaluate(()=>window.REP_STORE.flush());
@@ -126,6 +130,7 @@ try {
   await page.waitForSelector('html[data-app-ready="true"]',{timeout:10000});
   assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Habit completion survives a reload");
   assertTrue(await page.locator('.habit-head-actions a[href*="20e4226c53694ea79692dff9839a132f"]').count() === 1, "Habit tracker links to the Habit Log inside the Workout Hub");
+  if(!(await page.locator(".habit-tracker").evaluate(el=>el.open)))await page.locator(".habits-summary").click();
   await page.click('[data-habit-reorder]');
   const firstHabitBefore=await page.locator('[data-habit-card]').first().getAttribute('data-habit-card');
   await page.locator(`[data-habit-order-id="${firstHabitBefore}"][data-habit-move="down"]`).click();
@@ -167,18 +172,19 @@ try {
 
   await page.click('[data-session="football"]');
   await page.waitForTimeout(150);
-  const footballMedia=await page.locator('.preview-row').evaluateAll(rows=>rows.map(row=>({name:row.querySelector('strong')?.textContent||'',sources:[...row.querySelectorAll('.cinematic-motion img')].map(image=>image.getAttribute('src'))})));
-  assertTrue(footballMedia.length===7&&footballMedia.every(row=>row.sources.length>0&&row.sources.every(src=>src?.includes('assets/cinematic/football-'))), "Every football movement uses football-pitch media");
-  assertTrue(footballMedia.some(row=>row.name.includes('Lateral Shuffles')&&row.sources.length===3), "Football agility uses a three-frame male movement cycle");
+  assertTrue(await page.locator('.preview-row [data-player-key]').count()===7,"Every football step resolves through the reviewed media catalogue");
+  await page.locator('.preview-row').first().locator('summary').click();
+  const footballPlayer=page.locator('[data-exercise-media="Football Warm-up Jog"]');
+  await footballPlayer.locator('[data-media-play]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-exercise-media="Football Warm-up Jog"] video')?.currentTime>0);
+  assertTrue(await footballPlayer.locator('video').count()===1,"Football jogging uses a continuous real male video");
+  assertTrue(await footballPlayer.locator('img').count()===1,"Video keeps its matching poster ready");
   await page.click('[data-cancel-preview]');
-  await page.waitForTimeout(150);
   await page.click('[data-session="padel"]');
-  await page.waitForTimeout(150);
-  const padelMedia=await page.locator('.preview-row').evaluateAll(rows=>rows.map(row=>({name:row.querySelector('strong')?.textContent||'',sources:[...row.querySelectorAll('.cinematic-motion img')].map(image=>image.getAttribute('src'))})));
-  assertTrue(padelMedia.length===7&&padelMedia.every(row=>row.sources.length>0&&row.sources.every(src=>src?.includes('assets/cinematic/padel-'))), "Every padel movement uses male padel-court media");
-  assertTrue(padelMedia.some(row=>row.name.includes('Shoulder Prep')&&row.sources.length===3), "Padel shoulder prep uses a three-frame male movement cycle");
+  await page.locator('.preview-row').first().locator('summary').click();
+  assertTrue(await page.locator('.preview-row [data-player-key]').count()===7,"Every padel step has a reviewed media or cue fallback");
+  assertTrue(await page.locator('[data-exercise-media="Padel Warm-up Jog"] [data-media-play]:visible').count()===0,"Still references do not expose fabricated playback");
   await page.click('[data-cancel-preview]');
-  await page.waitForTimeout(150);
 
   // Regression guard: tapping a session must show a preview, not jump straight in.
   await page.click('[data-session="gym"]');
@@ -190,28 +196,18 @@ try {
   await page.waitForTimeout(300);
   assertTrue(await page.evaluate(() => document.body.classList.contains("workout-mode")), "Start workout enters the player");
   assertTrue((await page.evaluate(() => window.scrollY)) <= 1, "Active workout opens at the progress header instead of preserving preview scroll");
-  for (const [selector,label] of [
-    [".exercise-hero-stage","cinematic exercise animation"],
-    [".exercise-hero-stage .cinematic-motion","photorealistic exercise media"],
-    [".exercise-hero-stage .media-phase-rail","guided motion phase rail"],
-    [".hero-muscle-label","muscle visualization label"],
-    [".current-set-card","current set focus"],
-    [".workout-primary-action","primary set action"],
-    [".motion-controls","animation controls"]
-  ]) assertTrue(await page.locator(selector).count() === 1, `Active workout exposes its ${label}`);
-  assertTrue((await page.locator(".exercise-hero-stage .cinematic-motion img").first().getAttribute("src")).includes("assets/cinematic/"), "Active workout uses the exercise-specific cinematic asset");
-  assertTrue((await page.locator('link[data-rep-media-preload="next"]').getAttribute("href")).includes("leg-press"), "Active workout preloads only the real next exercise");
+  await page.waitForSelector('.exercise-hero-stage .exercise-media-poster[src]');
+  assertTrue(await page.locator('.exercise-hero-stage [data-media-play]:visible').count()===0,"Stationary-bike still has no playback controls");
+  for(const [selector,label] of [[".exercise-hero-stage .exercise-media","persistent exercise media"],[".hero-muscle-label","adjacent muscle information"],[".current-set-card","current set focus"],[".workout-primary-action","primary set action"]])assertTrue(await page.locator(selector).count()===1,`Active workout exposes its ${label}`);
+  assertTrue((await page.locator('link[data-rep-media-preload="next"]').getAttribute('href')).includes('leg-press'),"Only the next exercise's selected media is preloaded");
   const initialMediaTelemetry=await page.evaluate(()=>window.REP_TELEMETRY.snapshot().media);
-  assertTrue(initialMediaTelemetry.loads>=1&&initialMediaTelemetry.failures===0, "Cinematic image load and decode telemetry records without failures");
+  assertTrue(initialMediaTelemetry.loads>=1&&initialMediaTelemetry.failures===0,"Reviewed poster load/decode telemetry records without failures");
   assertTrue(!(await page.locator(".topbar").isVisible()), "Generic app utilities stay out of the focused workout header");
   for (const width of [375,390,430]) {
     await page.setViewportSize({width,height:844});
     assertTrue(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `Active workout has no horizontal overflow at ${width}px`);
   }
   await page.setViewportSize({width:390,height:900});
-  await page.click('[data-motion-action="speed"]');
-  assertTrue(await page.locator(".workout-choice-grid [data-choice]").count() === 5, "Speed control opens restrained playback choices");
-  await page.click("[data-choice-close]");
   await page.click("[data-exercise-timer]");
   assertTrue(await page.locator(".timed-ring").count() === 1, "Timed exercise opens a prominent progress ring");
   await page.click("[data-timed-pause]");
@@ -232,7 +228,15 @@ try {
   assertTrue(nextClickable, "Next exercise button is reachable while the rest timer is active");
   await page.waitForTimeout(250);
   assertTrue(await page.locator(".live-set-entry").count() === 1, "Strength exercise exposes quick entry backed by the set log");
-  assertTrue(await page.locator(".exercise-hero-stage .cinematic-motion img").count() === 3, "Leg press uses a three-frame male movement cycle");
+  assertTrue(await page.locator('.exercise-hero-stage [data-media-view]').count()===2,"Leg press has two real static reference positions");
+  assertTrue(await page.locator('.exercise-hero-stage video').count()===0,"Photo positions are never morphed into movement");
+  await page.locator('.exercise-hero-stage [data-media-view="1"]').click();
+  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage img')?.alt.includes('Position 2'));
+  const logField=page.locator('.set-card-row [data-log="reps"]').first();
+  await logField.focus();
+  await page.evaluate(()=>renderExercise());
+  assertTrue(await logField.evaluate(el=>el===document.activeElement),"Logging updates preserve detailed-field focus");
+  assertTrue(await page.evaluate(()=>{const field=document.querySelector('[data-live-log][data-log="reps"]');field.focus();renderExercise();return field===document.activeElement&&field===document.querySelector('[data-live-log][data-log="reps"]');}),"Quick logging keeps the same focused input during unrelated updates");
   await page.fill('[data-live-log][data-log="reps"]',"8");
   const activeSetIndex=await page.locator('[data-live-log][data-log="reps"]').getAttribute("data-log-set");
   const detailedRepValues=await page.locator(`.set-card-row [data-log="reps"][data-log-set="${activeSetIndex}"]`).evaluateAll(inputs=>inputs.map(input=>input.value));
@@ -247,7 +251,7 @@ try {
   await page.waitForTimeout(120);
   assertTrue(await page.locator("#timerNextPreview:not(.is-hidden)").count() === 1, "Final rest opens a dedicated next-exercise preview");
   assertTrue((await page.locator("#timerPreviewName").textContent()).includes("Back Extension"), "Rest preview is connected to the real next exercise");
-  assertTrue(await page.locator("#timerPreviewVisual :is(.media-focus-frame,.cinematic-motion img)").count() > 0, "Rest preview reuses the next exercise media");
+  assertTrue(await page.locator("#timerPreviewVisual .exercise-media-poster").count() > 0, "Rest preview reuses the next exercise media");
   await page.click("#timerNextNow");
   await page.waitForTimeout(200);
   assertTrue((await page.locator(".workout-identity h1").textContent()).includes("Back Extension"), "Start now advances directly from rest to the previewed exercise");
@@ -377,7 +381,9 @@ try {
   await page.waitForTimeout(300);
   assertTrue(await page.locator(".progress-overview .progress-feature").count() === 1, "Progress leads with a real seven-day training summary");
   assertTrue(await page.locator(".insight-stats article").count() > 0, "Insights stats render");
-  assertTrue(await page.locator(".weekly-health-review").count() === 1, "Weekly Health Review renders");
+  assertTrue(await page.locator("[data-product-weekly]").count() === 1, "One consolidated weekly report renders");
+  assertTrue(await page.locator("[data-product-experiments]").count()===1,"One experiment entry point renders");
+  await page.locator(".insights-more > summary").click();
   assertTrue(await page.locator(".performance-analytics").count() === 1, "Performance Intelligence renders as one integrated insight layer");
   assertTrue(await page.locator("[data-analytics-goal]").count() === 1, "Goal forecast controls render");
   assertTrue(await page.locator(".quality-domain-list article").count() === 4, "Whole-app data quality covers four domains");
@@ -536,6 +542,67 @@ try {
   await page.click("[data-accept-progression]");
   const targetApplied=await page.evaluate(()=>({target:state.trainingTargets["Chest Press"],set:state.logs["Chest Press"]?.sets?.[0]}));
   assertTrue(Boolean(targetApplied.target?.acceptedAt)&&String(targetApplied.set?.weight)===String(targetApplied.target?.targetWeight),"One tap prefills the accepted weight for the next session");
+
+  // Custom routine persistence, exact technique and logging regression.
+  await page.click('[data-app-tab="train"]');
+  await page.click('[data-create-new-routine]');
+  await page.fill('[data-routine-title]',"QA Saved Circuit");
+  await page.selectOption('[data-add-ex-select]',{label:"Dumbbell Lateral Raise (Shoulders)"});
+  assertTrue(await page.inputValue('[data-routine-title]')==="QA Saved Circuit","Adding exercises preserves the routine title");
+  await page.click('[data-save-routine]');
+  await page.evaluate(()=>window.REP_STORE.flush());
+  await page.reload({waitUntil:"load"});
+  await page.waitForSelector('html[data-app-ready="true"]');
+  const qaRoutine=page.locator('.custom-routine-card').filter({hasText:"QA Saved Circuit"});
+  assertTrue(await qaRoutine.count()===1,"Saved custom routine survives a full reload");
+  await qaRoutine.locator('[data-launch-custom]').click();
+  await page.locator('.preview-row').filter({hasText:"Dumbbell Lateral Raise"}).locator('summary').click();
+  await page.waitForSelector('[data-exercise-media="Dumbbell Lateral Raise"] img[src]');
+  assertTrue((await page.locator('[data-exercise-media="Dumbbell Lateral Raise"] img').getAttribute('src')).includes('dumbbell-lateral-raise'),"Lateral raise uses its exact male reference photo");
+  assertTrue(await page.locator('.preview-row').filter({hasText:"Dumbbell Lateral Raise"}).locator('.cinematic-motion').count()===0,"Lateral raise never borrows chest-press media");
+  await page.click('[data-download-workout]');
+  await page.waitForFunction(()=>document.querySelector('[data-media-status]')?.textContent.startsWith('Workout downloaded'),undefined,{timeout:20000});
+  await page.evaluate(()=>{state.sessionStartedAt=null;state.workoutChecks[isoDay()]={watch:true,workout:true};});
+  await page.click('[data-start-session]');
+  await page.fill('[data-live-log][data-log="weight"]',"20");
+  await page.fill('[data-live-log][data-log="reps"]',"10");
+  await page.click('[data-next]');
+  await page.evaluate(()=>window.REP_STORE.flush());
+  await page.reload({waitUntil:"load"});
+  await page.waitForSelector('html[data-app-ready="true"]');
+  await page.click('[data-start-today]');
+  await page.click('[data-start-session]');
+  await page.click("[data-tempo-coach]");
+  await page.waitForSelector('.timed-mode .exercise-media-poster[src]');
+  assertTrue(await page.locator('.timed-mode .exercise-media-poster').count()===1,"Tempo dialog uses the same reviewed male reference");
+  await page.click("[data-tempo-close]");
+  const customLogged=await page.evaluate(()=>({session:state.session,reps:state.logs["Incline Dumbbell Press"].sets[0].reps,weight:state.logs["Incline Dumbbell Press"].sets[0].weight,done:state.completed[`${state.session}-0`]}));
+  assertTrue(customLogged.session.startsWith('custom-')&&customLogged.reps==="10"&&customLogged.weight==="20"&&customLogged.done.includes(0),"Custom workout resumes with saved weights, reps and completed sets");
+
+  await page.evaluate(()=>{state.session='gym';state.index=3;state.sessionStartedAt=Date.now();state.exerciseSubstitutions['Chest Press']='Push-Up';state.completed['gym-3']=[];state.mediaQuality='720';renderExercise();});
+  await page.waitForSelector('.exercise-hero-stage video');
+  await page.locator('.exercise-hero-stage [data-media-rate]').selectOption('0.5');
+  await page.locator('.exercise-hero-stage [data-media-replay]').click();
+  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.currentTime>0.1);
+  const continuity=await page.evaluate(()=>{const video=document.querySelector('.exercise-hero-stage video'),time=video.currentTime;state.logs['Push-ups'].sets[0].reps='12';renderExercise();return {same:video===document.querySelector('.exercise-hero-stage video'),timePreserved:document.querySelector('.exercise-hero-stage video').currentTime>=time,rate:video.playbackRate};});
+  assertTrue(continuity.same&&continuity.timePreserved&&continuity.rate===0.5,"Logging keeps the same video, position and selected playback speed");
+  await page.locator('.exercise-hero-stage [data-media-quality]').selectOption('1080');
+  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.getAttribute('src').includes('1080'));
+  assertTrue(await page.evaluate(()=>state.mediaQuality)==='1080',"Video quality preference is saved");
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.evaluate(()=>{state.index=2;renderExercise();state.index=3;renderExercise();});
+  await page.waitForSelector('.exercise-hero-stage video');
+  assertTrue(await page.locator('.exercise-hero-stage video').evaluate(el=>el.paused),"Reduced motion uses a static poster until Play is requested");
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  const offlineAsset=await page.evaluate(async()=>{const assets=REP_MEDIA_PLAYER.assets({name:'Push-ups'},{allQualities:true});await REP_WORKOUT_MEDIA.download(assets);return assets.find(a=>a.type==='video').src;});
+  await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+  await context.setOffline(true);
+  const offlineRange=await page.evaluate(async src=>{const response=await fetch(src,{headers:{Range:'bytes=0-15'}});return {status:response.status,length:(await response.arrayBuffer()).byteLength,range:response.headers.get('content-range')};},offlineAsset);
+  assertTrue(offlineRange.status===206&&offlineRange.length===16&&offlineRange.range.startsWith('bytes 0-15/'),"Complete cached videos support byte-range seeking offline");
+  await page.reload();
+  await page.waitForSelector('html[data-app-ready="true"]');
+  assertTrue(await page.locator('[data-app-tab="train"]').count()===1,"Offline cold reload restores the application shell");
+  await context.setOffline(false);
 
   assertTrue(consoleErrors.length === 0, `No console/page errors during the run (found ${consoleErrors.length})`);
   if (consoleErrors.length) console.log(consoleErrors.join("\n"));

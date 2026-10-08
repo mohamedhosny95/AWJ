@@ -1,5 +1,5 @@
 (async function(){
-  const version=window.REP_BUILD_VERSION||"255d83c0f2e0";
+  const version=window.REP_BUILD_VERSION||"ce7f4682bbfa";
   const load=src=>new Promise((resolve,reject)=>{
     const script=document.createElement("script");
     script.src=`${src}?v=${version}`;
@@ -24,6 +24,13 @@
       load("barcode-scanner.js"),
       load("muscle-heatmap.js")
     ]);
+    await load("media-manifest.js");
+    await load("media-contract.js");
+    await load("motion.js");
+    await load("exercise-catalog.js");
+    await load("media-player.js");
+    await load("technique-guides.js");
+    await load("workout-media.js");
     await load("app.js");
     await Promise.all([
       load("sync.js"),

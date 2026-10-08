@@ -43,7 +43,7 @@
     }return state.activeWorkoutPlan;
   }
   function buildProgressionProposals(state,record,performance){
-    if(!record||!["gym","gymLite"].includes(record.session))return [];
+    if(!record||(!["gym","gymLite"].includes(record.session)&&!String(record.session||"").startsWith("custom-")))return [];
     const byExercise=new Map();
     for(const row of record.entries||[]){const weight=Number(row.weight),reps=Number(row.reps),rpe=Number(row.rpe);if(!LOAD_EXERCISES.has(row.exercise)||!weight)continue;const existing=byExercise.get(row.exercise)||{weights:[],reps:[],rpes:[]};existing.weights.push(weight);if(reps)existing.reps.push(reps);if(rpe)existing.rpes.push(rpe);byExercise.set(row.exercise,existing);}
     return [...byExercise].map(([exercise,rows])=>{const currentWeight=Math.max(...rows.weights),advice=performance?.progressionAdvice?.(exercise,state,dateKey(record.date))||{status:"initial"},step=["Leg Press","Back Extension","Hip Thrust Machine"].includes(exercise)?2.5:1.25,targetWeight=Math.max(step,roundTo(Number(advice.suggestedWeight)||currentWeight,step)),avgReps=rows.reps.length?Math.round(rows.reps.reduce((a,b)=>a+b,0)/rows.reps.length):10,status=advice.status||"initial";return {exercise,status,currentWeight,targetWeight,repsLow:status==="deload"?8:Math.min(10,avgReps),repsHigh:12,sets:record.session==="gymLite"?2:3,reason:advice.message||(status==="initial"?"Repeat this load once more to establish a reliable baseline.":"Hold and build clean reps."),sourceSessionId:record.id,createdAt:new Date().toISOString()};});

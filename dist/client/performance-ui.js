@@ -62,13 +62,6 @@
     </details>`;
   }
 
-  function experimentsPanel(model){
-    const results=model.experiments;
-    return `<details class="performance-card"><summary><span><small>${"PERSONAL OUTCOME LAB"}</small><strong>${"Behavior associations with performance"}</strong></span><b>${results.length}</b></summary>
-      ${results.length?`<div class="experiment-list">${results.map(item=>`<article><strong class="${item.effect<0?"warn":""}">${signed(item.effect)}%</strong><div><b>${esc(item.label)}</b><span>${item.withDays}+${item.withoutDays} ${"sessions"} · ${confidence(item.confidence)}</span><small>${esc(item.dateRange)}</small></div></article>`).join("")}</div>`:`<p class="analytics-empty">${"Results require at least four comparable sessions in each group. Keep logging sleep, protein, timing, and weighted sets."}</p>`}
-      <p class="analytics-boundary">${"Associations are exploratory and do not prove cause. Change one variable at a time."}</p>
-    </details>`;
-  }
 
   function qualityPanel(model){
     const data=model.quality;
@@ -84,41 +77,6 @@
     return `<article class="data-answer"><div><small>${confidence(answer.confidence)}</small><h3>${esc(answer.title)}</h3><p>${esc(answer.summary)}</p></div>${answer.bullets.length?`<ul>${answer.bullets.map(item=>`<li>${esc(item)}</li>`).join("")}</ul>`:""}<details><summary>${"Evidence used"}</summary>${answer.evidence.length?answer.evidence.map(item=>`<span>${esc(item)}</span>`).join(""):`<span>${"No sufficient records"}</span>`}</details><small class="analytics-boundary">${esc(answer.boundary)}</small></article>`;
   }
 
-  function thisWeekExecutivePanel(model){
-    const weekly=window.REP_PRODUCT_SUITE?.weeklySummary(state),ready=window.REP_HEALTH_ENGINE?.readiness(state,window.REP_HEALTH_ENGINE.dateKey(),state.healthProfile)||{score:null,confidence:"low"};
-    const n7=model.nutrition?.adherence7||{protein:null};
-    const slope=model.nutrition?.weightSlopePerWeek;
-    const slopeText=slope===null?"—":`${slope>0?"+":""}${slope} kg/${"wk"}`;
-
-    return `<section class="this-week-card" aria-label="${"This week at a glance"}">
-      <div class="this-week-head">
-        <small>${"THIS WEEK AT A GLANCE"}</small>
-        <strong>${"Consistency & Trajectory"}</strong>
-      </div>
-      <div class="this-week-grid">
-        <div>
-          <small>${"TRAINING"}</small>
-          <strong>${weekly?.totalWorkouts||0} ${"done"}</strong>
-          <span>${weekly?.planned?`Target: ${weekly.planned} planned`:("No sessions planned")}</span>
-        </div>
-        <div>
-          <small>${"READINESS"}</small>
-          <strong style="color:var(--acid);">${ready.score!==null?`${ready.score}%`:"—"}</strong>
-          <span>${ready.score===null?("Building baseline"):confidence(ready.confidence)}</span>
-        </div>
-        <div>
-          <small>${"PROTEIN"}</small>
-          <strong>${n7.protein!==null?`${Math.round(n7.protein)}%`:"—"}</strong>
-          <span>${n7.protein===null?("Needs food logs"):("Logged-day adherence")}</span>
-        </div>
-        <div>
-          <small>${"WEIGHT RATE"}</small>
-          <strong>${slopeText}</strong>
-          <span>${slope===null?("Needs weigh-ins"):("Robust slope")}</span>
-        </div>
-      </div>
-    </section>`;
-  }
 
   function askPanel(){
     const answer=state.analyticsLastQuestion?engine.ask(state,state.analyticsLastQuestion):null;
@@ -155,7 +113,7 @@
 
   function renderPerformance(){
     const model=engine.analyze(state),anchor=document.querySelector(".weekly-health-review")||document.querySelector(".health-subnav")||document.querySelector(".module-head");if(!anchor)return;
-    const container=document.createElement("section");container.className="performance-analytics";container.setAttribute("aria-label","Performance analytics");container.innerHTML=REP_SAFE_DOM.sanitize(`<div class="section-title performance-title"><h2>${"Performance Intelligence"}</h2><span>${"Deterministic · confidence-scored · local-first"}</span></div>${thisWeekExecutivePanel(model)}${window.REP_RECOVERY_MAP?.renderRecoveryMap(state)||""}${goalPanel(model)}${inboxPanel(model)}${strengthPanel(model)}${nutritionPanel(model)}${experimentsPanel(model)}${qualityPanel(model)}${askPanel()}`);anchor.insertAdjacentElement("afterend",container);bindPerformance();
+    const container=document.createElement("section");container.className="performance-analytics";container.setAttribute("aria-label","Performance analytics");container.innerHTML=REP_SAFE_DOM.sanitize(`<details class="insights-more"><summary>Detailed training, nutrition & data quality</summary><div class="section-title performance-title"><h2>${"Performance Intelligence"}</h2><span>${"Deterministic · confidence-scored · local-first"}</span></div>${window.REP_RECOVERY_MAP?.renderRecoveryMap(state)||""}${goalPanel(model)}${inboxPanel(model)}${strengthPanel(model)}${nutritionPanel(model)}${qualityPanel(model)}${askPanel()}</details>`);anchor.insertAdjacentElement("afterend",container);bindPerformance();
   }
 
   function bindPerformance(){

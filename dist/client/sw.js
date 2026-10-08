@@ -1,13 +1,15 @@
-const BUILD_VERSION="255d83c0f2e0";
+importScripts("./media-contract.js");
+const BUILD_VERSION="ce7f4682bbfa";
 const CACHE = `rep-companion-${BUILD_VERSION}`;
+const MEDIA_CACHE = REP_MEDIA_CONTRACT.CACHE_NAME;
 const versioned=path=>`${path}?v=${BUILD_VERSION}`;
-const CORE_ASSETS = ["./", "./index.html", ...["./styles.css","./vendor/dompurify.min.js","./safe-dom.js","./build-meta.js","./auth.js","./storage.js","./ui-state.js","./ui-shell.js","./health-data.js","./features.js","./health-engine.js","./health-coverage.js","./performance-insights.js","./product-suite.js","./adaptive-coach.js","./training-session.js","./navigation.js","./offline-nutrition.js","./store.js","./importer.js","./report-card.js","./command-palette.js","./recovery-map.js","./plate-calculator.js","./heart-rate-monitor.js","./audio-coach.js","./barcode-scanner.js","./muscle-heatmap.js","./custom-workouts.js","./bootstrap.js","./app.js","./sync-outbox.js","./telemetry.js","./sync.js","./sync-center.js","./enhancements.js","./habits.js","./health-ui.js","./performance-ui.js","./product-suite-ui.js"].map(versioned), "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+const CORE_ASSETS = ["./", "./index.html", ...["./styles.css","./vendor/dompurify.min.js","./safe-dom.js","./build-meta.js","./auth.js","./storage.js","./ui-state.js","./ui-shell.js","./health-data.js","./features.js","./health-engine.js","./health-coverage.js","./performance-insights.js","./product-suite.js","./adaptive-coach.js","./training-session.js","./navigation.js","./offline-nutrition.js","./store.js","./importer.js","./report-card.js","./command-palette.js","./recovery-map.js","./plate-calculator.js","./heart-rate-monitor.js","./audio-coach.js","./barcode-scanner.js","./muscle-heatmap.js","./custom-workouts.js","./bootstrap.js","./exercise-catalog.js","./technique-guides.js","./workout-media.js","./media-manifest.js","./media-contract.js","./motion.js","./media-player.js","./app.js","./sync-outbox.js","./telemetry.js","./sync.js","./sync-center.js","./enhancements.js","./habits.js","./health-ui.js","./performance-ui.js","./product-suite-ui.js"].map(versioned), "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const ATLAS_ASSETS = ["./assets/gym-anatomy-atlas.webp", "./assets/mobility-anatomy-atlas.webp", "./assets/core-anatomy-atlas.webp", "./assets/cardio-anatomy-atlas.webp", "./assets/gym-anatomy-front-atlas.webp", "./assets/mobility-anatomy-front-atlas.webp", "./assets/core-anatomy-front-atlas.webp", "./assets/cardio-anatomy-front-atlas.webp", "./assets/priority-motion-atlas.webp"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k !== CACHE && k !== MEDIA_CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
   // Fetched after activation so the app becomes usable immediately instead of
@@ -21,7 +23,11 @@ self.addEventListener("fetch", event => {
   // ?since= query, hiding newly imported data.
   if (new URL(event.request.url).pathname.startsWith("/api/")) { event.respondWith(fetch(event.request)); return; }
   if (event.request.mode === "navigate") { event.respondWith(fetch(event.request).then(response => { const copy=response.clone();caches.open(CACHE).then(cache=>cache.put("./index.html",copy));return response; }).catch(()=>caches.match("./index.html"))); return; }
-  event.respondWith(caches.match(event.request, { ignoreSearch: true }).then(hit => hit || fetch(event.request).then(response => {
+  const mediaUrl=new URL(event.request.url);
+  if(mediaUrl.pathname.includes("/assets/exercises/")){
+    event.respondWith((async()=>{const cache=await caches.open(MEDIA_CACHE),plain=new Request(event.request.url),hit=await cache.match(plain);if(hit)return REP_MEDIA_CONTRACT.rangeResponse(hit,event.request.headers.get("Range"));const response=await fetch(event.request);if(REP_MEDIA_CONTRACT.complete(response,/\.mp4$/.test(mediaUrl.pathname)?"video":"image"))event.waitUntil(cache.put(plain,response.clone()));return response;})().catch(()=>new Response("",{status:503,statusText:"Media unavailable"})));return;
+  }
+  event.respondWith(caches.match(event.request, { ignoreSearch: false }).then(hit => hit || fetch(event.request).then(response => {
     if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}
     return response;
   })).catch(() => new Response("", { status: 408, statusText: "Offline" })));
@@ -57,3 +63,5 @@ self.addEventListener("notificationclick", event => {
     return self.clients.openWindow(targetPath);
   })());
 });
+
+self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting();});
