@@ -395,6 +395,7 @@ try {
   await assertAccessibleView(page,"Performance Insights");
 
   await page.click("#settingsButton");
+  await page.waitForSelector('[data-reminder-time="bedtime"]');
   const reminderSuggestion=await page.evaluate(()=>({
     windDown:document.querySelector('[data-reminder-time="bedtime"]')?.value,
     bedtime:window.REP_HEALTH_ENGINE.bedtime(state,isoDay(),state.healthProfile).time,
@@ -415,6 +416,7 @@ try {
 
   await page.waitForTimeout(200);
   await page.click('[data-settings-tab="coach"]');
+  await page.waitForSelector('[data-health-profile="wakeTime"]');
   assertTrue(await page.locator('[data-health-profile="wakeTime"]').count() === 1, "Personal baseline settings are editable");
   assertTrue(page.url().endsWith("#/settings/coach"),"Settings sections have exact route URLs");
   await page.click('[data-settings-back]');
@@ -544,7 +546,9 @@ try {
   assertTrue(Boolean(targetApplied.target?.acceptedAt)&&String(targetApplied.set?.weight)===String(targetApplied.target?.targetWeight),"One tap prefills the accepted weight for the next session");
 
   // Custom routine persistence, exact technique and logging regression.
-  await page.click('[data-app-tab="train"]');
+  await page.click('[data-home]');
+  await page.waitForSelector('[data-training-view="program"]');
+  if(!(await page.locator('.program-discovery').count()))await page.click('[data-training-view="program"]');
   await page.click('[data-create-new-routine]');
   await page.fill('[data-routine-title]',"QA Saved Circuit");
   await page.selectOption('[data-add-ex-select]',{label:"Dumbbell Lateral Raise (Shoulders)"});
