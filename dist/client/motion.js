@@ -16,7 +16,7 @@
     if(active?.skipTransition)active.skipTransition();else active?.cancel?.();
     if(reduced()){update();return;}
     // Snapshot only route content; controls and tab navigation stay outside it.
-    if(kind==='page'&&document.startViewTransition){const view=document.startViewTransition(()=>{if(requested===revision)update();});active=view;view.finished.catch(()=>{}).finally(()=>{if(active===view)active=null;});return;}
+    if(kind==='page'&&document.startViewTransition){const view=document.startViewTransition(()=>{if(requested===revision)update();});active=view;view.ready?.catch(()=>{});view.finished.catch(()=>{}).finally(()=>{if(active===view)active=null;});return;}
     update();animate(element,kind,direction);
   }
   function bindSheet(node){if(node.dataset.motionSheet)return;node.dataset.motionSheet='true';window.dispatchEvent(new CustomEvent('rep:dialog-open'));animate(node.querySelector('.rep-modal-sheet,.workout-choice-sheet,.workout-preflight-panel')||node,'sheet');}

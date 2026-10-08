@@ -54,7 +54,7 @@ The `rep-exercise-media-v1` cache persists across unrelated app releases. Filena
 
 ## Verification and release boundary
 
-Local static checks and 203 Node tests plus 10 Worker tests passed during implementation. Regression coverage includes honest media mappings, quality selection, content hashes, range semantics, partial/interrupted downloads, storage recovery, rapid navigation, reduced motion and persisted custom-session state. Browser regression source was updated for continuous video, stable logging nodes, real static positions, saved quality and offline ranges.
+Local static checks and 204 Node tests plus 10 Worker tests passed during implementation. Regression coverage includes honest media mappings, quality selection, content hashes, range semantics, partial/interrupted downloads, storage recovery, rapid navigation, reduced motion and persisted custom-session state. Browser regression source was updated for continuous video, stable logging nodes, real static positions, saved quality and offline ranges.
 
 Interactive desktop app-browser checks confirmed actual video playback, retained media node/time/speed during logging, focus preservation, complete download and exact cached byte ranges. A local sample of 89 animation frame intervals had median 16.7 ms, p95 18.4 ms and no interval above 33.4 ms. Five exercise-response samples had a maximum 34 ms to the measured paint boundary. These are desktop app-browser observations, not phone performance certification.
 
