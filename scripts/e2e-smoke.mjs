@@ -574,7 +574,7 @@ try {
   await page.evaluate(()=>window.REP_STORE.flush());
   await page.reload({waitUntil:"load"});
   await page.waitForSelector('html[data-app-ready="true"]');
-  await page.click('[data-start-today]');
+  await qaRoutine.locator('[data-launch-custom]').click();
   await page.click('[data-start-session]');
   await page.click("[data-tempo-coach]");
   await page.waitForSelector('.timed-mode .exercise-media-poster[src]');
