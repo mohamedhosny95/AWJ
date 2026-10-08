@@ -87,9 +87,9 @@
 
     const sleepMetric=longTerm.metrics.find(m=>m.name==="sleep");
     const sleepHours=sleep.hours||sleepMetric?.current||null;
-    const sleepBase=sleepMetric?.average28||7.5;
+    const measuredSleepBase=Boolean(sleepMetric?.mature),sleepBase=measuredSleepBase?sleepMetric.average28:(Number(state.healthProfile?.baseSleepHours)||7.5);
     const sleepDebt=sleepHours?Math.round((sleepBase-sleepHours)*10)/10:null;
-    const sleepStatus=!sleepHours?("Log sleep"):(sleepDebt<=0.3?("In baseline"):(`Debt: ${sleepDebt}h`));
+    const sleepStatus=!sleepHours?("Log sleep"):(sleepDebt<=0.3?(measuredSleepBase?"In baseline":"Meets starting target"):(`Debt: ${sleepDebt}h`));
     const sleepTone=!sleepHours?"neutral":(sleepDebt<=0.3?"good":"warning");
 
     const hrvMetric=longTerm.metrics.find(m=>m.name==="hrv"),rhrMetric=longTerm.metrics.find(m=>m.name==="rhr");
@@ -112,7 +112,7 @@
           <span class="domain-pill ${sleepTone}">${sleepStatus}</span>
         </div>
         <div class="domain-stats">
-          <div><small>${"28D BASELINE"}</small><strong>${sleepBase}h</strong></div>
+          <div><small>${measuredSleepBase?"28D BASELINE":"STARTING SLEEP TARGET"}</small><strong>${sleepBase}h</strong></div>
           <div><small>${"DEEP SLEEP"}</small><strong>${metrics.deepSleepHours?`${metrics.deepSleepHours}h`:(sleep.bedtime?`${sleep.bedtime} → ${sleep.wake}`:"—")}</strong></div>
         </div>
       </article>
@@ -139,7 +139,7 @@
       <article class="domain-card tone-neutral">
         <div class="domain-head">
           <span><small>${"BODY & COMPOSITION"}</small><h3>⚖️ ${currentWeight?`${currentWeight} kg`:"—"}</h3></span>
-          <span class="domain-pill neutral">${weightDelta!==null?`${weightDelta>0?"+":""}${weightDelta} kg/wk`:("Stable")}</span>
+          <span class="domain-pill neutral">${weightDelta!==null?`${weightDelta>0?"+":""}${weightDelta} kg/wk`:("Not enough measurements")}</span>
         </div>
         <div class="domain-stats">
           <div><small>${"WAIST"}</small><strong>${waist?`${waist} cm`:"—"}</strong></div>
@@ -173,6 +173,6 @@
   const baseVitals=renderVitals,baseInsights=renderInsights,baseHome=renderHome;
   renderVitals=function(){baseVitals();document.querySelector(".health-subnav")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(`${domainOverviewGrid()}${coverageCard()}${morningCard()}${chargingCard()}`));organizeHealthWorkflow();bind();};
   renderInsights=function(){baseInsights();(document.querySelector(".trends-grid")||document.querySelector(".health-subnav"))?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(trendCard()));bind();};
-  renderHome=function(){baseHome();document.querySelectorAll("[data-start-today],[data-start-cardio-fallback]").forEach(start=>{const proceed=start.onclick;start.onclick=null;start.addEventListener("click",()=>{if(needsWorkoutPreflight())openWorkoutPreflight(()=>proceed?.());else proceed?.();});});};
+  renderHome=function(){baseHome();document.querySelectorAll("[data-start-today],[data-start-cardio-fallback]").forEach(start=>{const proceed=start.onclick;start.onclick=null;start.addEventListener("click",()=>{if(!REP_TRAINING_SESSION.isResumableWorkout(state,sessions,start.dataset.sessionId)&&needsWorkoutPreflight())openWorkoutPreflight(()=>proceed?.());else proceed?.();});});};
   if(state.activeTab==="vitals")renderVitals();else if(state.activeTab==="insights")renderInsights();
 })();

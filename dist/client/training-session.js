@@ -103,7 +103,7 @@
 
   function progressionAdvice({ logs = {}, history = [], id, recoveryGate = null }){
     const recent = (history || [])
-      .filter(h => h.session === "gym" && h.loads?.[id])
+      .filter(h => (["gym","gymLite"].includes(h.session)||String(h.session||"").startsWith("custom-")) && h.loads?.[id])
       .slice(0, 3)
       .map(h => setsFromLog(h.loads[id]))
       .filter(Boolean);
@@ -258,7 +258,8 @@
 
     (session.exercises || []).forEach((base, index) => {
       const completed = state.completed?.[`${state.session}-${index}`] || [];
-      const id = base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name;
+      const selected=state.exerciseSubstitutions?.[base.name]||(base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name);
+      const id=globalThis.REP_EXERCISES?.get(selected)?.name||selected;
       const logged = setsFromLog(state.logs?.[id]);
       completed.forEach(setIndex => {
         const set = logged[setIndex] || {};
@@ -291,7 +292,7 @@
     }
 
     state.history = [record, ...(state.history || [])].slice(0, WORKOUT_HISTORY_LIMIT);
-    if(state.session === "gym"){
+    if(["gym","gymLite"].includes(state.session)||String(state.session||"").startsWith("custom-")){
       promoteLogs(state.logs);
     }
     clearSessionCompletion(state, state.session);

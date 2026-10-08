@@ -51,7 +51,7 @@ test("the content-versioned service worker uses network-first navigation and nev
 });
 
 test("the state migration preserves health data and adds coaching preferences",async()=>{
-  const js=await read("dist/client/enhancements.js"); for(const field of ["sleepLogs","activeEnergy","lastVitalsImportDate","mealTemplates","savedMeals","habitOrder","connectionCapabilities","lastSyncedAt","healthProfile","healthMetrics","healthSummarySignatures","bodyMeasurements","chargingPlan","workoutChecks","analyticsGoal","insightControls","analyticsQuestions","onboarding","activeWorkoutPlan","progressionProposals","trainingTargets","nutritionView","trainingView","systemHealth","syncActivity","settingsSection","weekOverrides","scheduleAdjustments","launchEvents","customExperiments","experimentCheckins","exerciseSubstitutions","smartReminders","restTimer"])assert.match(js,new RegExp(field)); assert.match(js,/APP_SCHEMA=21/);
+  const js=await read("dist/client/enhancements.js"); for(const field of ["sleepLogs","activeEnergy","lastVitalsImportDate","mealTemplates","savedMeals","habitOrder","connectionCapabilities","lastSyncedAt","healthProfile","healthMetrics","healthSummarySignatures","bodyMeasurements","chargingPlan","workoutChecks","analyticsGoal","insightControls","analyticsQuestions","onboarding","activeWorkoutPlan","progressionProposals","trainingTargets","nutritionView","trainingView","systemHealth","syncActivity","settingsSection","weekOverrides","scheduleAdjustments","launchEvents","customExperiments","experimentCheckins","exerciseSubstitutions","smartReminders","restTimer"])assert.match(js,new RegExp(field)); assert.match(js,/APP_SCHEMA=22/);
 });
 
 test("the September 15 health plan is the app's versioned source of truth and generated from canonical JSON",async()=>{
@@ -267,22 +267,18 @@ test("timer chimes and the audio coach share one browser audio context",async()=
   assert.match(coach,/window\._repAudioCtx \|\| \(window\._repAudioCtx = new/);
 });
 
-test("priority cinematic motions use complete, mobile-sized three-frame cycles",async()=>{
-  const app=await read("dist/client/app.js"),css=await read("dist/client/styles.css"),block=app.match(/const cinematicMotionFrames = \{([\s\S]+?)\n\};/)?.[1]||"";
-  const assets=[...block.matchAll(/"(assets\/cinematic\/[^\"]+\.webp)"/g)].map(match=>match[1]);
-  assert.equal(assets.length,39,"thirteen priority exercises each declare three frames");
-  for(const asset of assets){
-    const file=await stat(join(root,"dist","client",asset));
-    assert.ok(file.size<180_000,`${asset} is ${file.size} bytes`);
-  }
-  assert.match(css,/cinematicFrameOne/);assert.match(css,/cinematicFrameTwo/);assert.match(css,/cinematicFrameThree/);
-  assert.match(css,/@media\(prefers-reduced-motion:reduce\)[\s\S]*?cinematic-motion>\.cinematic-frame:not\(:first-of-type\)\{opacity:0\}/);
+test("primary media uses genuine video or still references without image morphing",async()=>{
+  const app=await read("dist/client/app.js"),player=await read("dist/client/media-player.js"),css=await read("dist/client/styles.css");
+  const visual=app.match(/function exerciseVisual\([^]*?\n\}/)?.[0]||"";
+  assert.match(visual,/REP_MEDIA_PLAYER.markup/);assert.doesNotMatch(visual,/anatomyVisual|cinematicMotion|REP_TECHNIQUE/);
+  assert.match(player,/createElement\('video'\)/);assert.match(player,/requestVideoFrameCallback/);assert.match(player,/Reference positions/);
+  assert.doesNotMatch(css,/transition:\s*all/);
 });
 
 test("active workout media stays bounded and exposes decode telemetry",async()=>{
-  const app=await read("dist/client/app.js"),telemetry=await read("dist/client/telemetry.js");
-  assert.match(app,/function primeUpcomingCinematicMedia/);assert.match(app,/data-rep-media-preload/);assert.match(app,/session\?\.exercises\?\.\[index\+1\]/);
-  assert.match(app,/function observeCinematicMedia/);assert.match(app,/img\.decode/);assert.match(app,/recordMedia/);
+  const app=await read("dist/client/app.js"),telemetry=await read("dist/client/telemetry.js"),player=await read("dist/client/media-player.js");
+  assert.match(app,/function primeUpcomingCinematicMedia/);assert.match(player,/data-rep-media-preload/);assert.match(app,/session\?\.exercises\?\.\[index\+1\]/);
+  assert.match(player,/nextPoster\.decode/);assert.match(player,/recordMedia/);
   assert.match(telemetry,/mediaLoadMs:1200/);assert.match(telemetry,/mediaDecodeMs:120/);assert.match(telemetry,/recordMedia/);assert.match(telemetry,/maxDecodeMs/);
 });
 
@@ -350,8 +346,8 @@ test("post-launch suite ships encrypted reports, photos, reminders, resume state
 test("performance intelligence is local, confidence-scored, and evidence-grounded",async()=>{
   const [engine,ui,enhancements,readme]=await Promise.all([read("dist/client/performance-insights.js"),read("dist/client/performance-ui.js"),read("dist/client/enhancements.js"),read("README.md")]);
   for(const marker of ["function e1rm","function strength","function nutrition","function experiments","function dataQuality","function goalForecast","function inbox","function ask"])assert.match(engine,new RegExp(marker));
-  for(const marker of ["GOAL FORECAST","STRENGTH INTELLIGENCE","NUTRITION → OUTCOMES","INSIGHT INBOX","PERSONAL OUTCOME LAB","WHOLE-APP DATA QUALITY","ASK YOUR DATA · LOCAL","No upload"])assert.match(ui,new RegExp(marker));
-  assert.doesNotMatch(engine,/\bfetch\s*\(/);assert.doesNotMatch(ui,/\bfetch\s*\(/);assert.match(engine,/language:\s*"association"/);assert.match(engine,/withRows\.length<4\|\|withoutRows\.length<4/);
+  for(const marker of ["GOAL FORECAST","STRENGTH INTELLIGENCE","NUTRITION → OUTCOMES","INSIGHT INBOX","WHOLE-APP DATA QUALITY","ASK YOUR DATA · LOCAL","No upload"])assert.match(ui,new RegExp(marker));
+  assert.match(await read("dist/client/product-suite-ui.js"),/PERSONAL OUTCOME LAB/);assert.doesNotMatch(engine,/\bfetch\s*\(/);assert.doesNotMatch(ui,/\bfetch\s*\(/);assert.match(engine,/language:\s*"association"/);assert.match(engine,/withRows\.length<5\|\|withoutRows\.length<5/);
   for(const field of ["analyticsGoal","insightControls","analyticsQuestions","analyticsLastQuestion"])assert.match(enhancements,new RegExp(field));
   assert.match(readme,/Theil–Sen/);assert.match(readme,/Ask Your Data does not call an external AI service/);
 });

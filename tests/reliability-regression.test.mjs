@@ -105,6 +105,7 @@ function createAppContext(initialState = {}) {
   vm.runInContext(safeDomCode, context);
   vm.runInContext(healthDataCode, context);
   vm.runInContext(trainingSessionCode, context);
+  vm.runInContext(readFileSync("src/client/exercise-catalog.js", "utf8"),context);
   vm.runInContext(appCode, context);
 
   return sandbox;

@@ -3,8 +3,11 @@
   const routes=new Map();
   const paths=new Map();
   let currentId="";
+  let renderedId="";
   let started=false;
   let tabResolver=null;
+  let activation=0;
+  const scrollPositions=new Map();
 
   function normalizePath(value){
     const raw=String(value||"").trim().replace(/^#/,"");
@@ -33,13 +36,25 @@
   function activate(id,{focus=true,scroll=true}={}){
     const route=routes.get(id);
     if(!route)return false;
-    route.activate();
+    const animateRoute=Boolean(renderedId)&&renderedId!==id;
+    const requested=++activation;
+    if(renderedId)scrollPositions.set(renderedId,window.scrollY||0);
     currentId=id;
-    document.documentElement.dataset.route=id;
-    if(route.title)document.title=`${route.title} · Health OS`;
-    if(scroll)window.scrollTo({top:0,left:0,behavior:"auto"});
-    if(focus)requestAnimationFrame(()=>window.focusViewHeading?.());
-    window.dispatchEvent(new CustomEvent("rep:navigation",{detail:{id,path:route.path}}));
+    const commit=()=>{
+      if(requested!==activation)return;
+      route.activate();
+      renderedId=id;
+      document.documentElement.dataset.route=id;
+      if(route.title)document.title=`${route.title} · Health OS`;
+      if(scroll)window.scrollTo({top:0,left:0,behavior:"auto"});
+      requestAnimationFrame(()=>{
+        if(requested!==activation)return;
+        if(!scroll&&scrollPositions.has(id))window.scrollTo({top:scrollPositions.get(id),left:0,behavior:"auto"});
+        if(focus)window.focusViewHeading?.({scroll:false});
+      });
+      window.dispatchEvent(new CustomEvent("rep:navigation",{detail:{id,path:route.path}}));
+    };
+    if(window.REP_MOTION&&started&&animateRoute)window.REP_MOTION.transition(commit,{kind:"page"});else{window.REP_MOTION?.cancel?.();commit();}
     return true;
   }
 

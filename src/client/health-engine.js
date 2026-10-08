@@ -148,7 +148,7 @@ globalThis.REP_HEALTH_ENGINE=(()=>{
         if(score===null)continue;
         (day.checked?.[key]?withHabit:without).push(score);
       }
-      if(withHabit.length>=4&&without.length>=4){
+      if(withHabit.length>=5&&without.length>=5){
         const effect=Math.round(average(withHabit)-average(without));
         if(Math.abs(effect)>=4)result.push({key,label,effect,withDays:withHabit.length,withoutDays:without.length,language:"association"});
       }

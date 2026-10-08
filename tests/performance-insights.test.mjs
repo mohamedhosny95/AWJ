@@ -46,9 +46,12 @@ test("goal forecasts use a range and never return a single promised date",()=>{
   assert.equal(forecast.status,"forecast");assert.equal(forecast.dateRange.length,2);assert.ok(forecast.range[1]>=forecast.range[0]);assert.match(forecast.evidence,/sessions/);
 });
 
-test("personal experiments enforce four observations per comparison group",()=>{
-  const results=engine.experiments(populatedState(),now);
-  assert.ok(results.length>=1);assert.ok(results.every(item=>item.withDays>=4&&item.withoutDays>=4));assert.ok(results.every(item=>item.language==="association"));
+test("personal experiments enforce five observations per comparison group",()=>{
+  const state=populatedState();state.history=Array.from({length:20},(_,index)=>session(index,{weight:index%2===0?58:50}));
+  for(let offset=-65;offset<=-28;offset++)state.sleepLogs.push({date:day(offset),hours:offset%2===0?8:6.5});
+  const results=engine.experiments(state,now);
+  assert.equal(engine.experiments({...state,history:state.history.slice(0,8)},now).length,0);
+  assert.ok(results.length>=1);assert.ok(results.every(item=>item.withDays>=5&&item.withoutDays>=5));assert.ok(results.every(item=>item.language==="association"));
 });
 
 test("data quality reports duplicates, provenance, freshness, and domain scores",()=>{
