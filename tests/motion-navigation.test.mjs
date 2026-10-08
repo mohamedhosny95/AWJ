@@ -16,6 +16,7 @@ test('rapid navigation commits only the most recent queued view transition',()=>
   assert.deepEqual(seen,['latest']);
 });
 test('returning to the rendered route cancels a queued transition',()=>{const {ctx,updates}=motionContext();let stale=false;ctx.REP_MOTION.transition(()=>{stale=true;});ctx.REP_MOTION.cancel();updates[0]();assert.equal(stale,false);});
+test('a skipped browser snapshot does not create an unhandled rejection',async()=>{const {ctx}=motionContext();ctx.document.startViewTransition=()=>({ready:Promise.reject(new Error('Transition was skipped')),finished:Promise.resolve(),skipTransition(){}});ctx.REP_MOTION.transition(()=>{});await new Promise(resolve=>setImmediate(resolve));});
 
 test('poster and set animations do not cancel each other or a pending route update',()=>{
   const {ctx,updates}=motionContext();let committed=false;

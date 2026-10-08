@@ -1,5 +1,5 @@
 importScripts("./media-contract.js");
-const BUILD_VERSION="acb2cab1ee61";
+const BUILD_VERSION="8a45e2b584fa";
 const CACHE = `rep-companion-${BUILD_VERSION}`;
 const MEDIA_CACHE = REP_MEDIA_CONTRACT.CACHE_NAME;
 const versioned=path=>`${path}?v=${BUILD_VERSION}`;
