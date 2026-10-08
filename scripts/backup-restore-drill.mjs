@@ -83,6 +83,7 @@ try {
   const sourceContext = await browser.newContext({ viewport: { width: 390, height: 900 }, acceptDownloads: true });
   const sourcePage = await openApp(sourceContext);
 
+  await sourcePage.locator('.habits-summary').click();
   await sourcePage.click('[data-habit-id="sleep"]');
   await sourcePage.click('[data-app-tab="food"]');
   await sourcePage.fill("[data-food-note]", "recovery drill meal");
@@ -116,6 +117,7 @@ try {
   await restoredLoad;
   await restorePage.waitForSelector('html[data-app-ready="true"]', { timeout: 10000 });
   await restorePage.click("#homeButton");
+  await restorePage.locator('.habits-summary').click();
   await restorePage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await restorePage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Fresh profile restores the habit record");
   await restorePage.click('[data-app-tab="food"]');
@@ -132,6 +134,8 @@ try {
   const rejection = await tamperPage.locator(".toast").textContent();
   check(/incorrect|damaged|invalid/i.test(rejection), "Tampered backup is rejected through the real import UI");
   await tamperPage.click("#homeButton");
+  await tamperPage.locator('.habits-summary').click();
+  await tamperPage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await tamperPage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 0, "Rejected backup cannot replace local data");
   await tamperContext.close();
 
