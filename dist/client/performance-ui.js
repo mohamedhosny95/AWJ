@@ -112,7 +112,7 @@
 
 
   function renderPerformance(){
-    const model=engine.analyze(state),anchor=document.querySelector(".weekly-health-review")||document.querySelector(".health-subnav")||document.querySelector(".module-head");if(!anchor)return;
+    const model=engine.analyze(state),anchor=document.querySelector(".progress-analysis .trends-grid")||document.querySelector(".weekly-health-review")||document.querySelector(".health-subnav")||document.querySelector(".module-head");if(!anchor)return;
     const container=document.createElement("section");container.className="performance-analytics";container.setAttribute("aria-label","Performance analytics");container.innerHTML=REP_SAFE_DOM.sanitize(`<details class="insights-more"><summary>Detailed training, nutrition & data quality</summary><div class="section-title performance-title"><h2>${"Performance Intelligence"}</h2><span>${"Deterministic · confidence-scored · local-first"}</span></div>${window.REP_RECOVERY_MAP?.renderRecoveryMap(state)||""}${goalPanel(model)}${inboxPanel(model)}${strengthPanel(model)}${nutritionPanel(model)}${qualityPanel(model)}${askPanel()}</details>`);anchor.insertAdjacentElement("afterend",container);bindPerformance();
   }
 
@@ -128,7 +128,6 @@
     document.querySelectorAll("[data-ask-chip]").forEach(button=>button.onclick=()=>{const input=document.querySelector("#askDataQuestion");if(input){input.value=button.dataset.askChip;askForm?.requestSubmit();}});
   }
 
-  const baseInsights=renderInsights;
-  renderInsights=function(){baseInsights();renderPerformance();};
-  if(state.activeTab==="insights")renderInsights();
+  window.REP_PERFORMANCE_UI=Object.freeze({mount:renderPerformance});
+  if(state.activeTab==="insights")renderPerformance();
 })();

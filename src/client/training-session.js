@@ -180,6 +180,7 @@
     }
     state.session = sessionId;
     if(!isContinuing){
+      state.sessionSubstitutions = null;
       state.sessionStartedAt = now;
       state.index = 0;
       clearSessionCompletion(state, sessionId);
@@ -258,10 +259,11 @@
 
     (session.exercises || []).forEach((base, index) => {
       const completed = state.completed?.[`${state.session}-${index}`] || [];
-      const selected=state.exerciseSubstitutions?.[base.name]||(base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name);
-      const id=globalThis.REP_EXERCISES?.get(selected)?.name||selected;
-      const logged = setsFromLog(state.logs?.[id]);
+      const selected=globalThis.REP_TRAINING_PREFERENCES?.selectedExercise(state,base)??(state.exerciseSubstitutions?.[base.name]||(base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name));
       completed.forEach(setIndex => {
+        const actual=state.sessionSubstitutions?.session===state.session&&state.sessionSubstitutions?.startedAt===state.sessionStartedAt?state.sessionSubstitutions.performed?.[base.name]?.[setIndex]||selected:selected;
+        const id=globalThis.REP_EXERCISES?.get(actual)?.name||actual;
+        const logged = setsFromLog(state.logs?.[id]);
         const set = logged[setIndex] || {};
         const weight = Number(set.weight) || 0;
         const durFallback = motionDurations[base.motion] ?? (MOTION_DURATIONS[base.motion] || "");
@@ -297,6 +299,7 @@
     }
     clearSessionCompletion(state, state.session);
     state.sessionStartedAt = null;
+    state.sessionSubstitutions = null;
     return { record, state };
   }
 
@@ -306,6 +309,7 @@
     clearSessionCompletion(state, sid);
     state.index = 0;
     state.sessionStartedAt = null;
+    state.sessionSubstitutions = null;
     return state;
   }
 
@@ -315,6 +319,7 @@
     clearSessionCompletion(state, sid);
     state.index = 0;
     state.sessionStartedAt = null;
+    state.sessionSubstitutions = null;
     return state;
   }
 

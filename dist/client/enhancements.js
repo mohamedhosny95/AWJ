@@ -1,4 +1,4 @@
-/* Health OS v58 intelligence, safety, and flexibility layer.
+/* Rep Gym Companion v58 intelligence, safety, and flexibility layer.
    Kept separate from the recovered v55 client so upgrades remain reviewable. */
 (function(){
   const APP_SCHEMA=22,features=window.REP_FEATURES,health=window.REP_HEALTH_ENGINE,syncCenter=window.REP_SYNC_CENTER,performance=window.REP_PERFORMANCE_INSIGHTS,adaptive=window.REP_ADAPTIVE_COACH,productSuite=window.REP_PRODUCT_SUITE;
@@ -71,7 +71,7 @@
 
   function statePayload(){
     const restTimer=state.timer?{remaining:state.timer.remaining,total:state.timer.total,paused:state.timer.paused,set:state.timer.set,targetEndTime:state.timer.targetEndTime}:null;
-    return {version:APP_SCHEMA,programReview:state.programReview,customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines),mediaMode:state.mediaMode,mediaQuality:state.mediaQuality,guideVersion:REP_HEALTH_GUIDE.version,activeTab:state.activeTab,healthView:state.healthView,session:state.session,index:state.index,completed:state.completed,muted:state.muted,checkin:saved.checkin||{},speed:state.speed,paused:state.paused,muscles:state.muscles,viewMode:state.viewMode,logs:state.logs,swaps:state.swaps,history:state.history,sessionStartedAt:state.sessionStartedAt,reviews:state.reviews,fieldTest:state.fieldTest,voice:state.voice,syncQueue:state.syncQueue,syncActivity:state.syncActivity,recoveryCheckins:state.recoveryCheckins,daily:state.daily,habitOrder:state.habitOrder,cardioDraft:state.cardioDraft,programStart:state.programStart,foodEntries:state.foodEntries,savedMeals:state.savedMeals,water:state.water,foodNote:state.foodNote,foodMealType:state.foodMealType,foodLogMethod:state.foodLogMethod,preferences:state.preferences,mealQuantities:state.mealQuantities,lastBackupAt:state.lastBackupAt,backupSnoozedUntil:state.backupSnoozedUntil,bodyWeights:state.bodyWeights,bodyMeasurements:state.bodyMeasurements,chargingPlan:state.chargingPlan,workoutChecks:state.workoutChecks,mealTemplates:state.mealTemplates,sleepLogs:state.sleepLogs,pushTime:state.pushTime,pushEndpoint:state.pushEndpoint,activeEnergy:state.activeEnergy,lastVitalsImportDate:state.lastVitalsImportDate,lastVitalsImportAt:state.lastVitalsImportAt,connectionCapabilities:state.connectionCapabilities,lastSyncedAt:state.lastSyncedAt,healthProfile:state.healthProfile,healthMetrics:state.healthMetrics,healthSummarySignatures:state.healthSummarySignatures,analyticsGoal:state.analyticsGoal,insightControls:state.insightControls,analyticsQuestions:state.analyticsQuestions,analyticsLastQuestion:state.analyticsLastQuestion,onboarding:state.onboarding,activeWorkoutPlan:state.activeWorkoutPlan,progressionProposals:state.progressionProposals,trainingTargets:state.trainingTargets,nutritionView:state.nutritionView,trainingView:state.trainingView,settingsSection:state.settingsSection,systemHealth:state.systemHealth,weekOverrides:state.weekOverrides,scheduleAdjustments:state.scheduleAdjustments,launchEvents:state.launchEvents,customExperiments:state.customExperiments,experimentCheckins:state.experimentCheckins,exerciseSubstitutions:state.exerciseSubstitutions,smartReminders:state.smartReminders,restTimer};
+    return {version:APP_SCHEMA,programReview:state.programReview,customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines),routineFavourites:state.routineFavourites,displayPreferences:state.displayPreferences,sessionSubstitutions:state.sessionSubstitutions,mediaMode:state.mediaMode,mediaQuality:state.mediaQuality,guideVersion:REP_HEALTH_GUIDE.version,activeTab:state.activeTab,healthView:state.healthView,session:state.session,index:state.index,completed:state.completed,muted:state.muted,checkin:saved.checkin||{},speed:state.speed,paused:state.paused,muscles:state.muscles,viewMode:state.viewMode,logs:state.logs,swaps:state.swaps,history:state.history,sessionStartedAt:state.sessionStartedAt,reviews:state.reviews,fieldTest:state.fieldTest,voice:state.voice,syncQueue:state.syncQueue,syncActivity:state.syncActivity,recoveryCheckins:state.recoveryCheckins,daily:state.daily,habitOrder:state.habitOrder,cardioDraft:state.cardioDraft,programStart:state.programStart,foodEntries:state.foodEntries,savedMeals:state.savedMeals,water:state.water,foodNote:state.foodNote,foodMealType:state.foodMealType,foodLogMethod:state.foodLogMethod,preferences:state.preferences,mealQuantities:state.mealQuantities,lastBackupAt:state.lastBackupAt,backupSnoozedUntil:state.backupSnoozedUntil,bodyWeights:state.bodyWeights,bodyMeasurements:state.bodyMeasurements,chargingPlan:state.chargingPlan,workoutChecks:state.workoutChecks,mealTemplates:state.mealTemplates,sleepLogs:state.sleepLogs,pushTime:state.pushTime,pushEndpoint:state.pushEndpoint,activeEnergy:state.activeEnergy,lastVitalsImportDate:state.lastVitalsImportDate,lastVitalsImportAt:state.lastVitalsImportAt,connectionCapabilities:state.connectionCapabilities,lastSyncedAt:state.lastSyncedAt,healthProfile:state.healthProfile,healthMetrics:state.healthMetrics,healthSummarySignatures:state.healthSummarySignatures,analyticsGoal:state.analyticsGoal,insightControls:state.insightControls,analyticsQuestions:state.analyticsQuestions,analyticsLastQuestion:state.analyticsLastQuestion,onboarding:state.onboarding,activeWorkoutPlan:state.activeWorkoutPlan,progressionProposals:state.progressionProposals,trainingTargets:state.trainingTargets,nutritionView:state.nutritionView,trainingView:state.trainingView,settingsSection:state.settingsSection,systemHealth:state.systemHealth,weekOverrides:state.weekOverrides,scheduleAdjustments:state.scheduleAdjustments,launchEvents:state.launchEvents,customExperiments:state.customExperiments,experimentCheckins:state.experimentCheckins,exerciseSubstitutions:state.exerciseSubstitutions,smartReminders:state.smartReminders,restTimer};
   }
   globalThis.persist=function(){if(state.dataRestoreInProgress)return;const payload=statePayload();window.REP_STORE?.persist(storageKey,payload);features?.scheduleSnapshot(payload);};
   state.syncQueue=Array.isArray(state.syncQueue)?state.syncQueue:[];
@@ -79,7 +79,20 @@
   if(JSON.stringify(scheduleRepair.weekOverrides)!==JSON.stringify(state.weekOverrides)||JSON.stringify(scheduleRepair.scheduleAdjustments)!==JSON.stringify(state.scheduleAdjustments)){state.weekOverrides=scheduleRepair.weekOverrides;state.scheduleAdjustments=scheduleRepair.scheduleAdjustments;productSuite.trackEvent(state,"missed_workout_rescheduled",{count:Object.keys(state.weekOverrides).length});persist();}
   if((Number(rawSaved.version)||0)<APP_SCHEMA){features?.createDeviceSnapshot(rawSaved).catch(()=>{});persist();}
 
-  function showUndo(message,undo){clearTimeout(state.undoTimer);document.querySelector(".undo-bar")?.remove();const bar=document.createElement("div");bar.className="undo-bar";bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${esc(message)}</span><button>${"Undo"}</button>`);document.body.appendChild(bar);bar.querySelector("button").onclick=()=>{clearTimeout(state.undoTimer);bar.remove();undo();};state.undoTimer=setTimeout(()=>bar.remove(),6500);}
+  function clearWorkoutUndo(){const current=state._workoutUndo;if(!current)return;clearTimeout(state.undoTimer);current.bar.remove();state._workoutUndo=null;}
+  function mountWorkoutUndo(){
+    const current=state._workoutUndo;if(!current||state.view!=="player")return;
+    if(current.session!==state.session||current.index!==state.index||current.startedAt!==state.sessionStartedAt){clearWorkoutUndo();return;}
+    const card=document.querySelector(".current-set-card");if(card&&current.bar.parentElement!==card)card.append(current.bar);
+  }
+  function showUndo(message,undo){
+    clearWorkoutUndo();clearTimeout(state.undoTimer);document.querySelector(".undo-bar")?.remove();
+    const bar=document.createElement("div");bar.className="undo-bar";bar.innerHTML=REP_SAFE_DOM.sanitize(`<span role="status">${esc(message)}</span><button aria-label="Undo: ${esc(message)}">Undo</button>`);
+    if(state.view==="player"){bar.classList.add("workout-undo");state._workoutUndo={bar,session:state.session,index:state.index,startedAt:state.sessionStartedAt};mountWorkoutUndo();}else document.body.append(bar);
+    bar.querySelector("button").onclick=()=>{clearTimeout(state.undoTimer);bar.remove();if(state._workoutUndo?.bar===bar)state._workoutUndo=null;undo();};
+    state.undoTimer=setTimeout(()=>{bar.remove();if(state._workoutUndo?.bar===bar)state._workoutUndo=null;},6500);
+  }
+
   function daySchedule(day=currentDay()){const key=day===currentDay()?isoDay():null;return (key&&state.weekOverrides[key])||state.preferences.schedule[day]||DEFAULT_SCHEDULE[day];}
   function focusLabel(focus){const labels={gym:"Gym",football:"Football",padel:"Padel",cardio:"Cardio Workout",recovery:"Active recovery",spa:"Spa recovery",rest:"Rest",activespa:"Active recovery + Spa"};return labels[focus]||focus;}
   function profileKey(){const focus=daySchedule().focus;return focus==="gym"?"gym":["cardio","football","padel"].includes(focus)?"active":"flex";}
@@ -97,7 +110,7 @@
   function waterToMl(value){return state.preferences.waterUnit==="oz"?Number(value)*29.5735:Number(value);}
   window.weightLabel=weightLabel;window.weightInput=weightInput;window.weightToKg=weightToKg;window.waterDisplay=waterDisplay;window.waterToMl=waterToMl;
 
-  saveLog=function(base,item){const id=exerciseId(base),log=normalizedLog(id,item.sets);document.querySelectorAll("[data-log-set]").forEach(input=>{const i=Number(input.dataset.logSet),field=input.dataset.log;log.sets[i][field]=field==="weight"&&state.preferences.weightUnit==="lb"?(input.value===""?"":String(Math.round(weightToKg(input.value)*100)/100)):input.value;});persistDebounced();};
+
 
   weightTrackerCard=function(){const current=currentWeekWeight(),sorted=[...state.bodyWeights].sort((a,b)=>b.week.localeCompare(a.week)),unit=state.preferences.weightUnit;const rows=sorted.slice(0,8).map((w,i)=>{const prev=sorted[i+1],delta=prev?Number(w.kg)-Number(prev.kg):null;return `<div class="weight-row"><span>${new Date(w.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span><strong>${weightLabel(w.kg)}</strong><small class="${delta>0?"up":delta<0?"down":""}">${delta===null?"":`${delta>0?"+":delta<0?"−":""}${weightLabel(Math.abs(delta)).replace(/^-/,'')}`}</small><button class="quiet" data-delete-weight="${w.week}" aria-label="${"Delete"}">×</button></div>`;}).join("");return `<section class="weight-card"><div class="weight-summary"><div><small>${"BODY WEIGHT · WEEKLY"}</small><strong>${current?weightLabel(current.kg):("Not logged this week")}</strong></div></div><form class="weight-form" data-weight-form><input data-weight-input type="number" min="${unit==="lb"?66:30}" max="${unit==="lb"?660:300}" step="0.1" inputmode="decimal" placeholder="${unit}" value="${current?weightInput(current.kg):""}" aria-label="${"Body weight"} ${unit}"><button type="submit">${current?("Update"):("Save")}</button></form>${rows?`<div class="weight-history">${rows}</div>`:`<p class="weight-empty">${"Log your weight once a week to track the trend."}</p>`}</section>`;};
   waterTrackerCard=function(water,goal){const remaining=Math.max(goal-water,0),progress=goal?Math.min(Math.round(water/goal*100),100):0,oz=state.preferences.waterUnit==="oz",actions=oz?[[-8,-236.588],[8,236.588],[16,473.176],[32,946.352]]:[[-250,-250],[250,250],[500,500],[1000,1000]];return `<section class="water-card"><div class="water-summary"><div><small>${"HYDRATION"}</small><strong>${waterDisplay(water)} / ${waterDisplay(goal)}</strong><span>${waterDisplay(remaining)} ${"remaining today"}</span></div><div aria-label="${"Water goal progress"}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}" role="progressbar">${miniRing(progress,"var(--blue)")}</div></div><div class="water-actions">${actions.map(([label,delta])=>`<button data-water-delta="${delta}">${label>0?"+":""}${label}${oz?" oz":label===1000?" ml":""}</button>`).join("")}</div><form class="water-custom" data-water-form><label><span>${"Custom amount"} (${oz?"fl oz":"ml"})</span><input data-water-custom type="number" min="1" max="${oz?676:20000}" step="${oz?0.5:1}" inputmode="decimal" placeholder="${oz?12:330}"></label><button type="submit" data-water-custom-action="add">${"Add"}</button><button type="button" data-water-custom-action="set">${"Set total"}</button></form><button class="water-reset" data-water-reset>${"Reset today's water"}</button></section>`;};
@@ -119,9 +132,7 @@
   function relogMeal(source,qty){if(!source)return;const scaled={...source};for(const key of ["calories","protein_g","carbs_g","fat_g","fiber_g","sugar_g","sodium_mg","estimated_weight_g"])scaled[key]=Math.round((Number(source[key])||0)*qty*10)/10;delete scaled.id;delete scaled.date;state.foodDraft={...scaled,rawNote:source.rawNote||source.food_name,mealType:state.foodMealType||autoMealType(),logMethod:"Re-log",source:"Saved meal"};state.foodStatus="Review the portion, then confirm.";renderNutrition();document.querySelector(".analysis-card")?.scrollIntoView({behavior:"smooth",block:"center"});}
   function saveFavorite(id){const source=state.foodEntries.find(item=>item.id===id);if(!source||state.savedMeals.some(item=>mealKey(item)===mealKey(source)))return;state.savedMeals.unshift({...source,id:`fav-${Date.now()}-${Math.random().toString(36).slice(2,6)}`});state.savedMeals=state.savedMeals.slice(0,30);persist();renderNutrition();}
   function removeFavorite(id){const index=state.savedMeals.findIndex(item=>item.id===id),removed=state.savedMeals[index];if(!removed)return;state.savedMeals.splice(index,1);persist();renderNutrition();showUndo("Favorite removed.",()=>{state.savedMeals.splice(index,0,removed);persist();renderNutrition();});}
-  const baseRenderNutrition=renderNutrition;
-  renderNutrition=function(){
-    baseRenderNutrition();
+  function enhanceNutrition(){
     const recent=recentMeals(),anchor=document.querySelector(".food-log")?.previousElementSibling;
     const sections=[];
     if(state.savedMeals.length)sections.push(`<div class="food-section-head" data-nutrition-section="log"><h2>${"Favorite meals"}</h2><span>${"adjust portion, then log"}</span></div><section class="quick-meals">${state.savedMeals.map(item=>quickMealCard(item,true)).join("")}</section>`);
@@ -168,8 +179,9 @@
   }
   deleteFoodEntry=function(id){const index=state.foodEntries.findIndex(entry=>entry.id===id),entry=state.foodEntries[index];if(!entry)return;state.foodEntries.splice(index,1);queueNutritionSummary();persist();renderNutrition();showUndo("Meal deleted.",()=>{state.foodEntries.splice(index,0,entry);queueNutritionSummary();persist();renderNutrition();});};
 
-  const PRIMARY_TABS=new Set(["home","train","food","health","insights"]);
-  function primaryTabForState(){return ["care","vitals"].includes(state.activeTab)?"health":PRIMARY_TABS.has(state.activeTab)?state.activeTab:"home";}
+  window.REP_TRAINING_PREFERENCES?.normalize(state);
+  const PRIMARY_TABS=new Set(["home","train","food","more","insights"]);
+  function primaryTabForState(){return ["care","vitals","health"].includes(state.activeTab)?"more":PRIMARY_TABS.has(state.activeTab)?state.activeTab:"home";}
   function activatePrimaryTab(tab){
     if(tab==="health")tab=state.healthView==="care"?"care":"vitals";
     state.activeTab=tab;persistDebounced();updatePrimaryTabs();
@@ -178,12 +190,14 @@
     else if(tab==="care")renderHygiene();
     else if(tab==="insights")renderInsights();
     else if(tab==="vitals")renderVitals();
+    else if(tab==="more")window.REP_TRAINING_UI?.more();
     else renderHome();
     if(navigator.onLine&&localStorage.getItem(syncKeyStorage)&&typeof fetchPendingVitals==="function")setTimeout(()=>{fetchPendingVitals(false).catch(()=>{});},100);
   }
   function routeIdForPrimaryTab(tab){
     if(tab==="home")return "today";
-    if(tab==="train")return state.trainingView==="program"?"training-program":"training-today";
+    if(tab==="train")return "training-program";
+    if(tab==="more")return "more";
     if(tab==="food")return `nutrition-${state.nutritionView}`;
     if(tab==="health")return state.healthView==="care"?"health-wellness":"health-vitals";
     if(tab==="care")return "health-wellness";
@@ -221,7 +235,7 @@
   applyVitalsEntry=function(entry){const report=baseApplyVitalsEntry(entry),date=entry.date||isoDay(),fields=["steps","exercise_minutes","stand_minutes","vo2_max","oxygen_saturation_pct","wrist_temperature_c","sleep_deep_hours","sleep_rem_hours","coverage_minutes","heart_rate_samples","workout_hr_samples","watch_battery_pct","source"];state.healthMetrics[date]={...(state.healthMetrics[date]||{})};for(const field of fields)if(entry[field]!==null&&entry[field]!==undefined&&entry[field]!=="")state.healthMetrics[date][field]=entry[field];return report;};
   const baseFetchPendingVitals=fetchPendingVitals;
   fetchPendingVitals=async function(showStatus=false){await baseFetchPendingVitals(showStatus);const date=state.lastVitalsImportDate,entry=state.sleepLogs.find(item=>item.date===date);if(!date||!entry)return;const ready=health.readiness(state,date,state.healthProfile),training=health.trainingRecommendation(state,date,state.healthProfile),metrics=state.healthMetrics?.[date]||{},summary=[`Readiness ${ready.score===null?"not available":`${ready.score}%`} (${ready.confidence} confidence, ${ready.coverage}% coverage)`,`Strain ${health.strain(state,date)}`,`Coach: ${training.title}`,metrics.steps?`Steps ${Math.round(metrics.steps)}`:"",metrics.vo2_max?`VO₂ max ${metrics.vo2_max}`:"","Wellness estimate; not a diagnosis."].filter(Boolean).join(" · "),signature=JSON.stringify([entry.hours,entry.hrv,entry.rhr,entry.resp,metrics,summary]);if(state.healthSummarySignatures[date]===signature)return;state.healthSummarySignatures[date]=signature;queueHealth("sleep",{date,sleep:entry.hours,notes:summary});};
-  const baseVitals=renderVitals,baseCare=renderHygiene,baseOverview=renderOverview,baseTrainingHome=renderHome,baseComplete=renderComplete;
+  const baseVitals=renderVitals,baseCare=renderHygiene;
   renderVitals=function(){state.healthView="vitals";baseVitals();healthNav();document.querySelector(".health-subnav")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(`${coachCard()}${importQualityCard()}`));bindAdaptiveActions();document.querySelector("[data-health-import-check]")?.addEventListener("click",()=>fetchPendingVitals(true));};
   function organizeWellness(){
     const hour=new Date().getHours(),current=hour<12?("Morning"):hour<18?("Post-workout"):("Evening");const cards=[...document.querySelectorAll(".module-card")];
@@ -229,95 +243,19 @@
     const reference=document.querySelector("[data-view-care-plan]");if(reference&&!document.querySelector("[data-wellness-expand]")){const button=document.createElement("button");button.className="wellness-expand";button.dataset.wellnessExpand="";button.textContent=state.wellnessExpanded?("Show current routine"):("Show full daily routine");button.onclick=()=>{state.wellnessExpanded=!state.wellnessExpanded;renderHygiene();};reference.insertAdjacentElement("beforebegin",button);}
   }
   renderHygiene=function(){state.healthView="care";baseCare();healthNav();organizeWellness();};
-  renderOverview=function(){
-    baseOverview();
-    const override=state.weekOverrides[isoDay()],planned=state.preferences.schedule[currentDay()];
-    const note=override?`Rescheduled from ${override.sourceDate||"an earlier day"}.`:planned?.focus!==DEFAULT_SCHEDULE[currentDay()].focus?"Your saved schedule replaces the default program for today.":"";
-    if(note)document.querySelector(".home-today-card")?.insertAdjacentHTML("beforeend",REP_SAFE_DOM.sanitize(`<small class="schedule-explanation">${esc(note)} <button type="button" data-review-schedule>Review schedule</button></small>`));
-    document.querySelector("[data-review-schedule]")?.addEventListener("click",()=>renderSettings("schedule"));
-    const anchor=document.querySelector(".vitals-trio");
-    anchor?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(`<details class="today-plan-details"><summary>Why this plan?</summary>${coachCard(true,false)}</details>`));
-  };
-  function organizeTraining(){
-    const hero=document.querySelector(".hero");if(!hero)return;
-    let nav=document.querySelector(".module-subnav[aria-label*='Training']");
-    if(!nav){
-      nav=document.createElement("nav");nav.className="module-subnav";nav.setAttribute("aria-label","Training sections");
-      nav.innerHTML=REP_SAFE_DOM.sanitize([["today","Today"],["program","Program"],["history","History"]].map(([id,label])=>`<button data-training-view="${id}" class="${state.trainingView===id?"is-active":""}" aria-current="${state.trainingView===id?"page":"false"}">${label}</button>`).join(""));
-      hero.insertAdjacentElement("afterend",nav);
-    }
-    document.querySelector(".install-card")?.remove();
-    const sessionGrid=document.querySelector(".session-grid:not(.training-tools)"),weekly=document.querySelector(".weekly"),toolsTitle=document.querySelector(".training-tools-title"),tools=document.querySelector(".training-tools");
-    let advanced=document.querySelector(".training-advanced");
-    if(toolsTitle&&tools&&!advanced){
-      advanced=document.createElement("details");advanced.className="training-advanced";advanced.innerHTML=REP_SAFE_DOM.sanitize(`<summary>${"Tools & safety"}</summary>`);
-      toolsTitle.insertAdjacentElement("beforebegin",advanced);advanced.append(toolsTitle,tools);
-    }
-    if(sessionGrid)sessionGrid.hidden=state.trainingView!=="program";
-    if(weekly)weekly.hidden=state.trainingView!=="program";
-    if(weekly){weekly.querySelectorAll(".week-row .day").forEach((cell,i)=>{const day=DAY_NAMES[i],plan=daySchedule(day);cell.setAttribute("title",`${day}: ${focusLabel(plan.focus)}${plan.morning?" + Activation":""}`);const label=cell.querySelector("span");if(label)label.textContent={gym:"G",padel:"PDL",football:"FB",cardio:"C",rest:"R",recovery:"AR",spa:"S",activespa:"AR + S"}[plan.focus]||plan.focus;});}
-
-    if(advanced)advanced.hidden=state.trainingView!=="program";
-    document.querySelectorAll(".vitals-teaser,.today-strip,.health-status,.reminder-strip,.health-coach-card").forEach(el=>{el.hidden=state.trainingView!=="today";});
-    if(state.trainingView==="today"){
-      const resume=REP_TRAINING_SESSION.isResumableWorkout(state,sessions),plan=adaptiveTodayPlan(),id=resume?state.session:plan.targetSession;
-      document.querySelector(".today-training-action")?.remove();
-      const card=document.createElement("section");card.className="today-training-action";card.innerHTML=REP_SAFE_DOM.sanitize(`<small>${"NEXT ACTION · ADAPTIVE"}</small><h2>${esc(resume?`Continue ${sessions[id].name}`:plan.title)}</h2><p>${esc(resume?"Your completed sets and entered weights are saved.":plan.adjustments.join(" · "))}</p><div class="today-training-actions"><button data-start-today ${id?`data-session-id="${id}"`:""}>${resume?"Resume workout":id?("Apply & review workout"):("Apply recovery day")}</button>${!resume&&id&&id!=="cardio"?`<button class="today-cardio-fallback" data-start-cardio-fallback data-session-id="cardio">${"No game? Choose cardio"}</button>`:""}</div>`);
-      nav.insertAdjacentElement("afterend",card);
-      card.querySelector("[data-start-today]").onclick=()=>resume?showSessionPreview(id):applyAdaptiveToday(plan);
-      const cardioFallback=card.querySelector("[data-start-cardio-fallback]");if(cardioFallback)cardioFallback.onclick=()=>showSessionPreview("cardio");
-    } else if(state.trainingView==="program"){
-      const focus=daySchedule().focus,recommendedId=["morning","gym","football","padel","general","cardio"].includes(focus)?focus:"morning";
-      const recommended=document.querySelector(`[data-session="${recommendedId}"]`);
-      recommended?.classList.add("is-recommended");
-      recommended?.insertAdjacentHTML("afterbegin",REP_SAFE_DOM.sanitize(`<span class="session-recommended-badge">${"TODAY'S PLAN"}</span>`));
-      const discovery=document.createElement("section");discovery.className="program-discovery";
-      discovery.innerHTML=REP_SAFE_DOM.sanitize(`<div class="program-discovery-head"><div><small>${"WORKOUT LIBRARY"}</small><h2>${"Choose your environment"}</h2><p>${"Every plan stays connected to your real exercises, progress, and history."}</p></div><span>${Object.keys(sessions).filter(id=>!["bad","gymLite"].includes(id)&&!id.startsWith("custom-")).length} ${"plans"}</span></div><div class="program-filter-row" role="group" aria-label="${"Filter workout plans"}">${[["all","All"],["gym","Gym"],["home","Home"],["sport","Sport"],["cardio","Cardio"]].map(([id,label],index)=>`<button type="button" data-program-filter="${id}" class="${index===0?"is-active":""}" aria-pressed="${index===0}">${label}</button>`).join("")}</div>`);
-      nav.insertAdjacentElement("afterend",discovery);
-      const applyFilter=filter=>{
-        sessionGrid?.querySelectorAll("[data-session]").forEach(card=>{card.hidden=filter!=="all"&&card.dataset.programCategory!==filter;});
-        const logActivity=sessionGrid?.querySelector("[data-log-activity]");if(logActivity)logActivity.hidden=filter!=="all";
-        discovery.querySelectorAll("[data-program-filter]").forEach(button=>{const active=button.dataset.programFilter===filter;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active));});
-      };
-      discovery.querySelectorAll("[data-program-filter]").forEach(button=>button.onclick=()=>applyFilter(button.dataset.programFilter));
-      const exporterCard=document.createElement("details");exporterCard.className="settings-card program-exporter-card";
-      exporterCard.innerHTML=REP_SAFE_DOM.sanitize(`<summary><span><small>${"PROGRAM TOOLS"}</small><strong>${"Share & export your plan"}</strong></span><b>+</b></summary><div class="program-exporter-body"><p>${"Export your training split, exercise list, and target sets as a portable digital routine card."}</p><div><button class="settings-primary" data-export-program>${"📤 Export Program (JSON)"}</button><button class="quiet-setting" data-share-program>${"🔗 Copy Share Link"}</button><button class="quiet-setting" data-export-report-card>${"📄 Export Mesocycle PDF"}</button></div></div>`);
-      sessionGrid?.insertAdjacentElement("afterend",exporterCard);
-      exporterCard.querySelector("[data-export-program]")?.addEventListener("click",()=>{
-        const exportData={app:"Rep Gym Companion",type:"mesocycle-program",version:1,exportedAt:new Date().toISOString(),schedule:state.preferences.schedule,sessions:window.sessions||{}};
-        features.downloadJson(exportData,`rep-training-program-${Date.now()}.json`);
-      });
-      exporterCard.querySelector("[data-share-program]")?.addEventListener("click",()=>{
-        if(navigator.clipboard){
-          const shareUrl=`${window.location.origin}${window.location.pathname}#/training/program`;
-          navigator.clipboard.writeText(shareUrl).then(()=>showToast("Program link copied!"));
-        }
-      });
-      exporterCard.querySelector("[data-export-report-card]")?.addEventListener("click",()=>{
-        window.REP_REPORT_CARD?.openPrintableReport(state);
-      });
-    }
-    nav.querySelectorAll("[data-training-view]").forEach(button=>button.onclick=()=>navigateTo(`training-${button.dataset.trainingView}`,()=>{if(button.dataset.trainingView==="history")return renderHistory();state.trainingView=button.dataset.trainingView;persist();renderHome();}));
-  }
-  renderHome=function(){
-    baseTrainingHome();
-    organizeTraining();
-  };
   function progressionCard(proposals){
     if(!proposals.length)return "";
     const hasDeload=proposals.some(item=>item.status==="deload"),accepted=proposals.every(item=>state.trainingTargets[item.exercise]?.sourceSessionId===item.sourceSessionId);
     return `<section class="next-targets-card"><small>${hasDeload?("AUTO-DELOAD DETECTED"):("NEXT SESSION TARGETS")}</small><h2>${hasDeload?("Fatigue changed the plan"):("Your next loads are ready")}</h2><p>${"Built from completed reps, load, and RPE. Accept once; every target is prefilled next time."}</p><div class="next-target-list">${proposals.map(item=>`<div><span><strong>${esc(item.exercise)}</strong><small>${esc(item.status==="bump"?"Progress":item.status==="deload"?"Deload":item.status==="hold"?"Hold":"Baseline")}</small></span><b>${esc(weightLabel(item.targetWeight))} × ${item.repsLow}–${item.repsHigh}</b></div>`).join("")}</div><button data-accept-progression type="button" ${accepted?"disabled":""}>${accepted?("Targets applied ✓"):("Use these targets next time")}</button></section>`;
   }
-  renderComplete=function(){
-    const record=state.history[0];
-    if(record&&!["gym","gymLite"].includes(record.session)){baseComplete();return;}
+  function completionProposals(record){
+    if(!record||(!["gym","gymLite"].includes(record.session)&&!record.session?.startsWith("custom-")))return [];
     if(record&&!state.progressionProposals.some(item=>item.sourceSessionId===record.id))state.progressionProposals=adaptive.buildProgressionProposals(state,record,performance);
-    baseComplete();
-    const proposals=state.progressionProposals.filter(item=>item.sourceSessionId===record?.id),anchor=document.querySelector(".complete-actions");
-    if(anchor&&proposals.length)anchor.insertAdjacentHTML("beforebegin",REP_SAFE_DOM.sanitize(progressionCard(proposals)));
-    document.querySelector("[data-accept-progression]")?.addEventListener("click",()=>{adaptive.applyProgression(state,proposals);productSuite.trackEvent(state,"progression_accepted",{proposals:proposals.length});persist();renderComplete();showToast("Next-session weights are ready.");});
+    const proposals=state.progressionProposals.filter(item=>item.sourceSessionId===record.id);
     if(proposals.length)persist();
-  };
+    return proposals;
+  }
+  function acceptProgression(proposals){adaptive.applyProgression(state,proposals);productSuite.trackEvent(state,"progression_accepted",{proposals:proposals.length});persist();showToast("Next-session targets saved.");}
 
   // The single source of truth for pairing-key validation (app.js declares
   // no version of these — see the comment there).
@@ -342,7 +280,7 @@
   function settingsNav(active){return `<nav class="settings-nav" aria-label="${"Settings sections"}">${[["general","General"],["schedule","Schedule"],["targets","Targets"],["coach","Coach"],["sync","Sync"],["security","Security"]].map(([id,label])=>`<button data-settings-tab="${id}" class="${active===id?"is-active":""}" aria-current="${active===id?"page":"false"}">${label}</button>`).join("")}</nav>`;}
   function pwaInstallCard(){
     const isStandalone=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
-    if(isStandalone)return `<section class="settings-card" style="border-color:rgba(201,255,61,.3);background:linear-gradient(145deg,rgba(201,255,61,.06),var(--panel));"><small style="color:var(--acid);font-weight:900;">${"INSTALLED APP"}</small><h2>${"Health OS is running as a Standalone PWA"}</h2><p style="margin:0;color:var(--muted);font-size:11px;">✓ ${"Full screen with fast offline caching and no browser bar."}</p></section>`;
+    if(isStandalone)return `<section class="settings-card" style="border-color:rgba(201,255,61,.3);background:linear-gradient(145deg,rgba(201,255,61,.06),var(--panel));"><small style="color:var(--acid);font-weight:900;">${"INSTALLED APP"}</small><h2>${"Rep Gym Companion is running as a Standalone PWA"}</h2><p style="margin:0;color:var(--muted);font-size:11px;">✓ ${"Full screen with fast offline caching and no browser bar."}</p></section>`;
     return `<section class="settings-card pwa-install-card" style="border-color:rgba(125,201,255,.3);background:linear-gradient(145deg,rgba(125,201,255,.07),var(--panel));"><small style="color:var(--blue);font-weight:900;">${"INSTALL ON IPHONE"}</small><h2>${"Add to Home Screen for Native Experience"}</h2><div style="display:grid;gap:8px;margin:10px 0 12px;font-size:12px;color:var(--text);"><div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);"><b>1</b><span>${"Tap the <b>Share (⎋)</b> icon at the bottom of Safari"}</span></div><div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);"><b>2</b><span>${"Scroll down and tap <b>Add to Home Screen (+)</b>"}</span></div></div><button class="settings-primary" data-install-settings style="background:var(--blue);color:#03202e;">${"Install / Add to Home Screen"}</button></section>`;
   }
   function circadianRemindersCard(){
@@ -387,7 +325,7 @@
       </div></div>
       ${[["weightUnit","Weight",["kg","lb"]],["waterUnit","Water",["ml","oz"]]].map(([key,label,values])=>`<div class="segmented-setting"><span>${label}</span><div>${values.map(value=>`<button data-unit="${key}" data-value="${value}" class="${state.preferences[key]===value?"is-active":""}">${value==="oz"?"fl oz":value}</button>`).join("")}</div></div>`).join("")}
       <button class="quiet-setting" data-run-onboarding>${"Run guided setup again"}</button>
-      <button class="quiet-setting" data-install-settings>${"Install Health OS on this device"}</button>
+      <button class="quiet-setting" data-install-settings>${"Install Rep Gym Companion on this device"}</button>
       <p>${"Stored values stay in kilograms and milliliters, so switching display units never changes your history."}</p></section>
       ${circadianRemindersCard()}
       <section class="settings-card data-migration-card"><small>${"DATA MIGRATION & BACKFILL"}</small><h2>${"Import from Strong, Hevy, or Apple Health"}</h2><p>${"Drop your CSV or XML export to backfill historical workouts, body weights, and meals."}</p><label class="settings-primary" style="display:inline-block;cursor:pointer;text-align:center;padding:10px 16px;margin-top:8px;">📥 ${"Choose File (CSV/XML)"}<input type="file" accept=".csv,.xml,.json" data-import-file style="display:none;"></label><span class="import-status-msg" data-import-status style="display:block;margin-top:8px;font-size:12px;color:var(--acid);"></span></section>`;
@@ -427,11 +365,11 @@
         }
         try{
           const reg=await navigator.serviceWorker?.ready;
-          if(reg?.showNotification) await reg.showNotification("⚡ Health OS: Today's Readiness 88%",{body:"High readiness today. Today's plan: Chest & Back.",icon:"./icon-192.png",badge:"./icon-192.png"});
-          else new Notification("⚡ Health OS: Today's Readiness 88%",{body:"High readiness today."});
+          if(reg?.showNotification) await reg.showNotification("⚡ Rep Gym Companion: Today's Readiness 88%",{body:"High readiness today. Today's plan: Chest & Back.",icon:"./icon-192.png",badge:"./icon-192.png"});
+          else new Notification("⚡ Rep Gym Companion: Today's Readiness 88%",{body:"High readiness today."});
           showToast("Test notification sent successfully!");
         }catch{
-          try{new Notification("⚡ Health OS: Test Notification",{body:"Notifications are working perfectly!"});showToast("Test notification sent successfully!");}catch(e){showToast(String(e.message||e));}
+          try{new Notification("⚡ Rep Gym Companion: Test Notification",{body:"Notifications are working perfectly!"});showToast("Test notification sent successfully!");}catch(e){showToast(String(e.message||e));}
         }
       }else{showToast("Notifications are not supported in this browser.");}
     });
@@ -455,14 +393,14 @@
     document.querySelector("[data-backup-snooze]")?.addEventListener("click",()=>{snoozeBackupReminder();renderSettings("security");});
     features?.backupHistory().then(dates=>{const status=document.querySelector("[data-backup-status]"),history=document.querySelector("[data-backup-history]");if(status)status.textContent=dates.length?(`Latest: ${new Date(dates[0]).toLocaleString()}`):("A restore point will be created after the next change.");if(history&&dates.length>1){history.innerHTML=REP_SAFE_DOM.sanitize(dates.slice(1).map((date,index)=>`<button data-restore-index="${index+1}">${new Date(date).toLocaleString(undefined)}</button>`).join(""));history.querySelectorAll("[data-restore-index]").forEach(button=>button.onclick=()=>restoreSnapshot(Number(button.dataset.restoreIndex)));}});
   }
-  function loadOptionalScript(src,globalName){if(window[globalName])return Promise.resolve();return new Promise((resolve,reject)=>{const existing=document.querySelector(`script[data-optional="${src}"]`);if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return;}const script=document.createElement("script");script.src=`${src}?v=${window.REP_BUILD_VERSION||"8a45e2b584fa"}`;script.dataset.optional=src;script.onload=resolve;script.onerror=()=>reject(Error(`Could not load ${src}`));document.head.appendChild(script);});}
+  function loadOptionalScript(src,globalName){if(window[globalName])return Promise.resolve();return new Promise((resolve,reject)=>{const existing=document.querySelector(`script[data-optional="${src}"]`);if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return;}const script=document.createElement("script");script.src=`${src}?v=${window.REP_BUILD_VERSION||"f17e54415806"}`;script.dataset.optional=src;script.onload=resolve;script.onerror=()=>reject(Error(`Could not load ${src}`));document.head.appendChild(script);});}
   async function createPairHandoff(){if(!repAuth.isPaired())return;state.pairHandoffBusy=true;renderSettings("security");try{await loadOptionalScript("qrcode.js","qrcode");const response=await repAuth.fetch("/api/pair/handoff",{method:"POST"}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||`Pairing failed (${response.status})`);const qr=qrcode(0,"M");qr.addData(data.url);qr.make();state.pairHandoff={url:data.url,expiresAt:data.expiresAt,qr:qr.createDataURL(6,16)};}catch(error){showToast(String(error.message||error));}finally{state.pairHandoffBusy=false;renderSettings("security");}}
-  async function shareHandoff(preferShare){const url=state.pairHandoff?.url;if(!url)return;try{if(preferShare&&navigator.share)await navigator.share({title:"Pair Health OS",url});else await navigator.clipboard.writeText(url);showToast("Pairing link copied.");}catch{showToast("Could not share the link.");}}
+  async function shareHandoff(preferShare){const url=state.pairHandoff?.url;if(!url)return;try{if(preferShare&&navigator.share)await navigator.share({title:"Pair Rep Gym Companion",url});else await navigator.clipboard.writeText(url);showToast("Pairing link copied.");}catch{showToast("Could not share the link.");}}
   async function exportEncrypted(passphrase){try{if(!passphrase)passphrase=prompt("Enter a backup passphrase (at least 8 characters):");if(passphrase===null)return;persist();const inner={app:"Rep Gym Companion",schema:APP_SCHEMA,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:statePayload(),assets:{progressPhotos:await features.exportProgressPhotos()}} ,payload=await features.encryptExport(inner,passphrase);features.downloadJson(payload,`health-os-backup-${isoDay()}.json`);state.lastBackupAt=new Date().toISOString();state.backupSnoozedUntil=null;persist();showToast("Encrypted backup downloaded, including progress photos.");}catch(error){showToast(String(error.message||error));}}
   function safeBackupData(data){if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid backup data.");const text=JSON.stringify(data);if(text.length>25_000_000||text.includes('"__proto__"')||text.includes('"prototype"'))throw Error("Backup is too large or unsafe.");for(const key of ["history","foodEntries","bodyWeights","mealTemplates","sleepLogs","syncQueue","customRoutines"]){if(data[key]!==undefined&&!Array.isArray(data[key]))throw Error(`Invalid ${key} data.`);}return data;}
   async function importSecureBackup(event){const file=event.target.files?.[0];if(!file)return;try{if(file.size>250*1024*1024)throw Error("Backup is too large.");const payload=JSON.parse(await file.text());let inner;if(payload.encrypted){const passphrase=prompt("Enter the backup passphrase:");if(passphrase===null)return;inner=await features.decryptExport(payload,passphrase);}else inner=payload;const data=safeBackupData(inner.data||inner);if(!confirm("This replaces current app data and restores encrypted progress photos. Continue?"))return;state.dataRestoreInProgress=true;await features?.createDeviceSnapshot(statePayload());await window.REP_STORE?.replace(storageKey,data);await features.importProgressPhotos(inner.assets?.progressPhotos||[]);location.reload();}catch(error){state.dataRestoreInProgress=false;showToast(String(error.message||error));event.target.value="";}}
   async function restoreSnapshot(index){try{const snapshot=await features.restoreDeviceSnapshot(index);if(!confirm("Restore this automatic snapshot?"))return;state.dataRestoreInProgress=true;await window.REP_STORE?.replace(storageKey,safeBackupData(snapshot.data));location.reload();}catch(error){state.dataRestoreInProgress=false;showToast(String(error.message||error));}}
-  async function deleteLocalData(){if(!confirm("Delete all Health OS data on this device?"))return;if(!confirm("This cannot be undone. Are you sure?"))return;await repAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});await window.REP_STORE?.clear();localStorage.removeItem(storageKey);repAuth.clear();localStorage.removeItem(errorLogKey);indexedDB?.deleteDatabase("rep-device-vault-v1");location.reload();}
+  async function deleteLocalData(){if(!confirm("Delete all Rep Gym Companion data on this device?"))return;if(!confirm("This cannot be undone. Are you sure?"))return;await repAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});await window.REP_STORE?.clear();localStorage.removeItem(storageKey);repAuth.clear();localStorage.removeItem(errorLogKey);indexedDB?.deleteDatabase("rep-device-vault-v1");location.reload();}
   exportData=function(){return exportEncrypted();};
   importData=importSecureBackup;
   const baseHistory=renderHistory;renderHistory=function(){baseHistory();const exportButton=document.querySelector("[data-export]");if(exportButton)exportButton.textContent="Export encrypted backup";const tools=document.querySelector(".data-tools");if(tools&&!tools.querySelector("[data-open-settings]")){const button=document.createElement("button");button.dataset.openSettings="";button.textContent="Settings & security";tools.prepend(button);button.onclick=()=>navigateTo("settings-security",()=>renderSettings("security"));}};
@@ -488,16 +426,17 @@
   function installNavigationRoutes(){
     if(!navigation)return;
     navigation.register([
+      {id:"more",path:"/more",title:"More",activate:()=>window.REP_TRAINING_UI?.more()},
       {id:"today",path:"/today",title:"Today",activate:()=>activatePrimaryTab("home")},
       {id:"training-today",path:"/training/today",title:"Training",activate:()=>activateTrainingRoute("today")},
-      {id:"training-program",path:"/training/program",aliases:["/program-active"],title:"Program",activate:()=>activateTrainingRoute("program")},
-      {id:"training-history",path:"/training/history",title:"History",activate:()=>activateTrainingRoute("history")},
+      {id:"training-program",path:"/train",aliases:["/training/program","/program-active"],title:"Program",activate:()=>activateTrainingRoute("program")},
+      {id:"training-history",path:"/progress/history",aliases:["/training/history"],title:"History",activate:()=>activateTrainingRoute("history")},
       {id:"nutrition-log",path:"/nutrition/log",title:"Log meal",activate:()=>activateNutritionRoute("log")},
       {id:"nutrition-today",path:"/nutrition/today",title:"Nutrition",activate:()=>activateNutritionRoute("today")},
       {id:"nutrition-plan",path:"/nutrition/plan",title:"Nutrition plan",activate:()=>activateNutritionRoute("plan")},
-      {id:"health-vitals",path:"/health/vitals",title:"Vitals",activate:()=>activateHealthRoute("vitals")},
-      {id:"health-wellness",path:"/health/wellness",title:"Wellness",activate:()=>activateHealthRoute("care")},
-      {id:"insights",path:"/insights",title:"Insights",activate:()=>activatePrimaryTab("insights")},
+      {id:"health-vitals",path:"/more/recovery",aliases:["/health/vitals"],title:"Vitals",activate:()=>activateHealthRoute("vitals")},
+      {id:"health-wellness",path:"/more/routines",aliases:["/health/wellness"],title:"Wellness",activate:()=>activateHealthRoute("care")},
+      {id:"insights",path:"/progress",aliases:["/insights"],title:"Progress",activate:()=>activatePrimaryTab("insights")},
       ...["general","schedule","targets","coach","sync","security"].map(section=>({id:`settings-${section}`,path:`/settings/${section}`,title:"Settings",activate:()=>renderSettings(section)}))
     ]);
     navigation.setTabResolver(routeIdForPrimaryTab);
@@ -565,4 +504,6 @@
   updatePrimaryTabs();updateSyncPanel();claimPairFromUrl();refreshCapabilities();setInterval(()=>probeSystemHealth(state.view==="settings"&&state.settingsSection==="sync"),5*60*1000);
   if(state.view==="home-overview")renderOverview();
   openOnboarding(false);
+  window.REP_ENHANCEMENTS_UI=Object.freeze({nutrition:enhanceNutrition,dayNames:DAY_NAMES,daySchedule,focusLabel,coachCard,adaptiveTodayPlan,applyAdaptiveToday,progressionCard,completionProposals,acceptProgression,settings:renderSettings,undo:showUndo,mountUndo:mountWorkoutUndo,clearWorkoutUndo});
+
 })();

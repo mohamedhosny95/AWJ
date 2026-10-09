@@ -20,7 +20,7 @@
   function morningCard(){
     const checkin=coverage.checkinFor(state,today()),prior=checkin||{},savedMessage=checkin?("Today's check-in is saved."):"";
     const options=value=>[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(value)===n?"selected":""}>${n}</option>`).join("");
-    return `<section class="morning-card"><div><small>${"MORNING CHECK · 1 MINUTE"}</small><h2>${"Add what the Watch cannot measure"}</h2><p>${"Pain, stress, soreness, and energy provide essential training context."}</p></div>
+    return `<section class="morning-card"><div><small>${"Quick recovery check-in"}</small><h2>${"How do you feel today?"}</h2><p>${"Pain, stress, soreness, and energy provide essential training context."}</p></div>
       <form data-morning-checkin>
         <label>${"Energy"}<select name="energy">${options(prior?.energy||3)}</select></label>
         <label>${"Soreness"}<select name="soreness">${options(prior?.soreness||2)}</select></label>
@@ -60,17 +60,17 @@
     </section>`;
   }
 
-  function bind({onWorkoutReady}={}){
+  function bind({onWorkoutReady,onSaved,onMeasurementSaved}={}){
     document.querySelector("[data-morning-checkin]")?.addEventListener("submit",event=>{
       event.preventDefault();const form=new FormData(event.currentTarget),date=today(),now=new Date(),createdAt=now.toISOString(),record={dateKey:date,createdAt,date,energy:Number(form.get("energy")),soreness:Number(form.get("soreness")),stress:Number(form.get("stress")),sleep:Number((state.sleepLogs||[]).find(row=>(row.dateKey||String(row.date||"")).slice(0,10)===date)?.hours)||null,pain:form.get("pain")==="on",illness:form.get("illness")==="on",notes:String(form.get("notes")||"").trim()};
-      state.recoveryCheckins=(state.recoveryCheckins||[]).filter(row=>(row.dateKey||String(row.date||"").slice(0,10))!==date);state.recoveryCheckins.unshift(record);state.recoveryCheckins=state.recoveryCheckins.slice(0,400);coverage.invalidateCache?.(state);window.REP_HEALTH_ENGINE?.invalidateCache?.(state);queueHealth("recovery",record);persist();renderVitals();
+      state.recoveryCheckins=(state.recoveryCheckins||[]).filter(row=>(row.dateKey||String(row.date||"").slice(0,10))!==date);state.recoveryCheckins.unshift(record);state.recoveryCheckins=state.recoveryCheckins.slice(0,400);coverage.invalidateCache?.(state);window.REP_HEALTH_ENGINE?.invalidateCache?.(state);queueHealth("recovery",record);persist();if(onSaved)onSaved();else renderVitals();
     });
     document.querySelector("[data-charging-plan]")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);state.chargingPlan={time:String(form.get("time")||"20:00"),minutes:Math.max(20,Math.min(120,Number(form.get("minutes"))||45))};persist();event.currentTarget.querySelector("output").textContent="Routine saved.";});
     document.querySelector("[data-workout-check]")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);state.workoutChecks={...(state.workoutChecks||{}),[today()]:{watch:form.get("watch")==="on",workout:form.get("workout")==="on",checkedAt:new Date().toISOString()}};persist();document.querySelector(".workout-preflight-panel")?.remove();if(onWorkoutReady)onWorkoutReady();else setPrimaryTab("train");});
     document.querySelector("[data-body-measurement]")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget),date=today(),weight=Number(form.get("weight")),waist=Number(form.get("waist")),systolic=Number(form.get("systolic")),diastolic=Number(form.get("diastolic")),now=new Date(),createdAt=now.toISOString();
       if(Number.isFinite(weight)&&weight>=30&&weight<=300){const week=weekKey(now);state.bodyWeights=(state.bodyWeights||[]).filter(row=>row.week!==week&&row.dateKey!==date);state.bodyWeights.unshift({week,dateKey:date,createdAt,date,kg:weight});}
       if([waist,systolic,diastolic].some(Number.isFinite)){state.bodyMeasurements=(state.bodyMeasurements||[]).filter(row=>(row.dateKey||String(row.date||"").slice(0,10))!==date);state.bodyMeasurements.unshift({dateKey:date,createdAt,date,waist_cm:Number.isFinite(waist)?waist:null,systolic:Number.isFinite(systolic)?systolic:null,diastolic:Number.isFinite(diastolic)?diastolic:null});state.bodyMeasurements=state.bodyMeasurements.slice(0,400);}
-      coverage.invalidateCache?.(state);window.REP_HEALTH_ENGINE?.invalidateCache?.(state);persist();renderInsights();
+      coverage.invalidateCache?.(state);window.REP_HEALTH_ENGINE?.invalidateCache?.(state);persist();if(onMeasurementSaved)onMeasurementSaved();else renderInsights();
     });
     document.querySelector("[data-health-report]")?.addEventListener("click",()=>{const payload={generatedAt:new Date().toISOString(),coverage:coverage.coverage(state,today()),baseline:coverage.longTerm(state,today()),recentCheckins:(state.recoveryCheckins||[]).slice(0,28),measurements:(state.bodyMeasurements||[]).slice(0,90),disclaimer:"General wellness trends; not a diagnosis."},blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`rep-health-report-${today()}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);});
   }
@@ -161,18 +161,13 @@
     document.documentElement.dataset.healthWorkflow=active;
   }
 
-  function needsWorkoutPreflight(){
-    const guard=coverage.workoutGuard(state,today()),manual=state.workoutChecks?.[today()]||{};
-    return !(guard.ready&&manual.watch&&manual.workout);
-  }
   function openWorkoutPreflight(proceed){
     document.querySelector(".workout-preflight-panel")?.remove();
     const panel=document.createElement("div");panel.className="exit-confirm workout-preflight-panel";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label","Workout preflight");panel.innerHTML=REP_SAFE_DOM.sanitize(`<button class="dialog-close" data-close-preflight aria-label="${"Close"}">×</button>${workoutCard()}`);document.body.append(panel);panel.querySelector("[data-close-preflight]").onclick=()=>panel.remove();bind({onWorkoutReady:proceed});panel.querySelector("input,button")?.focus();
   }
 
-  const baseVitals=renderVitals,baseInsights=renderInsights,baseHome=renderHome;
+  const baseVitals=renderVitals;
   renderVitals=function(){baseVitals();document.querySelector(".health-subnav")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(`${domainOverviewGrid()}${coverageCard()}${morningCard()}${chargingCard()}`));organizeHealthWorkflow();bind();};
-  renderInsights=function(){baseInsights();(document.querySelector(".trends-grid")||document.querySelector(".health-subnav"))?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(trendCard()));bind();};
-  renderHome=function(){baseHome();document.querySelectorAll("[data-start-today],[data-start-cardio-fallback]").forEach(start=>{const proceed=start.onclick;start.onclick=null;start.addEventListener("click",()=>{if(!REP_TRAINING_SESSION.isResumableWorkout(state,sessions,start.dataset.sessionId)&&needsWorkoutPreflight())openWorkoutPreflight(()=>proceed?.());else proceed?.();});});};
-  if(state.activeTab==="vitals")renderVitals();else if(state.activeTab==="insights")renderInsights();
+  window.REP_HEALTH_UI=Object.freeze({checkinMarkup:morningCard,trendMarkup:trendCard,bind,openWorkoutPreflight});
+  if(state.activeTab==="vitals")renderVitals();
 })();

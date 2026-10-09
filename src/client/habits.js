@@ -41,7 +41,7 @@
   function dayNameFor(date){const d=typeof date==="string"?new Date(`${date.slice(0,10)}T12:00:00`):new Date(date);return Number.isNaN(d.getTime())?"":DAY_NAMES[d.getDay()]||"";}
   function appliesOn(habit,date){return !habit.days||habit.days.includes(dayNameFor(date));}
   function habitsForDate(date){return orderedHabits().filter(habit=>appliesOn(habit,date));}
-  function saveOrder(order){state.habitOrder=order.map(habit=>habit.id);persist();renderOverview();}
+  function saveOrder(order){state.habitOrder=order.map(habit=>habit.id);persist();renderHabitsPage();}
   function moveHabit(id,delta){
     const order=orderedHabits(),index=order.findIndex(habit=>habit.id===id),target=index+delta;
     if(index<0||target<0||target>=order.length)return;
@@ -123,7 +123,7 @@
       }
     }
     const justChecked=Boolean(value.checked[id]);
-    persist();scheduleSync(date,id);renderOverview();
+    persist();scheduleSync(date,id);renderHabitsPage();
     if(justChecked){
       const card=document.querySelector(`[data-habit-card="${id}"]`);
       if(card){card.classList.add("is-just-checked");setTimeout(()=>card.classList.remove("is-just-checked"),550);}
@@ -150,9 +150,9 @@
       </div>
       <div class="habit-grid ${reorderMode?"is-reordering":""}">${visibleHabits.map((habit,index)=>{const isDone=checked(date,habit.id),days=streak(habit.id),name=label(habit),description=detail(habit),action=isDone?("completed"):("not completed");return `<article class="habit-card ${isDone?"is-done":""}" data-habit-card="${habit.id}" draggable="${reorderMode}"><button type="button" class="habit-toggle" data-habit-id="${habit.id}" aria-label="${esc([name,description,action].filter(Boolean).join(" · "))}" aria-pressed="${isDone}"><span class="habit-icon" aria-hidden="true">${ICONS[habit.icon]}</span><span class="habit-copy"><strong>${esc(name)}</strong>${description?`<small>${esc(description)}</small>`:""}<em>${days?`${days} ${"day streak"}`:("Start today")}</em></span><span class="habit-check" aria-hidden="true">${isDone?"✓":""}</span></button>${reorderMode?`<div class="habit-order-controls"><span aria-hidden="true">↕</span><button type="button" data-habit-move="up" data-habit-order-id="${habit.id}" ${index===0?"disabled":""} aria-label="${`Move ${name} up`}">↑</button><button type="button" data-habit-move="down" data-habit-order-id="${habit.id}" ${index===visibleHabits.length-1?"disabled":""} aria-label="${`Move ${name} down`}">↓</button></div>`:""}</article>`;}).join("")}</div>
       <details class="habit-history"><summary><span>${"Last 7 days"}</span><strong>${"View progress"}</strong></summary><div class="habit-week">${days.map(day=>{const n=completed(day).length,dayTotal=habitsForDate(day).length,p=dayTotal?Math.round(n/dayTotal*100):0,today=day===date;return `<div class="habit-day ${today?"is-today":""}"><span>${new Date(`${day}T12:00:00`).toLocaleDateString("en-US",{weekday:"short"})}</span><i><b style="height:${p}%"></b></i><strong>${n}/${dayTotal}</strong></div>`;}).join("")}</div></details>`);
-    section.querySelectorAll("[data-filter-habits]").forEach(btn=>{btn.onclick=()=>{state.habitFilter=btn.dataset.filterHabits;persist();renderOverview();};});
+    section.querySelectorAll("[data-filter-habits]").forEach(btn=>{btn.onclick=()=>{state.habitFilter=btn.dataset.filterHabits;persist();renderHabitsPage();};});
     section.querySelectorAll("[data-habit-id]").forEach(button=>button.addEventListener("click",()=>toggle(button.dataset.habitId)));
-    section.querySelector("[data-habit-reorder]")?.addEventListener("click",()=>{reorderMode=!reorderMode;renderOverview();});
+    section.querySelector("[data-habit-reorder]")?.addEventListener("click",()=>{reorderMode=!reorderMode;renderHabitsPage();});
     section.querySelectorAll("[data-habit-move]").forEach(button=>button.addEventListener("click",()=>moveHabit(button.dataset.habitOrderId,button.dataset.habitMove==="up"?-1:1)));
     section.querySelectorAll("[data-habit-card]").forEach(card=>{
       card.addEventListener("dragstart",event=>{if(!reorderMode){event.preventDefault();return;}draggedId=card.dataset.habitCard;card.classList.add("is-dragging");event.dataTransfer.effectAllowed="move";});
@@ -162,10 +162,9 @@
     });
     return section;
   }
-  function mount(){const existing=document.querySelector(".habit-tracker");existing?.remove();const section=render(),anchor=document.querySelector(".today-fuel-card")||document.querySelector(".home-today-card");if(anchor)anchor.insertAdjacentElement("afterend",section);else app.append(section);}
+  function renderHabitsPage(){if(state.view==='care'&&window.REP_TRAINING_UI)window.REP_TRAINING_UI.routines();else renderOverview();}
+  function mount(){const existing=document.querySelector(".habit-tracker");existing?.remove();const section=render(),anchor=document.querySelector(".today-fuel-card")||document.querySelector(".home-today-card");const slot=document.querySelector("[data-daily-routines]");if(slot)slot.append(section);else if(anchor)anchor.insertAdjacentElement("afterend",section);else app.append(section);}
 
-  window.REP_HABITS={definitions:HABITS,orderedHabits,bucket,completed,streak,payloadForDate,payloadForHabit,hasEntries,notionUrl:NOTION_HABITS_URL};
-  const baseOverview=renderOverview;
-  renderOverview=function(){baseOverview();mount();};
-  if(state.view==="home-overview")renderOverview();
+  window.REP_HABITS={definitions:HABITS,orderedHabits,bucket,completed,streak,payloadForDate,payloadForHabit,hasEntries,notionUrl:NOTION_HABITS_URL,mount,render};
+  if(state.view==="home-overview")mount();
 })();

@@ -61,8 +61,8 @@ with tempfile.TemporaryDirectory() as temporary:
     if not variants:
         raise ValueError('source is below the minimum 720p delivery size')
     poster_path = Path(temporary) / 'poster.png'
-    subprocess.run([args.ffmpeg,'-v','error','-ss',str(args.start+args.poster_offset),
-                    '-i',str(args.input),'-frames:v','1','-y',str(poster_path)], check=True)
+    subprocess.run([args.ffmpeg,'-v','error','-ss',str(args.poster_offset),
+                    '-i',str(path),'-frames:v','1','-y',str(poster_path)], check=True)
     poster = Image.open(poster_path).convert('RGB')
     output = io.BytesIO(); poster.save(output,'WEBP',quality=92,method=6)
     result = {'poster':store(output.getvalue(),'poster','image',poster.width,poster.height),

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "reviewedAt": "2026-10-07",
+  "reviewedAt": "2026-10-08",
   "budget": "free-only",
   "entries": [
     {
@@ -18,7 +18,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -58,7 +64,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -112,7 +124,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; unaltered positions, native image resolution.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -166,7 +184,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -215,7 +239,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -250,7 +280,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -290,7 +326,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -339,7 +381,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -374,7 +422,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -409,7 +463,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -449,7 +509,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -503,7 +569,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -557,7 +629,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -611,7 +689,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -665,7 +749,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -714,7 +804,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -749,8 +845,8 @@
         ],
         "retrievedAt": "2026-10-07",
         "processing": {
-          "trimStartSeconds": 6.8,
-          "trimDurationSeconds": 2.7,
+          "trimStartSeconds": 8.4,
+          "trimDurationSeconds": 1.125,
           "nativeWidth": 1080,
           "nativeHeight": 1920,
           "nativeFps": 24,
@@ -761,14 +857,20 @@
           "upscaled": false,
           "interpolated": false,
           "colourCorrection": "none",
-          "posterFrom": "Prepared 1080p clip; PNG extraction, WebP quality 92"
+          "posterFrom": "Source at 8.95 seconds; PNG extraction to WebP quality 92"
         }
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Reviewed at start, middle and finish: real male demonstrator, full relevant movement and stable camera. Matching poster extracted; original frame rate retained. Replay rather than an artificial seamless loop.",
+        "date": "2026-10-08",
+        "result": "Short excerpt of relaxed jogging in place with the full male demonstrator visible. Complete alternating foot contacts are retained; high-knee/kick and cropped-body frames excluded. Replay after the retained end frame, without an artificial loop. This is a jogging reference, not football-specific technique.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-motion",
+          "result": "Full body remains in fitted portrait footage; Expand improves visibility at the compact height. Re-reviewed source frames from 8.4 to 9.525 seconds, excluding the kick."
+        }
       },
       "views": [
         {
@@ -776,35 +878,35 @@
           "label": "Three-quarter",
           "angle": "Three-quarter",
           "poster": {
-            "src": "assets/exercises/football-jog-poster-d4385805cf611029.webp",
-            "version": "d4385805cf611029",
-            "bytes": 231694,
+            "src": "assets/exercises/football-jog-poster-ff628587ec29f78d.webp",
+            "version": "ff628587ec29f78d",
+            "bytes": 241738,
             "type": "image",
             "width": 1080,
             "height": 1920
           },
           "videos": [
             {
-              "src": "assets/exercises/football-warm-up-jog-720-5924031d3c4ac283.mp4",
-              "version": "5924031d3c4ac283",
-              "bytes": 1073373,
+              "src": "assets/exercises/football-jog-720-441c23d722476a8f.mp4",
+              "version": "441c23d722476a8f",
+              "bytes": 484260,
               "type": "video",
               "width": 720,
               "height": 1280,
               "quality": 720,
               "fps": 24.0,
-              "duration": 2.7
+              "duration": 1.125
             },
             {
-              "src": "assets/exercises/football-warm-up-jog-1080-28ddc7b791d94d4a.mp4",
-              "version": "28ddc7b791d94d4a",
-              "bytes": 2057844,
+              "src": "assets/exercises/football-jog-1080-c598a7c291c6fa48.mp4",
+              "version": "c598a7c291c6fa48",
+              "bytes": 915255,
               "type": "video",
               "width": 1080,
               "height": 1920,
               "quality": 1080,
               "fps": 24.0,
-              "duration": 2.7
+              "duration": 1.125
             }
           ],
           "loop": false
@@ -827,7 +929,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -862,7 +970,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -897,7 +1011,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -932,7 +1052,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -967,8 +1093,8 @@
         ],
         "retrievedAt": "2026-10-07",
         "processing": {
-          "trimStartSeconds": 6.8,
-          "trimDurationSeconds": 2.7,
+          "trimStartSeconds": 8.4,
+          "trimDurationSeconds": 1.125,
           "nativeWidth": 1080,
           "nativeHeight": 1920,
           "nativeFps": 24,
@@ -979,14 +1105,20 @@
           "upscaled": false,
           "interpolated": false,
           "colourCorrection": "none",
-          "posterFrom": "Prepared 1080p clip; PNG extraction, WebP quality 92"
+          "posterFrom": "Source at 8.95 seconds; PNG extraction to WebP quality 92"
         }
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Reviewed at start, middle and finish: real male demonstrator, full relevant movement and stable camera. Matching poster extracted; original frame rate retained. Replay rather than an artificial seamless loop.",
+        "date": "2026-10-08",
+        "result": "Short excerpt of relaxed jogging in place with the full male demonstrator visible. Complete alternating foot contacts are retained; high-knee/kick and cropped-body frames excluded. Replay after the retained end frame, without an artificial loop. This is a jogging reference, not football-specific technique.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-motion",
+          "result": "Full body remains in fitted portrait footage; Expand improves visibility at the compact height. Re-reviewed source frames from 8.4 to 9.525 seconds, excluding the kick."
+        }
       },
       "views": [
         {
@@ -994,35 +1126,35 @@
           "label": "Three-quarter",
           "angle": "Three-quarter",
           "poster": {
-            "src": "assets/exercises/football-jog-poster-d4385805cf611029.webp",
-            "version": "d4385805cf611029",
-            "bytes": 231694,
+            "src": "assets/exercises/football-jog-poster-ff628587ec29f78d.webp",
+            "version": "ff628587ec29f78d",
+            "bytes": 241738,
             "type": "image",
             "width": 1080,
             "height": 1920
           },
           "videos": [
             {
-              "src": "assets/exercises/football-warm-up-jog-720-5924031d3c4ac283.mp4",
-              "version": "5924031d3c4ac283",
-              "bytes": 1073373,
+              "src": "assets/exercises/football-jog-720-441c23d722476a8f.mp4",
+              "version": "441c23d722476a8f",
+              "bytes": 484260,
               "type": "video",
               "width": 720,
               "height": 1280,
               "quality": 720,
               "fps": 24.0,
-              "duration": 2.7
+              "duration": 1.125
             },
             {
-              "src": "assets/exercises/football-warm-up-jog-1080-28ddc7b791d94d4a.mp4",
-              "version": "28ddc7b791d94d4a",
-              "bytes": 2057844,
+              "src": "assets/exercises/football-jog-1080-c598a7c291c6fa48.mp4",
+              "version": "c598a7c291c6fa48",
+              "bytes": 915255,
               "type": "video",
               "width": 1080,
               "height": 1920,
               "quality": 1080,
               "fps": 24.0,
-              "duration": 2.7
+              "duration": 1.125
             }
           ],
           "loop": false
@@ -1045,7 +1177,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1080,7 +1218,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1115,7 +1259,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1150,7 +1300,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1185,7 +1341,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1220,7 +1382,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1255,7 +1423,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1290,7 +1464,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1325,7 +1505,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1360,7 +1546,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1395,7 +1587,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1430,7 +1628,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1465,7 +1669,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1500,7 +1710,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1535,7 +1751,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1570,7 +1792,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1605,7 +1833,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1640,7 +1874,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -1680,7 +1920,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -1734,7 +1980,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -1788,7 +2040,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -1842,7 +2100,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -1896,7 +2160,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -1950,7 +2220,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2004,7 +2280,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2050,28 +2332,19 @@
         "kind": "generated-reference"
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
-        "malePresentation": true,
-        "professionalSignoff": false
-      },
-      "views": [
-        {
-          "id": "reference",
-          "label": "Reference",
-          "angle": "Reference",
-          "poster": {
-            "src": "assets/exercises/hip-thrust-machine-reference-99a9e391478e28ea.webp",
-            "version": "99a9e391478e28ea",
-            "bytes": 145784,
-            "type": "image",
-            "width": 864,
-            "height": 1821
-          },
-          "videos": []
+        "date": "2026-10-08",
+        "result": "Illustration shows a seated leg-machine setup rather than a hip-thrust machine and belt/pad. Removed from display; technique cues remain until a correct licensed asset is available.",
+        "malePresentation": null,
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "Illustration shows a seated leg-machine setup rather than a hip-thrust machine and belt/pad. Removed from display; technique cues remain until a correct licensed asset is available."
         }
-      ],
-      "cueOnly": false
+      },
+      "views": [],
+      "cueOnly": true
     },
     {
       "exercise": "Lying Leg Curl",
@@ -2093,7 +2366,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2147,7 +2426,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2201,7 +2486,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2255,7 +2546,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2309,7 +2606,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2363,7 +2666,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2417,7 +2726,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2460,7 +2775,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2470,21 +2791,21 @@
       "status": "approved-video",
       "equipment": "Floor / optional mat",
       "source": {
-        "url": "https://www.pexels.com/video/a-man-doing-push-ups-5802475/",
-        "author": "Rene S Manzanero",
+        "url": "https://www.pexels.com/video/man-doing-push-ups-4804794/",
+        "author": "Ketut Subiyanto",
         "license": "Pexels License",
         "licenseUrl": "https://www.pexels.com/license/",
         "kind": "real-footage",
         "assetUrls": [
-          "https://videos.pexels.com/video-files/5802475/5802475-hd_1920_1080_30fps.mp4"
+          "https://videos.pexels.com/video-files/4804794/4804794-uhd_3840_2160_25fps.mp4"
         ],
-        "retrievedAt": "2026-10-07",
+        "retrievedAt": "2026-10-08",
         "processing": {
-          "trimStartSeconds": 2.25,
-          "trimDurationSeconds": 8.5,
-          "nativeWidth": 1920,
-          "nativeHeight": 1080,
-          "nativeFps": 30,
+          "trimStartSeconds": 0.25,
+          "trimDurationSeconds": 8,
+          "nativeWidth": 3840,
+          "nativeHeight": 2160,
+          "nativeFps": 25,
           "codec": "H.264",
           "pixelFormat": "yuv420p",
           "crf": 20,
@@ -2492,50 +2813,56 @@
           "upscaled": false,
           "interpolated": false,
           "colourCorrection": "none",
-          "posterFrom": "Prepared 1080p clip; PNG extraction, WebP quality 92"
+          "posterFrom": "Prepared 1080p clip at 0.2 seconds; PNG extraction to WebP quality 92"
         }
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Reviewed at start, middle and finish: real male demonstrator, full relevant movement and stable camera. Matching poster extracted; original frame rate retained. Replay rather than an artificial seamless loop.",
+        "date": "2026-10-08",
+        "result": "Male standard push-up; whole relevant body, hands and feet visible through complete controlled repetitions. Replaces the earlier distant framing with a closer, brighter outdoor view. Camera is three-quarter, never labelled Side or Front.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-motion",
+          "result": "Brighter whole-body male push-up view; hands and feet remain visible at 360px. Full controlled repetitions reviewed at native 25 fps."
+        }
       },
       "views": [
         {
           "id": "demonstration",
-          "label": "Side",
-          "angle": "Side",
+          "label": "Three-quarter",
+          "angle": "Three-quarter",
           "poster": {
-            "src": "assets/exercises/push-ups-poster-a7f3f389846274fb.webp",
-            "version": "a7f3f389846274fb",
-            "bytes": 175200,
+            "src": "assets/exercises/push-ups-poster-bd13cdba98c02ef7.webp",
+            "version": "bd13cdba98c02ef7",
+            "bytes": 351066,
             "type": "image",
             "width": 1920,
             "height": 1080
           },
           "videos": [
             {
-              "src": "assets/exercises/push-ups-720-efdbde089b95e7b1.mp4",
-              "version": "efdbde089b95e7b1",
-              "bytes": 1165760,
+              "src": "assets/exercises/push-ups-720-c20f875f7558043b.mp4",
+              "version": "c20f875f7558043b",
+              "bytes": 2833219,
               "type": "video",
               "width": 1280,
               "height": 720,
               "quality": 720,
-              "fps": 30.0,
-              "duration": 8.5
+              "fps": 25.0,
+              "duration": 8.0
             },
             {
-              "src": "assets/exercises/push-ups-1080-33f11a1612699a0d.mp4",
-              "version": "33f11a1612699a0d",
-              "bytes": 2647875,
+              "src": "assets/exercises/push-ups-1080-8231d0613764a957.mp4",
+              "version": "8231d0613764a957",
+              "bytes": 5987196,
               "type": "video",
               "width": 1920,
               "height": 1080,
               "quality": 1080,
-              "fps": 30.0,
-              "duration": 8.5
+              "fps": 25.0,
+              "duration": 8.0
             }
           ],
           "loop": false
@@ -2563,7 +2890,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2617,7 +2950,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2671,7 +3010,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2714,7 +3059,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2728,7 +3079,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2742,7 +3099,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2759,28 +3122,19 @@
         "kind": "generated-reference"
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
-        "malePresentation": true,
-        "professionalSignoff": false
-      },
-      "views": [
-        {
-          "id": "reference",
-          "label": "Reference",
-          "angle": "Reference",
-          "poster": {
-            "src": "assets/exercises/resistance-band-pulldown-reference-ed39c08f877fcb34.webp",
-            "version": "ed39c08f877fcb34",
-            "bytes": 129156,
-            "type": "image",
-            "width": 864,
-            "height": 1821
-          },
-          "videos": []
+        "date": "2026-10-08",
+        "result": "Illustration depicts a cable machine rather than the specified resistance band and overhead anchor. Removed from display; technique cues remain until a correct licensed asset is available.",
+        "malePresentation": null,
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "Illustration depicts a cable machine rather than the specified resistance band and overhead anchor. Removed from display; technique cues remain until a correct licensed asset is available."
         }
-      ],
-      "cueOnly": false
+      },
+      "views": [],
+      "cueOnly": true
     },
     {
       "exercise": "Dumbbell Pullover",
@@ -2802,7 +3156,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; unaltered positions, native image resolution.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2845,7 +3205,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2870,7 +3236,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2924,7 +3296,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; unaltered positions, native image resolution.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -2967,7 +3345,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -2981,7 +3365,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -3006,7 +3396,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3060,7 +3456,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3114,7 +3516,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3163,7 +3571,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3203,7 +3617,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3257,7 +3677,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; unaltered positions, native image resolution.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3303,28 +3729,19 @@
         "kind": "generated-reference"
       },
       "review": {
-        "date": "2026-10-07",
-        "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
-        "malePresentation": true,
-        "professionalSignoff": false
-      },
-      "views": [
-        {
-          "id": "reference",
-          "label": "Reference",
-          "angle": "Reference",
-          "poster": {
-            "src": "assets/exercises/cable-pull-through-reference-f78276e4062d2378.webp",
-            "version": "f78276e4062d2378",
-            "bytes": 157966,
-            "type": "image",
-            "width": 864,
-            "height": 1821
-          },
-          "videos": []
+        "date": "2026-10-08",
+        "result": "Illustration faces the pulley and does not show a rope travelling between the legs during a hip hinge. Removed from display; technique cues remain until a correct licensed asset is available.",
+        "malePresentation": null,
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "Illustration faces the pulley and does not show a rope travelling between the legs during a hip hinge. Removed from display; technique cues remain until a correct licensed asset is available."
         }
-      ],
-      "cueOnly": false
+      },
+      "views": [],
+      "cueOnly": true
     },
     {
       "exercise": "Single-Leg Glute Bridge",
@@ -3346,7 +3763,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; unaltered positions, native image resolution.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3395,7 +3818,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3430,7 +3859,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3465,7 +3900,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3505,7 +3946,13 @@
         "date": "2026-10-07",
         "result": "Visually reviewed: male demonstrator and exact exercise/equipment. Native source resolution retained; positions are static, never morphed.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3554,7 +4001,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3594,7 +4047,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3643,7 +4102,13 @@
         "date": "2026-10-07",
         "result": "Generated straight-arm male dead-hang reference corrected and visually reviewed during the 7 October audit. Real male footage/photo replacement still required.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3683,7 +4148,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3737,7 +4208,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3780,7 +4257,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -3794,7 +4277,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -3808,7 +4297,13 @@
         "date": "2026-10-07",
         "result": "No exact male photograph or footage approved. Show exercise-specific cues; replacement asset still required.",
         "malePresentation": null,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "cue-fallback",
+          "result": "No suitable exact-exercise visual; show exercise-specific technique cues."
+        }
       },
       "views": [],
       "cueOnly": true
@@ -3828,7 +4323,13 @@
         "date": "2026-10-07",
         "result": "Male illustrated reference retained from the existing project and visually reviewed. Real male photograph / footage and original provenance still required; not approved as real-trainer media.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "interim-reference",
+          "result": "Not approved real-trainer coverage. Keep the explicit illustration label and cues."
+        }
       },
       "views": [
         {
@@ -3868,7 +4369,13 @@
         "date": "2026-10-07",
         "result": "Male demonstrator and matching exercise/equipment visually reviewed; native image resolution retained, photographed positions only. No generated movement.",
         "malePresentation": true,
-        "professionalSignoff": false
+        "professionalSignoff": false,
+        "phoneReview": {
+          "date": "2026-10-08",
+          "viewport": "360 × 780; fitted 180–240px media stage",
+          "status": "reviewed-photo",
+          "result": "Fitted at phone size; retain Expand for grip, joint and foot details. No trainer or biomechanics certification claimed."
+        }
       },
       "views": [
         {
@@ -3939,6 +4446,32 @@
     {
       "url": "https://github.com/yuhonas/free-exercise-db/tree/main/exercises/Inverted_Row",
       "reason": "Feet cropped from reference photos; cannot review full body line and heel support."
+    },
+    {
+      "url": "https://www.pexels.com/video/man-doing-push-ups-6389834/",
+      "reason": "Close-up crops head, hips and feet; too dark to inspect the full body line."
+    },
+    {
+      "url": "https://www.pexels.com/video/a-man-doing-push-ups-5802475/",
+      "reason": "Earlier approved full-body clip is too distant for the compact demonstration; replaced with closer, brighter footage."
+    },
+    {
+      "exercise": "Hip Thrust Machine",
+      "url": "assets/cinematic/hip-thrust-machine.webp",
+      "reason": "Illustration shows a seated leg-machine setup rather than a hip-thrust machine and belt/pad.",
+      "reviewedAt": "2026-10-08"
+    },
+    {
+      "exercise": "Resistance Band Pulldown",
+      "url": "assets/cinematic/resistance-band-pulldown.webp",
+      "reason": "Illustration depicts a cable machine rather than the specified resistance band and overhead anchor.",
+      "reviewedAt": "2026-10-08"
+    },
+    {
+      "exercise": "Cable Pull-Through",
+      "url": "assets/cinematic/cable-pull-through.webp",
+      "reason": "Illustration faces the pulley and does not show a rope travelling between the legs during a hip hinge.",
+      "reviewedAt": "2026-10-08"
     }
   ]
 }

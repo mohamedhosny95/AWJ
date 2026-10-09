@@ -89,11 +89,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright's Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install mobile browser test engines
+        run: npx playwright install --with-deps chromium webkit
 
-      - name: Run end-to-end smoke test
+      - name: Run Chrome mobile end-to-end test
         run: npm run test:e2e
+        env:
+          REP_E2E_REPORT: work/certification/chrome-${{ github.sha }}.json
+
+      - name: Run WebKit mobile end-to-end test
+        run: npm run test:e2e
+        env:
+          REP_E2E_BROWSER: webkit
+          REP_E2E_REPORT: work/certification/webkit-${{ github.sha }}.json
 
       - name: Run encrypted backup recovery drill
         run: npm run test:recovery

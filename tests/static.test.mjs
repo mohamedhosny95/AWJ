@@ -9,7 +9,7 @@ const read=path=>readFile(join(root,path),"utf8");
 
 test("the mobile shell exposes five primary tabs",async()=>{
   const html=await read("dist/client/index.html"),tabs=[...html.matchAll(/data-app-tab="([^"]+)"/g)].map(match=>match[1]);
-  assert.deepEqual(tabs,["home","train","food","health","insights"]);
+  assert.deepEqual(tabs,["home","train","food","insights","more"]);
 });
 
 test("primary navigation keeps its active indicator aligned and uses the central URL router",async()=>{
@@ -20,7 +20,7 @@ test("primary navigation keeps its active indicator aligned and uses the central
   assert.match(navigation,/history\[replace\?"replaceState":"pushState"\]/);
   assert.match(navigation,/addEventListener\("popstate"/);
   assert.match(navigation,/routeFromLocation/);
-  for(const path of ["/training/program","/training/history","/nutrition/plan","/health/wellness","/insights"])assert.ok(enhancements.includes(path));
+  for(const path of ["/train","/progress/history","/nutrition/plan","/more/routines","/progress"])assert.ok(enhancements.includes(path));
   assert.match(enhancements,/path:`\/settings\/\$\{section\}`/);
   assert.doesNotMatch(enhancements,/restoringPrimaryTabHistory|rememberPrimaryTab/);
   assert.doesNotMatch(enhancements,/(?:setPrimaryTab|updatePrimaryTabs)=function/);
@@ -282,13 +282,8 @@ test("active workout media stays bounded and exposes decode telemetry",async()=>
   assert.match(telemetry,/mediaLoadMs:1200/);assert.match(telemetry,/mediaDecodeMs:120/);assert.match(telemetry,/recordMedia/);assert.match(telemetry,/maxDecodeMs/);
 });
 
-test("program discovery filters the real workout sessions without replacing their handlers",async()=>{
-  const app=await read("dist/client/app.js"),enhancements=await read("dist/client/enhancements.js"),css=await read("dist/client/styles.css");
-  assert.match(app,/data-program-category/);assert.match(app,/data-session="\$\{id\}"/);assert.match(app,/session-card-media/);
-  for(const filter of ["all","gym","home","sport","cardio"])assert.match(enhancements,new RegExp(`\\[\\"${filter}\\"`));
-  assert.match(enhancements,/data-program-filter="\$\{id\}"/);
-  assert.match(enhancements,/card\.hidden=filter!=="all"/);assert.match(enhancements,/sessionGrid\?\.querySelectorAll\("\[data-session\]"\)/);
-  assert.match(css,/\.program-discovery/);assert.match(css,/\.program-session-card\.has-session-media/);
+test("training discovery searches the canonical catalogue and preserves routine actions",async()=>{
+ const ui=await read("src/client/training-first-ui.js");assert.match(ui,/REP_EXERCISES.list\(\)/);assert.match(ui,/equipmentTags.includes/);assert.match(ui,/muscleTags.includes/);assert.match(ui,/data-routine-favourite/);assert.match(ui,/showSessionPreview/);
 });
 
 test("browser pairing keeps only a non-secret marker and synchronizes tabs",async()=>{
@@ -330,7 +325,7 @@ test("coverage-aware health features and native companion stay wired",async()=>{
   ]);
   assert.match(html,/health-coverage\.js\?v=[a-f0-9]{12}/);assert.match(bootstrap,/health-ui\.js/);
   for(const marker of ["coverage","longTerm","chargingAdvice","workoutGuard"])assert.match(coverage,new RegExp(marker));
-  for(const marker of ["MORNING CHECK","WORKOUT PREFLIGHT","PERSONAL BASELINE","data-health-report","healthWorkflow","workout-preflight-panel"])assert.match(ui,new RegExp(marker));
+  for(const marker of ["Quick recovery check-in","WORKOUT PREFLIGHT","PERSONAL BASELINE","data-health-report","healthWorkflow","workout-preflight-panel"])assert.match(ui,new RegExp(marker));
   assert.match(storage,/bodyMeasurements/);assert.match(storage,/healthMetrics/);
   assert.match(readme,/Background Delivery/);assert.match(swift,/HKObserverQuery/);assert.match(swift,/enableBackgroundDelivery/);assert.match(swift,/KeychainStore/);
 });

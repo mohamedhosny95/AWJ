@@ -6,10 +6,10 @@
     return [
       // Navigation
       { id: "nav-today", title:  "Home · Today", category:  "Navigation", icon: "🏠", action: () => window.setPrimaryTab?.("home") },
-      { id: "nav-training", title:  "Training · Workouts", category:  "Navigation", icon: "🏋️", action: () => window.setPrimaryTab?.("train") },
+      { id: "nav-training", title:  "Train · Workouts", category:  "Navigation", icon: "🏋️", action: () => window.setPrimaryTab?.("train") },
       { id: "nav-food", title:  "Nutrition · Food Tracker", category:  "Navigation", icon: "🥗", action: () => window.setPrimaryTab?.("food") },
       { id: "nav-vitals", title:  "Vitals · Recovery & Sleep", category:  "Navigation", icon: "❤️", action: () => window.setPrimaryTab?.("health") },
-      { id: "nav-insights", title:  "Insights · Strength & Habits", category:  "Navigation", icon: "📈", action: () => window.setPrimaryTab?.("insights") },
+      { id: "nav-insights", title:  "Progress · Strength & Habits", category:  "Navigation", icon: "📈", action: () => window.setPrimaryTab?.("insights") },
       { id: "nav-settings", title:  "Settings & Security", category:  "Navigation", icon: "⚙️", action: () => window.renderRepSettings?.() },
 
       // Quick Tools

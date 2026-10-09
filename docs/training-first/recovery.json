@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "generatedAt": "2026-10-08T15:24:27.774Z",
+  "build": "803f5166949a",
+  "schema": 5,
+  "checks": [
+    {
+      "label": "Recovery fixture contains a meal",
+      "passed": true
+    },
+    {
+      "label": "Downloaded backup uses authenticated schema 5",
+      "passed": true
+    },
+    {
+      "label": "Fresh profile restores favourites and display preferences",
+      "passed": true
+    },
+    {
+      "label": "Encrypted backup preserves the active-session substitution and performed set",
+      "passed": true
+    },
+    {
+      "label": "Fresh profile restores the habit record",
+      "passed": true
+    },
+    {
+      "label": "Fresh profile restores the meal record",
+      "passed": true
+    },
+    {
+      "label": "Tampered backup is rejected through the real import UI",
+      "passed": true
+    },
+    {
+      "label": "Rejected backup cannot replace local data",
+      "passed": true
+    }
+  ]
+}
