@@ -19,14 +19,20 @@ const arabic={
   'YOUR PREFERENCES':'تفضيلاتك','Make the app feel familiar':'اجعل التطبيق مناسبًا لك','Theme Mode':'المظهر','Emerald & Ivory':'الزمرد والعاج','Night Emerald':'الزمرد الليلي','Sound Pack':'الأصوات','Digital':'رقمي','Clicks':'نقرات','Gong':'جرس','Accent':'اللون الرئيسي','Emerald':'زمردي','Teal':'فيروزي','Copper':'نحاسي','Violet':'بنفسجي','Weight':'الوزن','Run guided setup again':'إعادة الإعداد الموجّه','Install AWJ on this device':'تثبيت أوج على هذا الجهاز',
   'Log set':'سجّل المجموعة','Log Set':'سجّل المجموعة','Rest':'راحة','REST':'راحة','Pause':'إيقاف مؤقت','Skip':'تخطَّ','Finish':'إنهاء','Finish workout':'إنهاء التمرين','Finish session':'إنهاء الجلسة','Next set':'المجموعة التالية','Start now':'ابدأ الآن','Weight (kg)':'الوزن (كجم)','Reps':'التكرارات',
   'Use the planned session':'اتبع الجلسة المخططة','There is not enough reliable data to adjust the plan. Use your warm-up and effort rating as the final check.':'لا توجد بيانات كافية لتعديل الخطة. استعن بالإحماء وتقييم مجهودك قبل المتابعة.',
-  'More recovery observations are needed.':'نحتاج إلى مزيد من بيانات التعافي.','No imported health data':'لا توجد بيانات صحية مستوردة'
+  'More recovery observations are needed.':'نحتاج إلى مزيد من بيانات التعافي.','No imported health data':'لا توجد بيانات صحية مستوردة',
+  'Start today':'ابدأ اليوم','completed':'مكتمل','not completed':'غير مكتمل','All':'الكل','Pending':'المتبقي','Done':'مكتمل',
+  'Check-ins stay available offline and update the Habit Log in Notion directly.':'تظل المتابعة متاحة دون اتصال، ويُحدَّث سجل العادات في نوشن عند المزامنة.',
+  'A new offline version is ready.':'يتوفر إصدار جديد جاهز للعمل دون اتصال.','Update now':'التحديث الآن'
 };
 function translate(value){
   const trimmed=value.trim();if(arabic[trimmed])return value.replace(trimmed,arabic[trimmed]);
   if(/^Saved on device · \d+ waiting to sync$/.test(trimmed))return trimmed.replace(/Saved on device · (\d+) waiting to sync/,'محفوظ على الجهاز · $1 بانتظار المزامنة');
-  if(/^\d+\/\d+ complete$/.test(trimmed))return trimmed+' مكتمل';
+  if(/^\d+\/\d+ complete$/.test(trimmed))return trimmed.replace(' complete',' مكتمل');
+  if(/^(All|Pending|Done) \(\d+\)$/.test(trimmed))return trimmed.replace(/^(All|Pending|Done)/,word=>arabic[word]);
+  if(trimmed.includes(' · '))return trimmed.split(' · ').map(translate).join(' · ');
   return value;
 }
+export const localizeText=value=>document.documentElement.lang==='ar'?translate(value):value;
 export function applyLocale(root=document){
   if(document.documentElement.lang!=='ar')return;
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);

@@ -9,8 +9,12 @@
     const promise=new Promise((resolve,reject)=>{
     const script=document.createElement("script");
     script.src=`${src}?v=${version}`;
-    script.onload=resolve;
-    script.onerror=()=>{pendingScripts.delete(src);script.remove();reject(Error(`Could not load ${src}`));};
+    const cleanup=()=>window.removeEventListener('error',runtimeError);
+    const fail=error=>{cleanup();pendingScripts.delete(src);script.remove();reject(error);};
+    const runtimeError=event=>{if(event.filename===script.src){event.preventDefault();fail(Error(`Could not initialize ${src}: ${event.message}`));}};
+    window.addEventListener('error',runtimeError);
+    script.onload=()=>{cleanup();resolve();};
+    script.onerror=()=>fail(Error(`Could not load ${src}`));
     document.head.appendChild(script);
     });
     pendingScripts.set(src,promise);

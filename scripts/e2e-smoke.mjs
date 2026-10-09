@@ -106,8 +106,8 @@ try {
   assertTrue((await page.locator('[data-today-start]').boundingBox()).y<500,'Start workout is in the first phone viewport');
   await captureScreen('today');
   assertTrue(await page.locator('.readiness-note').count()===1,'Today has one readiness recommendation');
-  assertTrue(!(await page.locator('.habit-tracker').evaluate(x=>x.open)),'Daily routines are collapsed by default');
-  await page.locator('.habits-summary').click();await page.click('[data-habit-id="sleep"]');
+  assertTrue(await page.locator('.habit-tracker').evaluate(x=>x.open),'Daily practices are directly accessible on Today');
+  await page.click('[data-habit-id="sleep"]');
   await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
   assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count()===1,'Habit records survive reload');
   await page.click('[data-today-checkin]');await page.waitForSelector('[data-morning-checkin]');
@@ -125,6 +125,8 @@ try {
   await page.goBack();await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Browser Back restores Wellbeing');
   await page.goForward();await page.waitForSelector('.progress-overview');assertTrue(page.url().endsWith('#/progress'),'Browser Forward restores Progress');
   await page.click('[data-app-tab="wellbeing"]');await page.waitForSelector('.more-menu');
+  await page.click('[data-habit-id="fajr"]');
+  assertTrue(page.url().endsWith('#/wellbeing')&&await page.locator('main h1').textContent()==='Wellbeing','Checking a habit keeps the Wellbeing route and screen together');
   await page.click('[data-more-route="health-vitals"]');await page.waitForSelector('.recovery-sleep');
   assertTrue(await page.locator('.health-subnav,.health-workflow-nav').count()===0,'Recovery does not stack navigation layers');
   await page.locator('.recovery-sleep>summary').click();await page.fill('[data-sleep-bedtime]','22:15');await page.fill('[data-sleep-wake]','06:15');await page.click('[data-sleep-form] button[type="submit"]');

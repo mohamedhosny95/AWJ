@@ -2,15 +2,19 @@
   // Chromium can resize its layout viewport for the keyboard; WebKit uses VisualViewport.
   if('virtualKeyboard' in navigator){const viewport=document.querySelector('meta[name="viewport"]');if(viewport&&!viewport.content.includes('interactive-widget'))viewport.content+=', interactive-widget=resizes-content';}
 
-  const version=window.REP_BUILD_VERSION||"0e5f7f27cfb2";
+  const version=window.REP_BUILD_VERSION||"6b0302a09873";
   const pendingScripts=new Map();
   const load=src=>{
     if(pendingScripts.has(src))return pendingScripts.get(src);
     const promise=new Promise((resolve,reject)=>{
     const script=document.createElement("script");
     script.src=`${src}?v=${version}`;
-    script.onload=resolve;
-    script.onerror=()=>{pendingScripts.delete(src);script.remove();reject(Error(`Could not load ${src}`));};
+    const cleanup=()=>window.removeEventListener('error',runtimeError);
+    const fail=error=>{cleanup();pendingScripts.delete(src);script.remove();reject(error);};
+    const runtimeError=event=>{if(event.filename===script.src){event.preventDefault();fail(Error(`Could not initialize ${src}: ${event.message}`));}};
+    window.addEventListener('error',runtimeError);
+    script.onload=()=>{cleanup();resolve();};
+    script.onerror=()=>fail(Error(`Could not load ${src}`));
     document.head.appendChild(script);
     });
     pendingScripts.set(src,promise);

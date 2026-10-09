@@ -28,7 +28,7 @@ test("Report card generator renders valid HTML with comprehensive metrics in Eng
   const html = reportCard.generateReportHtml(state);
 
   assert.ok(html.includes("<!doctype html>"), "Contains DOCTYPE");
-  assert.ok(html.includes("Health OS · Weekly Report"), "Contains English title");
+  assert.ok(html.includes("AWJ · Weekly Report"), "Contains AWJ report title");
   assert.ok(html.includes("75%"), "Contains workout adherence");
   assert.ok(html.includes("Leg Press"), "Contains exercise name");
   assert.ok(html.includes("Repeat the current plan"), "Contains next action");

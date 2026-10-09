@@ -440,15 +440,27 @@
     "Use the planned session": "\u0627\u062A\u0628\u0639 \u0627\u0644\u062C\u0644\u0633\u0629 \u0627\u0644\u0645\u062E\u0637\u0637\u0629",
     "There is not enough reliable data to adjust the plan. Use your warm-up and effort rating as the final check.": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062E\u0637\u0629. \u0627\u0633\u062A\u0639\u0646 \u0628\u0627\u0644\u0625\u062D\u0645\u0627\u0621 \u0648\u062A\u0642\u064A\u064A\u0645 \u0645\u062C\u0647\u0648\u062F\u0643 \u0642\u0628\u0644 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629.",
     "More recovery observations are needed.": "\u0646\u062D\u062A\u0627\u062C \u0625\u0644\u0649 \u0645\u0632\u064A\u062F \u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062A\u0639\u0627\u0641\u064A.",
-    "No imported health data": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0635\u062D\u064A\u0629 \u0645\u0633\u062A\u0648\u0631\u062F\u0629"
+    "No imported health data": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0635\u062D\u064A\u0629 \u0645\u0633\u062A\u0648\u0631\u062F\u0629",
+    "Start today": "\u0627\u0628\u062F\u0623 \u0627\u0644\u064A\u0648\u0645",
+    "completed": "\u0645\u0643\u062A\u0645\u0644",
+    "not completed": "\u063A\u064A\u0631 \u0645\u0643\u062A\u0645\u0644",
+    "All": "\u0627\u0644\u0643\u0644",
+    "Pending": "\u0627\u0644\u0645\u062A\u0628\u0642\u064A",
+    "Done": "\u0645\u0643\u062A\u0645\u0644",
+    "Check-ins stay available offline and update the Habit Log in Notion directly.": "\u062A\u0638\u0644 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0645\u062A\u0627\u062D\u0629 \u062F\u0648\u0646 \u0627\u062A\u0635\u0627\u0644\u060C \u0648\u064A\u064F\u062D\u062F\u0651\u064E\u062B \u0633\u062C\u0644 \u0627\u0644\u0639\u0627\u062F\u0627\u062A \u0641\u064A \u0646\u0648\u0634\u0646 \u0639\u0646\u062F \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629.",
+    "A new offline version is ready.": "\u064A\u062A\u0648\u0641\u0631 \u0625\u0635\u062F\u0627\u0631 \u062C\u062F\u064A\u062F \u062C\u0627\u0647\u0632 \u0644\u0644\u0639\u0645\u0644 \u062F\u0648\u0646 \u0627\u062A\u0635\u0627\u0644.",
+    "Update now": "\u0627\u0644\u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0622\u0646"
   };
   function translate(value) {
     const trimmed = value.trim();
     if (arabic[trimmed]) return value.replace(trimmed, arabic[trimmed]);
     if (/^Saved on device · \d+ waiting to sync$/.test(trimmed)) return trimmed.replace(/Saved on device · (\d+) waiting to sync/, "\u0645\u062D\u0641\u0648\u0638 \u0639\u0644\u0649 \u0627\u0644\u062C\u0647\u0627\u0632 \xB7 $1 \u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629");
-    if (/^\d+\/\d+ complete$/.test(trimmed)) return trimmed + " \u0645\u0643\u062A\u0645\u0644";
+    if (/^\d+\/\d+ complete$/.test(trimmed)) return trimmed.replace(" complete", " \u0645\u0643\u062A\u0645\u0644");
+    if (/^(All|Pending|Done) \(\d+\)$/.test(trimmed)) return trimmed.replace(/^(All|Pending|Done)/, (word) => arabic[word]);
+    if (trimmed.includes(" \xB7 ")) return trimmed.split(" \xB7 ").map(translate).join(" \xB7 ");
     return value;
   }
+  var localizeText = (value) => document.documentElement.lang === "ar" ? translate(value) : value;
   function applyLocale(root = document) {
     if (document.documentElement.lang !== "ar") return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -605,7 +617,7 @@
     }
     const ui = { enter, heading, readinessMarkup, saveStatus, bindSaveStatus, route, checkin, core, preferences, sheet, date, tr, readiness };
     const { today } = createTodayScreen(ui), { train } = createTrainingScreen(ui), { nutrition } = createNutritionScreen(ui), { progress } = createProgressScreen(ui), { wellbeing, recovery, routines } = createWellbeingScreens(ui);
-    window.AWJ_LOCALE = Object.freeze({ apply: applyLocale });
+    window.AWJ_LOCALE = Object.freeze({ apply: applyLocale, text: localizeText });
     const lifecycle = (mount) => ({ mount() {
       mount();
       applyLocale();
@@ -617,7 +629,7 @@
     } });
     const screenRegistry = createScreenRegistry({ today: lifecycle(today), train: lifecycle(train), nutrition: lifecycle(nutrition), progress: lifecycle(progress), wellbeing: lifecycle(wellbeing), recovery: lifecycle(recovery), routines: lifecycle(routines), settings: createSettingsScreen() });
     const show = (id) => () => screenRegistry.show(id);
-    window.REP_TRAINING_UI = Object.freeze({ today: show("today"), train: show("train"), nutrition: show("nutrition"), progress: show("progress"), wellbeing: show("wellbeing"), more: show("wellbeing"), recovery: show("recovery"), routines: show("routines"), checkin, sheet, guardStart });
+    window.REP_TRAINING_UI = Object.freeze({ today: show("today"), train: show("train"), nutrition: show("nutrition"), progress: show("progress"), wellbeing: show("wellbeing"), more: show("wellbeing"), recovery: show("recovery"), routines: show("routines"), refresh: () => screenRegistry.update(), checkin, sheet, guardStart });
     document.body.classList.add("training-first-app");
     nav.register([{ id: "today", path: "/today", title: "Today", activate: show("today") }, { id: "training-program", path: "/train", aliases: ["/training/program", "/training/today", "/program-active"], title: "Train", activate: show("train") }, { id: "training-today", path: "/training/today", title: "Today", activate: show("today") }, { id: "insights", path: "/progress", aliases: ["/insights"], title: "Progress", activate: show("progress") }, { id: "training-history", path: "/progress/history", aliases: ["/training/history"], title: "History", activate: show("progress") }, { id: "wellbeing", path: "/wellbeing", title: "Wellbeing", activate: show("wellbeing") }, { id: "more", path: "/more", title: "Wellbeing", activate: show("wellbeing") }, { id: "health-vitals", path: "/wellbeing/recovery", aliases: ["/more/recovery", "/health/vitals"], title: "Recovery", activate: show("recovery") }, { id: "health-wellness", path: "/wellbeing/routines", aliases: ["/more/routines", "/health/wellness"], title: "Daily routines", activate: show("routines") }]);
     nav.register([

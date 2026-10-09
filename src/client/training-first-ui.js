@@ -5,7 +5,7 @@ import {createProgressScreen} from './screens/progress.js';
 import {createWellbeingScreens} from './screens/wellbeing.js';
 import {createScreenRegistry} from './screens/registry.ts';
 import {createSettingsScreen} from './screens/settings.js';
-import {applyLocale} from './screens/locale.js';
+import {applyLocale,localizeText} from './screens/locale.js';
 /* Explicit screen composition. Domain logic and durable data stay in their existing modules. */
 (function(){
   const nav=window.REP_NAVIGATION,core=window.REP_CORE_PAGES,preferences=window.REP_TRAINING_PREFERENCES;
@@ -62,11 +62,11 @@ import {applyLocale} from './screens/locale.js';
   }
   const ui={enter,heading,readinessMarkup,saveStatus,bindSaveStatus,route,checkin,core,preferences,sheet,date,tr,readiness};
   const {today}=createTodayScreen(ui),{train}=createTrainingScreen(ui),{nutrition}=createNutritionScreen(ui),{progress}=createProgressScreen(ui),{wellbeing,recovery,routines}=createWellbeingScreens(ui);
-  window.AWJ_LOCALE=Object.freeze({apply:applyLocale});
+  window.AWJ_LOCALE=Object.freeze({apply:applyLocale,text:localizeText});
   const lifecycle=mount=>({mount(){mount();applyLocale();},update(){mount();applyLocale();},destroy(){document.querySelectorAll('.rep-modal-backdrop').forEach(node=>node.remove());}});
   const screenRegistry=createScreenRegistry({today:lifecycle(today),train:lifecycle(train),nutrition:lifecycle(nutrition),progress:lifecycle(progress),wellbeing:lifecycle(wellbeing),recovery:lifecycle(recovery),routines:lifecycle(routines),settings:createSettingsScreen()});
   const show=id=>()=>screenRegistry.show(id);
-  window.REP_TRAINING_UI=Object.freeze({today:show('today'),train:show('train'),nutrition:show('nutrition'),progress:show('progress'),wellbeing:show('wellbeing'),more:show('wellbeing'),recovery:show('recovery'),routines:show('routines'),checkin,sheet,guardStart});
+  window.REP_TRAINING_UI=Object.freeze({today:show('today'),train:show('train'),nutrition:show('nutrition'),progress:show('progress'),wellbeing:show('wellbeing'),more:show('wellbeing'),recovery:show('recovery'),routines:show('routines'),refresh:()=>screenRegistry.update(),checkin,sheet,guardStart});
   document.body.classList.add('training-first-app');
   nav.register([{id:'today',path:'/today',title:'Today',activate:show('today')},{id:'training-program',path:'/train',aliases:['/training/program','/training/today','/program-active'],title:'Train',activate:show('train')},{id:'training-today',path:'/training/today',title:'Today',activate:show('today')},{id:'insights',path:'/progress',aliases:['/insights'],title:'Progress',activate:show('progress')},{id:'training-history',path:'/progress/history',aliases:['/training/history'],title:'History',activate:show('progress')},{id:'wellbeing',path:'/wellbeing',title:'Wellbeing',activate:show('wellbeing')},{id:'more',path:'/more',title:'Wellbeing',activate:show('wellbeing')},{id:'health-vitals',path:'/wellbeing/recovery',aliases:['/more/recovery','/health/vitals'],title:'Recovery',activate:show('recovery')},{id:'health-wellness',path:'/wellbeing/routines',aliases:['/more/routines','/health/wellness'],title:'Daily routines',activate:show('routines')}]);
   nav.register([

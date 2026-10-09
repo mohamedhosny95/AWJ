@@ -75,7 +75,8 @@ html,body,.training-first-app{background:var(--bg);color:var(--text)}
 .training-first-app .daily-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:16px 0}
 .training-first-app .daily-overview a{display:grid;gap:4px;padding:15px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);text-decoration:none;color:var(--text)}
 .daily-overview strong{font-size:18px}.daily-overview span{font-size:12px;color:var(--muted)}
-.update-bar{top:auto;bottom:calc(94px + var(--safe-bottom));left:max(12px,var(--safe-left));right:max(12px,var(--safe-right));width:auto;max-width:696px;margin-inline:auto;box-shadow:0 8px 24px rgba(25,61,45,.18)}
+.update-bar{top:auto;bottom:calc(94px + var(--safe-bottom));left:max(12px,var(--safe-left));right:max(12px,var(--safe-right));width:auto;max-width:696px;margin-inline:auto;transform:none;box-shadow:0 8px 24px rgba(25,61,45,.18)}
+:root[lang="ar"] .habit-tracker[open]>.habits-summary>span:last-child::after{content:"إغلاق العادات"}
 .workout-mode .update-bar{display:none}
 body:has(.update-bar) .quick-log{bottom:calc(172px + var(--safe-bottom))}
 body:has(.update-bar) main{padding-bottom:calc(182px + var(--safe-bottom))}

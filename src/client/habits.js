@@ -129,8 +129,8 @@
       if(card){card.classList.add("is-just-checked");setTimeout(()=>card.classList.remove("is-just-checked"),550);}
     }
   }
-  function label(habit){return habit.en;}
-  function detail(habit){return habit.detailEn;}
+  function label(habit){return window.AWJ_LOCALE?.text(habit.en)||habit.en;}
+  function detail(habit){return habit.detailEn?(window.AWJ_LOCALE?.text(habit.detailEn)||habit.detailEn):'';}
   function render(){
     const date=isoDay(),ordered=habitsForDate(date),done=completed(date),percent=ordered.length?Math.round(done.length/ordered.length*100):0,days=Array.from({length:7},(_,index)=>dateKey(index-6));
     const filter=state.habitFilter||"all";
@@ -162,7 +162,7 @@
     });
     return section;
   }
-  function renderHabitsPage(){if(state.view==='care'&&window.REP_TRAINING_UI)window.REP_TRAINING_UI.routines();else renderOverview();}
+  function renderHabitsPage(){if(window.REP_TRAINING_UI)window.REP_TRAINING_UI.refresh();else renderOverview();}
   function mount(){const existing=document.querySelector(".habit-tracker");existing?.remove();const section=render(),anchor=document.querySelector(".today-fuel-card")||document.querySelector(".home-today-card");const slot=document.querySelector("[data-daily-routines]");if(slot)slot.append(section);else if(anchor)anchor.insertAdjacentElement("afterend",section);else app.append(section);}
 
   window.REP_HABITS={definitions:HABITS,orderedHabits,bucket,completed,streak,payloadForDate,payloadForHabit,hasEntries,notionUrl:NOTION_HABITS_URL,mount,render};
