@@ -1,4 +1,6 @@
 /* Shared media cache and byte-range semantics for page and service worker. */
+// Older installed workers import this file directly before the new shell loads.
+if(typeof AWJ_COMPAT==='undefined'&&typeof importScripts==='function')importScripts('./compatibility.js');
 (function(root){
   const CACHE_NAME=AWJ_COMPAT.mediaCache;
   function parseRange(header,length){
@@ -16,4 +18,5 @@
   }
   function complete(response,type,expectedBytes=0){const mime=response?.headers?.get('content-type')||'';return (!expectedBytes||!response?.headers?.get('content-length')||Number(response.headers.get('content-length'))===expectedBytes)&&response?.status===200&&!response.headers.get('content-range')&&(type==='video'?mime.startsWith('video/'):mime.startsWith('image/'));}
   root.AWJ_MEDIA_CONTRACT=Object.freeze({CACHE_NAME,parseRange,rangeResponse,complete});
+  root[AWJ_COMPAT.legacyMediaContractGlobal]=root.AWJ_MEDIA_CONTRACT;
 })(typeof self!=='undefined'?self:globalThis);

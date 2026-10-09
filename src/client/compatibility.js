@@ -15,6 +15,7 @@ var AWJ_COMPAT=Object.freeze({
   handoffKey:"rep-pair-handoff-v1",
   mediaCache:"rep-exercise-media-v1",
   legacyCachePrefix:"rep-companion-",
+  legacyMediaContractGlobal:"REP_MEDIA_CONTRACT",
   legacyBackupFormat:"rep-health-export/v5",
   backupFormat:"awj-export/v5"
 });

@@ -1,9 +1,8 @@
 /* Explicit, cancellable transitions. Logging mutations never trigger page animation. */
 (function(){
   const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let active=null,revision=0;
   const animations=new WeakMap();
-  function cancel(){revision++;if(active?.skipTransition)active.skipTransition();else active?.cancel?.();animations.get(document.querySelector('#app'))?.cancel();active=null;}
+  function cancel(){const root=document.querySelector('#app');animations.get(root)?.cancel();if(root)animations.delete(root);}
   function animate(element,kind='page',direction=1){
     if(!element||reduced()||!element.animate)return Promise.resolve();
     animations.get(element)?.cancel();
@@ -12,11 +11,9 @@
     return animation.finished.catch(()=>{}).finally(()=>{if(animations.get(element)===animation)animations.delete(element);});
   }
   function transition(update,{element=document.querySelector('#app'),kind='page',direction=1}={}){
-    const requested=++revision;
-    if(active?.skipTransition)active.skipTransition();else active?.cancel?.();
+    cancel();
     if(reduced()){update();return;}
-    // Snapshot only route content; controls and tab navigation stay outside it.
-    if(kind==='page'&&document.startViewTransition){const view=document.startViewTransition(()=>{if(requested===revision)update();});active=view;view.ready?.catch(()=>{});view.finished.catch(()=>{}).finally(()=>{if(active===view)active=null;});return;}
+    // Commit before animation so snapshot work never delays a tab's first paint.
     update();animate(element,kind,direction);
   }
   function bindSheet(node){if(node.dataset.motionSheet)return;node.dataset.motionSheet='true';window.dispatchEvent(new CustomEvent('awj:dialog-open'));animate(node.querySelector('.awj-modal-sheet,.workout-choice-sheet,.workout-preflight-panel')||node,'sheet');}

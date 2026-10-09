@@ -9,21 +9,20 @@ function motionContext(reduced=false){
   ctx.window=ctx;vm.createContext(ctx);vm.runInContext(compatibilitySource+"\n"+(readFileSync('src/client/motion.js','utf8')),ctx);return {ctx,updates};
 }
 
-test('rapid navigation commits only the most recent queued view transition',()=>{
+test('tab changes commit immediately and leave the newest destination visible',()=>{
   const {ctx,updates}=motionContext(),seen=[];
   ctx.AWJ_MOTION.transition(()=>seen.push('old'));
   ctx.AWJ_MOTION.transition(()=>seen.push('latest'));
-  updates[1]();updates[0]();
-  assert.deepEqual(seen,['latest']);
+  assert.deepEqual(seen,['old','latest']);assert.equal(updates.length,0,'page snapshots must not block a tab update');
 });
-test('returning to the rendered route cancels a queued transition',()=>{const {ctx,updates}=motionContext();let stale=false;ctx.AWJ_MOTION.transition(()=>{stale=true;});ctx.AWJ_MOTION.cancel();updates[0]();assert.equal(stale,false);});
-test('a skipped browser snapshot does not create an unhandled rejection',async()=>{const {ctx}=motionContext();ctx.document.startViewTransition=()=>({ready:Promise.reject(new Error('Transition was skipped')),finished:Promise.resolve(),skipTransition(){}});ctx.AWJ_MOTION.transition(()=>{});await new Promise(resolve=>setImmediate(resolve));});
+test('route cancellation stops its current entrance animation',()=>{const {ctx}=motionContext();let cancelled=false;const root={animate:()=>({cancel(){cancelled=true;},finished:new Promise(()=>{})})};ctx.document.querySelector=()=>root;ctx.AWJ_MOTION.transition(()=>{});ctx.AWJ_MOTION.cancel();assert.equal(cancelled,true);});
+test('a browser snapshot cannot delay or reject a committed route',()=>{const {ctx}=motionContext();ctx.document.startViewTransition=()=>{throw Error('Snapshot must not run');};let committed=false;ctx.AWJ_MOTION.transition(()=>{committed=true;});assert.equal(committed,true);});
 
 test('poster and set animations do not cancel each other or a pending route update',()=>{
   const {ctx,updates}=motionContext();let committed=false;
   ctx.AWJ_MOTION.transition(()=>{committed=true;});
   const create=()=>({cancelled:false,animate(){const owner=this;return {cancel(){owner.cancelled=true;},finished:new Promise(()=>{})};}}),poster=create(),set=create();
-  ctx.AWJ_MOTION.animate(poster,'media');ctx.AWJ_MOTION.animate(set,'set');updates[0]();
+  ctx.AWJ_MOTION.animate(poster,'media');ctx.AWJ_MOTION.animate(set,'set');assert.equal(updates.length,0);
   assert.equal(poster.cancelled,false);assert.equal(set.cancelled,false);assert.equal(committed,true);
   ctx.AWJ_MOTION.animate(poster,'media');assert.equal(poster.cancelled,true);
 });

@@ -1,5 +1,5 @@
 importScripts("./compatibility.js","./media-contract.js");
-const BUILD_VERSION="d47195de9fbc";
+const BUILD_VERSION="341590906c57";
 const CACHE = `awj-companion-${BUILD_VERSION}`;
 const MEDIA_CACHE = AWJ_MEDIA_CONTRACT.CACHE_NAME;
 const versioned=path=>`${path}?v=${BUILD_VERSION}`;
