@@ -6,6 +6,12 @@
   let currentGeneration=0;
   let pendingTimer=null,pendingWrite=null;
   let writeChain=Promise.resolve();
+  let saveStatus="saved";
+  let failedWrite=null,localWriteFailed=false;
+  function reportSave(status,error){
+    saveStatus=status;
+    if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("rep:storage-status",{detail:{status,message:error?String(error.message||error):""}}));
+  }
 
   function isPlainObject(val){
     return val!==null&&typeof val==="object"&&!Array.isArray(val);
@@ -592,9 +598,22 @@
   }
 
   async function hydrate(storageKey){
-    let parsed={};try{parsed=JSON.parse(localStorage.getItem(storageKey)||"{}");}catch{}
-    const legacy=split(parsed),indexed=await readDurable().catch(()=>({})),durable={...legacy.durable,...indexed};
-    localStorage.setItem(storageKey,JSON.stringify(legacy.local));
+    let parsed;
+    try{parsed=JSON.parse(localStorage.getItem(storageKey)||"{}");}
+    catch(error){reportSave("failed",error);throw Error("Saved settings could not be read. Your data has been kept; retry after checking device storage.");}
+    const legacy=split(parsed);
+    let indexed;
+    try{indexed=await readDurable();}
+    catch(error){reportSave("failed",error);throw Error("Device records are temporarily unavailable. Keep your site data and retry.");}
+    const durable={...legacy.durable,...indexed};
+    // Move legacy records only after IndexedDB confirms the complete transaction.
+    // A failed migration must leave the original localStorage copy recoverable.
+    if(Object.keys(legacy.durable).length){
+      try{await writeDurable(durable);}
+      catch(error){failedWrite=clone(durable);reportSave("failed",error);return {...parsed,...durable};}
+    }
+    try{localStorage.setItem(storageKey,JSON.stringify(legacy.local));}
+    catch(error){localWriteFailed=true;reportSave("failed",error);}
     for(const key of LARGE_KEYS){
       if(durable[key]!==undefined){
         baseSnapshots.set(key,clone(durable[key]));
@@ -603,7 +622,6 @@
         }
       }
     }
-    if(Object.keys(legacy.durable).length)writeDurable(legacy.durable).catch(()=>{});
     return {...legacy.local,...durable};
   }
 
@@ -617,24 +635,41 @@
       }
       const next=pendingWrite;
       pendingWrite=null;
-      if(next)await writeDurable(next,scheduledGen).catch(()=>{});
+      if(next){
+        try{
+          await writeDurable(next,scheduledGen);
+          if(scheduledGen!==currentGeneration)return;
+          if(failedWrite){for(const key of Object.keys(next))delete failedWrite[key];if(!Object.keys(failedWrite).length)failedWrite=null;}
+          if(!pendingWrite&&!failedWrite&&!localWriteFailed)reportSave("saved");
+        }
+        catch(error){failedWrite={...(failedWrite||{}),...next};reportSave("failed",error);}
+      }
     },0);
   }
 
   function persist(storageKey,payload){
     const {local,durable}=split(payload);
-    localStorage.setItem(storageKey,JSON.stringify(local));
-    pendingWrite={...(pendingWrite||{}),...durable};
+    try{localStorage.setItem(storageKey,JSON.stringify(local));}
+    catch(error){localWriteFailed=true;reportSave("failed",error);return false;}
+    localWriteFailed=false;
+    pendingWrite={...(failedWrite||{}),...(pendingWrite||{}),...durable};failedWrite=null;
+    reportSave("saving");
     scheduleWrite();
+    return true;
   }
 
   async function flush(){
     clearTimeout(pendingTimer);
     const flushGen=currentGeneration;
-    const next=pendingWrite;
+    const next={...(failedWrite||{}),...(pendingWrite||{})};
     pendingWrite=null;
-    if(next)await writeDurable(next,flushGen).catch(()=>{});
-    await writeChain.catch(()=>{});
+    failedWrite=null;
+    try{
+      if(Object.keys(next).length)await writeDurable(next,flushGen);
+      else await writeChain;
+      if(localWriteFailed)throw Error("Settings have not been saved on this device.");
+      if(flushGen===currentGeneration)reportSave("saved");
+    }catch(error){failedWrite={...next,...(failedWrite||{})};reportSave("failed",error);throw error;}
   }
 
   async function replace(storageKey,payload){
@@ -643,6 +678,7 @@
     clearTimeout(pendingTimer);
     pendingWrite=null;
     const opGen=++currentGeneration;
+    failedWrite=null;localWriteFailed=false;
 
     serialized.clear();
     baseSnapshots.clear();
@@ -669,12 +705,13 @@
     };
 
     writeChain=writeChain.then(run,run);
-    await writeChain.catch(()=>{});
+    await writeChain;
   }
 
   async function clear(storageKey){
     clearTimeout(pendingTimer);
     pendingWrite=null;
+    failedWrite=null;localWriteFailed=false;
     const opGen=++currentGeneration;
 
     serialized.clear();
@@ -708,6 +745,7 @@
     flush,
     replace,
     clear,
+    get saveStatus(){return saveStatus;},
     dbName:DB_NAME,
     largeKeys:[...LARGE_KEYS],
     get conflicts(){return [...recordedConflicts];},
@@ -716,6 +754,6 @@
     onConflict:null
   };
 
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush();});
-  addEventListener("pagehide",()=>flush());
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush().catch(()=>{});});
+  addEventListener("pagehide",()=>flush().catch(()=>{}));
 })();

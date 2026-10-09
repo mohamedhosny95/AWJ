@@ -5,11 +5,11 @@ import {fileURLToPath} from "node:url";
 import {dirname,join} from "node:path";
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
-const read=path=>readFile(join(root,path),"utf8");
+const read=async path=>path==="dist/client/styles.css"?(await Promise.all(["styles.css","screens.css","awj-theme.css"].map(file=>readFile(join(root,"dist/client",file),"utf8")))).join("\n"):readFile(join(root,path),"utf8");
 
 test("the mobile shell exposes five primary tabs",async()=>{
   const html=await read("dist/client/index.html"),tabs=[...html.matchAll(/data-app-tab="([^"]+)"/g)].map(match=>match[1]);
-  assert.deepEqual(tabs,["home","train","food","insights","more"]);
+  assert.deepEqual(tabs,["home","train","food","wellbeing","insights"]);
 });
 
 test("primary navigation keeps its active indicator aligned and uses the central URL router",async()=>{
@@ -20,8 +20,9 @@ test("primary navigation keeps its active indicator aligned and uses the central
   assert.match(navigation,/history\[replace\?"replaceState":"pushState"\]/);
   assert.match(navigation,/addEventListener\("popstate"/);
   assert.match(navigation,/routeFromLocation/);
-  for(const path of ["/train","/progress/history","/nutrition/plan","/more/routines","/progress"])assert.ok(enhancements.includes(path));
-  assert.match(enhancements,/path:`\/settings\/\$\{section\}`/);
+  const shell=await read("src/client/training-first-ui.js");
+  for(const path of ["/train","/progress/history","/nutrition/","/more/routines","/progress"])assert.ok(shell.includes(path));
+  assert.match(shell,/path:'\/settings\/'\+section/);
   assert.doesNotMatch(enhancements,/restoringPrimaryTabHistory|rememberPrimaryTab/);
   assert.doesNotMatch(enhancements,/(?:setPrimaryTab|updatePrimaryTabs)=function/);
   assert.doesNotMatch(enhancements,/\["insights","Trends"\]/);
@@ -283,7 +284,7 @@ test("active workout media stays bounded and exposes decode telemetry",async()=>
 });
 
 test("training discovery searches the canonical catalogue and preserves routine actions",async()=>{
- const ui=await read("src/client/training-first-ui.js");assert.match(ui,/REP_EXERCISES.list\(\)/);assert.match(ui,/equipmentTags.includes/);assert.match(ui,/muscleTags.includes/);assert.match(ui,/data-routine-favourite/);assert.match(ui,/showSessionPreview/);
+ const ui=await read("src/client/screens/training.js");assert.match(ui,/REP_EXERCISES.list\(\)/);assert.match(ui,/equipmentTags.includes/);assert.match(ui,/muscleTags.includes/);assert.match(ui,/data-routine-favourite/);assert.match(ui,/showSessionPreview/);
 });
 
 test("browser pairing keeps only a non-secret marker and synchronizes tabs",async()=>{

@@ -39,5 +39,16 @@ test('navigation restores focus after the winning route is actually rendered',()
   ctx.REP_NAVIGATION.register([{id:'a',title:'A',activate:()=>seen.push('a')},{id:'b',title:'B',activate:()=>seen.push('b')}]);
   ctx.REP_NAVIGATION.start({fallback:'a'});assert.deepEqual(seen,['a']);assert.equal(queued.length,0,'first render is immediate');seen.length=0;
   ctx.REP_NAVIGATION.navigate('b');queued[0]();frames.forEach(callback=>callback());
-  assert.deepEqual(seen,['b','focus']);assert.equal(ctx.document.title,'B · Rep Gym Companion');assert.equal(ctx.REP_NAVIGATION.current(),'b');
+  assert.deepEqual(seen,['b','focus']);assert.equal(ctx.document.title,'B · AWJ / أوج');assert.equal(ctx.REP_NAVIGATION.current(),'b');
+});
+
+test('returning to a tab restores its scroll position',()=>{
+  const positions=[],ctx={location:{pathname:'/',search:'',hash:''},history:{state:{},pushState(state,_,url){this.state=state;ctx.location.hash=url.split('#')[1];},replaceState(state,_,url){this.state=state;ctx.location.hash=url.split('#')[1];}},document:{documentElement:{dataset:{}}},scrollY:0,scrollTo({top}){this.scrollY=top;positions.push(top);},requestAnimationFrame:callback=>callback(),addEventListener(){},dispatchEvent(){},CustomEvent:class{},focusViewHeading(){}};
+  ctx.window=ctx;vm.createContext(ctx);vm.runInContext(readFileSync('src/client/navigation.js','utf8'),ctx);
+  ctx.REP_NAVIGATION.register([{id:'today',activate(){}},{id:'train',activate(){}}]);
+  ctx.REP_NAVIGATION.start({fallback:'today'});
+  ctx.scrollY=380;ctx.REP_NAVIGATION.navigate('train');
+  ctx.scrollY=125;ctx.REP_NAVIGATION.navigate('today');
+  assert.equal(ctx.scrollY,380);
+  assert.equal(positions.at(-1),380);
 });

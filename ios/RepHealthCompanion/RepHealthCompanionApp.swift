@@ -11,7 +11,7 @@ struct RepHealthCompanionApp: App {
             NavigationStack {
                 Form {
                     Section("Connection") {
-                        TextField("Rep origin, including https://", text: Binding(
+                        TextField("AWJ origin, including https://", text: Binding(
                             get: { UserDefaults.standard.string(forKey: "repOrigin") ?? "" },
                             set: { UserDefaults.standard.set($0, forKey: "repOrigin") }
                         )).textInputAutocapitalization(.never).keyboardType(.URL)
@@ -46,10 +46,10 @@ struct RepHealthCompanionApp: App {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     Section {
-                        Text("Rep uploads daily aggregates, sample counts, and coverage indicators. Raw heart-rate samples remain in Apple Health on this iPhone.")
+                        Text("AWJ uploads daily aggregates, sample counts, and coverage indicators. Raw heart-rate samples remain in Apple Health on this iPhone.")
                     }
                 }
-                .navigationTitle("Rep Health")
+                .navigationTitle("AWJ Health")
                 .task { try? await sync.bootstrap() }
                 .onOpenURL { url in
                     if url.host == "workout" { Task { await workout.start() } }

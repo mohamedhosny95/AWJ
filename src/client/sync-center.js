@@ -24,7 +24,7 @@
     </section>`;
   }
   async function backupSelfTest(features){
-    const sample={app:"Rep Gym Companion",test:true,createdAt:new Date().toISOString(),data:{foodEntries:[{id:"self-test"}] }},passphrase=`self-test-${crypto.randomUUID()}`;
+    const sample={app:"AWJ",test:true,createdAt:new Date().toISOString(),data:{foodEntries:[{id:"self-test"}] }},passphrase=`self-test-${crypto.randomUUID()}`;
     const encrypted=await features.encryptExport(sample,passphrase),decrypted=await features.decryptExport(encrypted,passphrase);
     if(JSON.stringify(sample)!==JSON.stringify(decrypted))throw Error("Encrypted backup round-trip did not match.");
     return true;

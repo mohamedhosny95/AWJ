@@ -3,13 +3,29 @@
   if('virtualKeyboard' in navigator){const viewport=document.querySelector('meta[name="viewport"]');if(viewport&&!viewport.content.includes('interactive-widget'))viewport.content+=', interactive-widget=resizes-content';}
 
   const version=window.REP_BUILD_VERSION||"__BUILD_VERSION__";
-  const load=src=>new Promise((resolve,reject)=>{
+  const pendingScripts=new Map();
+  const load=src=>{
+    if(pendingScripts.has(src))return pendingScripts.get(src);
+    const promise=new Promise((resolve,reject)=>{
     const script=document.createElement("script");
     script.src=`${src}?v=${version}`;
     script.onload=resolve;
-    script.onerror=()=>reject(Error(`Could not load ${src}`));
+    script.onerror=()=>{pendingScripts.delete(src);script.remove();reject(Error(`Could not load ${src}`));};
     document.head.appendChild(script);
-  });
+    });
+    pendingScripts.set(src,promise);
+    return promise;
+  };
+  const extras=["command-palette.js","heart-rate-monitor.js","audio-coach.js","barcode-scanner.js","muscle-heatmap.js"];
+  async function loadExtras(sources=extras){
+    const results=await Promise.allSettled(sources.map(load));
+    const failed=sources.filter((_,index)=>results[index].status==="rejected");
+    let retry=document.querySelector("#retryExtraTools");
+    if(failed.length){
+      if(!retry){retry=document.createElement("button");retry.type="button";retry.id="retryExtraTools";retry.className="top-more-item";retry.textContent="Retry extra tools";document.querySelector("#topMoreMenu")?.append(retry);}
+      retry.onclick=()=>loadExtras(failed);
+    }else retry?.remove();
+  }
   try{
     window.REP_HYDRATED_STATE=await window.REP_STORE?.hydrate("rep-gym-companion-v1");
     await Promise.all([
@@ -17,15 +33,10 @@
       load("offline-nutrition.js"),
       load("importer.js"),
       load("report-card.js"),
-      load("command-palette.js"),
       load("sync-outbox.js"),
       load("telemetry.js"),
       load("recovery-map.js"),
-      load("plate-calculator.js"),
-      load("heart-rate-monitor.js"),
-      load("audio-coach.js"),
-      load("barcode-scanner.js"),
-      load("muscle-heatmap.js")
+      load("plate-calculator.js")
     ]);
     await load("media-manifest.js");
     await load("media-contract.js");
@@ -47,16 +58,20 @@
     await load("performance-ui.js");
     await load("product-suite-ui.js");
     await load("training-first-ui.js");
-    document.querySelector("#commandPaletteButton")?.addEventListener("click",()=>window.REP_COMMAND_PALETTE?.open());
+    document.querySelector("#commandPaletteButton")?.addEventListener("click",()=>load("command-palette.js").then(()=>window.REP_COMMAND_PALETTE?.open()).catch(()=>loadExtras(["command-palette.js"])));
     document.documentElement.dataset.appReady="true";
+    document.querySelector('#app')?.setAttribute('aria-busy','false');
     delete window.REP_HYDRATED_STATE;
+    loadExtras();
   }catch(error){
+    document.documentElement.dataset.appReady="true";
     const app=document.querySelector("#app");
     if(app){
       app.replaceChildren();
       const section=document.createElement("section"),title=document.createElement("strong"),message=document.createElement("p"),retry=document.createElement("button");
-      section.className="startup-error";title.textContent="Rep Gym Companion could not start.";message.textContent=String(error.message||error);retry.textContent="Retry";retry.addEventListener("click",()=>location.reload());
+      section.className="startup-error";title.textContent="AWJ could not start.";message.textContent=String(error.message||error);retry.textContent="Retry";retry.addEventListener("click",()=>location.reload());
       section.append(title,message,retry);app.append(section);
+      app.setAttribute('aria-busy','false');
     }
   }
 })();

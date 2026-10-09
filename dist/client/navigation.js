@@ -45,7 +45,7 @@
       route.activate();
       renderedId=id;
       document.documentElement.dataset.route=id;
-      if(route.title)document.title=`${route.title} · Rep Gym Companion`;
+      if(route.title)document.title=`${route.title} · AWJ / أوج`;
       if(scroll)window.scrollTo({top:0,left:0,behavior:"auto"});
       requestAnimationFrame(()=>{
         if(requested!==activation)return;
@@ -58,14 +58,15 @@
     return true;
   }
 
-  function navigate(id,{replace=false,focus=true,scroll=true}={}){
+  function navigate(id,{replace=false,focus=true,scroll}={}){
     const route=routes.get(id);
     if(!route)return false;
-    if(currentId===id&&routeFromLocation()===id)return activate(id,{focus,scroll});
+    const shouldScroll=scroll===undefined?!scrollPositions.has(id):scroll;
+    if(currentId===id&&routeFromLocation()===id)return activate(id,{focus,scroll:shouldScroll});
     const prior=history.state&&typeof history.state==="object"?history.state:{};
     const depth=replace?Number(prior.repRouteDepth)||0:(Number(prior.repRouteDepth)||0)+1;
     history[replace?"replaceState":"pushState"]({...prior,repRoute:id,repRouteDepth:depth},"",routeUrl(route));
-    return activate(id,{focus,scroll});
+    return activate(id,{focus,scroll:shouldScroll});
   }
 
   function dispatch(){

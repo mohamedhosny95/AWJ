@@ -114,4 +114,9 @@ test("storage.js single-step migration backfills missing LARGE_KEYS from legacy 
 
   assert.equal(records.get("state:history").length, 2);
   assert.equal(records.get("state:history")[1].session, "cardio");
+
+  // A full device store must never be presented as a successful local save.
+  mockStorage.setItem = () => { throw Error("Quota exceeded"); };
+  assert.equal(store.persist("rep-gym-companion-v1", hydrated), false);
+  assert.equal(store.saveStatus, "failed");
 });

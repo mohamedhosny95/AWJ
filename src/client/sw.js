@@ -3,9 +3,9 @@ const BUILD_VERSION="__BUILD_VERSION__";
 const CACHE = `rep-companion-${BUILD_VERSION}`;
 const MEDIA_CACHE = REP_MEDIA_CONTRACT.CACHE_NAME;
 const versioned=path=>`${path}?v=${BUILD_VERSION}`;
-const CORE_ASSETS = ["./", "./index.html", ...["./styles.css","./vendor/dompurify.min.js","./safe-dom.js","./build-meta.js","./auth.js","./storage.js","./ui-state.js","./ui-shell.js","./health-data.js","./features.js","./health-engine.js","./health-coverage.js","./performance-insights.js","./product-suite.js","./adaptive-coach.js","./training-session.js","./navigation.js","./offline-nutrition.js","./store.js","./importer.js","./report-card.js","./command-palette.js","./recovery-map.js","./plate-calculator.js","./heart-rate-monitor.js","./audio-coach.js","./barcode-scanner.js","./muscle-heatmap.js","./custom-workouts.js","./bootstrap.js","./exercise-catalog.js","./training-preferences.js","./training-first-ui.js","./technique-guides.js","./workout-media.js","./media-manifest.js","./media-contract.js","./motion.js","./media-player.js","./app.js","./sync-outbox.js","./telemetry.js","./sync.js","./sync-center.js","./enhancements.js","./habits.js","./health-ui.js","./performance-ui.js","./product-suite-ui.js"].map(versioned), "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+const CORE_ASSETS = ["./", "./index.html", ...["./styles.css","./screens.css","./awj-theme.css","./vendor/dompurify.min.js","./safe-dom.js","./build-meta.js","./auth.js","./storage.js","./ui-state.js","./ui-shell.js","./health-data.js","./features.js","./health-engine.js","./health-coverage.js","./performance-insights.js","./product-suite.js","./adaptive-coach.js","./training-session.js","./navigation.js","./offline-nutrition.js","./store.js","./importer.js","./report-card.js","./recovery-map.js","./plate-calculator.js","./custom-workouts.js","./bootstrap.js","./exercise-catalog.js","./training-preferences.js","./training-first-ui.js","./technique-guides.js","./workout-media.js","./media-manifest.js","./media-contract.js","./motion.js","./media-player.js","./app.js","./sync-outbox.js","./telemetry.js","./sync.js","./sync-center.js","./enhancements.js","./habits.js","./health-ui.js","./performance-ui.js","./product-suite-ui.js"].map(versioned), "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const ATLAS_ASSETS = ["./assets/gym-anatomy-atlas.webp", "./assets/mobility-anatomy-atlas.webp", "./assets/core-anatomy-atlas.webp", "./assets/cardio-anatomy-atlas.webp", "./assets/gym-anatomy-front-atlas.webp", "./assets/mobility-anatomy-front-atlas.webp", "./assets/core-anatomy-front-atlas.webp", "./assets/cardio-anatomy-front-atlas.webp", "./assets/priority-motion-atlas.webp"];
-self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())));
+self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE_ASSETS))));
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -33,7 +33,7 @@ self.addEventListener("fetch", event => {
   })).catch(() => new Response("", { status: 408, statusText: "Offline" })));
 });
 self.addEventListener("push", event => {
-  let payload = { title: "Rep Gym Companion", body: "Time to log your day." };
+  let payload = { title: "AWJ", body: "Time to log your day." };
   try { if (event.data) payload = { ...payload, ...event.data.json() }; } catch {}
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,

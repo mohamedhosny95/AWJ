@@ -62,8 +62,8 @@ await new Promise(resolve => server.listen(port, resolve));
 const baseUrl = `http://localhost:${port}`;
 
 const webkitMode=process.env.REP_E2E_BROWSER==="webkit";
-const browser = webkitMode?await webkit.launch():await chromium.launch({
-  channel: existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined,
+const browser = process.env.REP_E2E_CDP_URL?await chromium.connectOverCDP(process.env.REP_E2E_CDP_URL):webkitMode?await webkit.launch():await chromium.launch({
+  channel: process.env.REP_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
   args: ["--no-sandbox"]
 });
 const consoleErrors = [],expectedNetworkDiagnostics=[];let testingNetworkFailure=false,reportMetrics=null;
@@ -120,16 +120,20 @@ try {
   await page.evaluate(()=>showSessionPreview('gym'));await page.click('[data-start-session]');await page.waitForSelector('[data-review-recovery]');
   assertTrue(await page.locator('[data-acknowledge-workout]').count()===1,'A workout started from the library retains the symptom warning');await page.click('[data-review-recovery]');await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
   await page.evaluate(()=>{state.recoveryCheckins=[];REP_HEALTH_COVERAGE.invalidateCache(state);REP_HEALTH_ENGINE.invalidateCache(state);REP_NAVIGATION.navigate('today');});
-  const destinations=[['home','Today','/today'],['train','Train','/train'],['food','Nutrition','/nutrition/today'],['insights','Progress','/progress'],['more','More','/more']];
+  const destinations=[['home','Today','/today'],['train','Train','/train'],['food','Nutrition','/nutrition/today'],['wellbeing','Wellbeing','/wellbeing'],['insights','Progress','/progress']];
   for(const [tab,title,path] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);assertTrue(page.url().endsWith('#'+path),title+' has a stable route');await captureScreen(tab);await assertAccessibleView(page,title);await assertAxe(page,title);}
-  await page.goBack();await page.waitForSelector('.progress-overview');assertTrue(page.url().endsWith('#/progress'),'Browser Back restores Progress');
-  await page.goForward();await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/more'),'Browser Forward restores More');
+  await page.goBack();await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Browser Back restores Wellbeing');
+  await page.goForward();await page.waitForSelector('.progress-overview');assertTrue(page.url().endsWith('#/progress'),'Browser Forward restores Progress');
+  await page.click('[data-app-tab="wellbeing"]');await page.waitForSelector('.more-menu');
   await page.click('[data-more-route="health-vitals"]');await page.waitForSelector('.recovery-sleep');
   assertTrue(await page.locator('.health-subnav,.health-workflow-nav').count()===0,'Recovery does not stack navigation layers');
   await page.locator('.recovery-sleep>summary').click();await page.fill('[data-sleep-bedtime]','22:15');await page.fill('[data-sleep-wake]','06:15');await page.click('[data-sleep-form] button[type="submit"]');
   await page.waitForSelector('.recovery-sleep');assertTrue(await page.evaluate(()=>state.sleepLogs.some(x=>x.hours===8)),'Existing sleep logic stays connected to Recovery');
-  await page.click('[data-more-back]');await page.click('[data-more-route="settings-general"]');await page.waitForSelector('[data-reminder-time="bedtime"]');
-  assertTrue(await page.locator('[data-app-tab="more"][aria-current="page"]').count()===1,'Settings belongs to More');
+  await page.click('[data-more-back]');await page.click('#settingsButton');await page.waitForSelector('[data-reminder-time="bedtime"]');
+  assertTrue(await page.locator('[data-app-tab][aria-current="page"]').count()===0,'Settings keeps the primary tabs unselected');
+  await page.click('[data-language="ar"]');assertTrue(await page.locator('html[dir="rtl"][lang="ar"]').count()===1,'Arabic selection applies RTL direction');
+  assertTrue(await page.locator('[data-app-tab="wellbeing"] span').textContent()==='العافية','Primary navigation uses Arabic labels');
+  await page.click('[data-language="en"]');assertTrue(await page.locator('html[dir="ltr"][lang="en"]').count()===1,'English selection restores LTR direction');
   await page.click('[data-settings-tab="coach"]');await page.waitForSelector('[data-health-profile="wakeTime"]');await page.click('[data-settings-back]');await page.waitForSelector('[data-reminder-time="bedtime"]');
   await page.click('[data-app-tab="food"]');await page.waitForSelector('.nutrition-actions');await page.click('[data-nutrition-log]');
   await page.fill('[data-food-note]','plain eggs and toast');await page.click('[data-manual-food]');await page.waitForSelector('[data-save-food]');await page.click('[data-save-food]');
@@ -221,7 +225,7 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
 
   await page.fill('[data-history-search]','missing exercise');assertTrue((await page.locator('[data-history-results]').textContent()).includes('No')||(await page.locator('[data-history-results]').textContent()).includes('first workout'),'History search has an honest empty state');
   await page.evaluate(()=>{state.sessionStartedAt=null;state.history.push({session:'gym',date:new Date().toISOString(),duration:1200,sets:1,entries:[{exercise:'Chest Press',weight:'40',reps:'10'}]});renderInsights();});await page.fill('[data-history-search]','Chest Press');assertTrue((await page.locator('[data-history-results]').textContent()).includes('Chest Press'),'History searches exercise records');
-  await page.evaluate(()=>{REP_NAVIGATION.navigate('training-program');REP_NAVIGATION.navigate('nutrition-today');REP_NAVIGATION.navigate('more');});await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/more'),'Rapid navigation commits only the winning screen');
+  await page.evaluate(()=>{REP_NAVIGATION.navigate('training-program');REP_NAVIGATION.navigate('nutrition-today');REP_NAVIGATION.navigate('wellbeing');});await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Rapid navigation commits only the winning screen');
   for(const width of [320,360,375,390,414,430]){await page.setViewportSize({width,height:844});for(const [tab,title] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);await assertAccessibleView(page,`${title} ${width}px`);const navSize=await page.locator('#appTabs').evaluate(el=>Math.min(...[...el.querySelectorAll('button')].map(b=>Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height))));assertTrue(navSize>=44,`${title} navigation targets remain 44px at ${width}px`);}}
   await page.setViewportSize({width:932,height:430});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#appTabs').evaluate(el=>{const box=el.getBoundingClientRect();return box.width>box.height&&box.bottom<=innerHeight;}),'Wide touch phones keep bottom navigation in landscape');
   await page.setViewportSize({width:852,height:393});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');await assertAccessibleView(page,'Landscape Today');

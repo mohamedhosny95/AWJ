@@ -73,8 +73,8 @@ function acceptRestoreDialogs(page) {
 }
 
 await new Promise(resolve => server.listen(port, resolve));
-const browser = await chromium.launch({
-  channel: existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined,
+const browser = process.env.REP_E2E_CDP_URL?await chromium.connectOverCDP(process.env.REP_E2E_CDP_URL):await chromium.launch({
+  channel: process.env.REP_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
   args: ["--no-sandbox"]
 });
 

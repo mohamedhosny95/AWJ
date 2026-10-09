@@ -1,4 +1,8 @@
-# Health OS
+# AWJ / أوج
+
+AWJ is a private daily companion for training, nutrition, wellbeing, and daily practices. **أوج** evokes a peak or ascent; the name is not presented as a Qur’anic quotation.
+
+The primary destinations are Today, Train, Nutrition, Wellbeing, and Progress. Settings and the sync centre remain available from the header. Existing local records, encrypted backups, device pairing, and the Cloudflare Worker retain their compatibility identifiers; the production address remains `rep-gym-companion.mohamedahmedhosny95.workers.dev`.
 
 Version 71 completes the post-launch product suite:
 

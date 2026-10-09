@@ -97,6 +97,9 @@ jobs:
         env:
           REP_E2E_REPORT: work/certification/chrome-${{ github.sha }}.json
 
+      - name: Certify cold portrait and landscape layouts before deployment
+        run: npm run test:layout
+
       - name: Run WebKit mobile end-to-end test
         run: npm run test:e2e
         env:
@@ -137,9 +140,41 @@ jobs:
       - name: Verify real Notion schema, write, receipt, and cleanup
         run: npm run test:notion-live
 
+  certify-staging:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: [verify, e2e]
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: awj-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run sync
+      - name: Require the isolated staging origin
+        env:
+          REP_STAGING_URL: ${{ vars.REP_STAGING_URL }}
+        run: node scripts/validate-staging-origin.mjs
+      - name: Deploy the verified commit to isolated staging
+        run: npm run deploy:staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - run: npx playwright install --with-deps chromium
+      - name: Audit the exact staging build in both orientations
+        run: npm run test:devices
+        env:
+          REP_DEVICE_AUDIT_URL: ${{ vars.REP_STAGING_URL }}
+          REP_DEVICE_AUDIT_MATCH_BUILD: "1"
+
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [verify, e2e]
+    needs: [verify, e2e, certify-staging]
     runs-on: ubuntu-latest
     environment: production
     concurrency:

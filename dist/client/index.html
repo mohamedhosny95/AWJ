@@ -8,26 +8,28 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-touch-fullscreen" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta property="og:title" content="Rep Gym Companion">
+  <meta property="og:title" content="AWJ / أوج">
   <meta property="og:description" content="Training, nutrition, recovery, and daily health in one private mobile companion.">
   <meta property="og:image" content="rep-social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
-  <title>Rep Gym Companion</title>
+  <title>AWJ / أوج</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Rep Gym Companion">
-  <meta name="theme-color" content="#070908">
-  <link rel="stylesheet" href="styles.css?v=f17e54415806">
+  <meta name="apple-mobile-web-app-title" content="AWJ">
+  <meta name="theme-color" content="#F7F8F2">
+  <link rel="stylesheet" href="styles.css?v=0e5f7f27cfb2">
+  <link rel="stylesheet" href="screens.css?v=0e5f7f27cfb2">
+  <link rel="stylesheet" href="awj-theme.css?v=0e5f7f27cfb2">
 </head>
-<body>
+<body class="training-first-app">
   <div class="app-shell">
     <header class="topbar">
       <button class="brand" id="homeButton" aria-label="Today">
-        <span class="brand-mark" aria-hidden="true">R</span>
-        <span>REP GYM</span>
+        <span class="brand-mark" aria-hidden="true">▲</span>
+        <span>AWJ <span lang="ar">أوج</span></span>
       </button>
       <div class="top-actions">
         <span class="offline-pill" id="networkStatus"><i></i> App available offline</span>
@@ -43,13 +45,13 @@
       </div>
     </header>
 
-    <main id="app"></main>
+    <main id="app" aria-busy="true"></main>
     <nav class="app-tabs" id="appTabs" aria-label="Main app sections">
       <button data-app-tab="home" aria-current="page"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/><path d="M10 20v-6h4v6"/></svg></i><span>Today</span></button>
       <button data-app-tab="train"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4.5" y="7" width="3" height="10" rx="1"/><line x1="7.5" y1="12" x2="16.5" y2="12"/><rect x="16.5" y="7" width="3" height="10" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></i><span>Train</span></button>
       <button data-app-tab="food"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></i><span>Nutrition</span></button>
+      <button data-app-tab="wellbeing"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11Z"/></svg></i><span>Wellbeing</span></button>
       <button data-app-tab="insights"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10m8 10V4m8 16v-7"/></svg></i><span>Progress</span></button>
-      <button data-app-tab="more"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></i><span>More</span></button>
     </nav>
   </div>
 
@@ -76,22 +78,22 @@
     <button id="timerSkip" class="timer-skip" type="button">Skip</button>
   </div>
 
-  <script src="vendor/dompurify.min.js?v=f17e54415806" defer></script>
-  <script src="safe-dom.js?v=f17e54415806" defer></script>
-  <script src="build-meta.js?v=f17e54415806" defer></script>
-  <script src="auth.js?v=f17e54415806" defer></script>
-  <script src="storage.js?v=f17e54415806" defer></script>
-  <script src="ui-state.js?v=f17e54415806" defer></script>
-  <script src="ui-shell.js?v=f17e54415806" defer></script>
-  <script src="health-data.js?v=f17e54415806" defer></script>
-  <script src="features.js?v=f17e54415806" defer></script>
-  <script src="health-engine.js?v=f17e54415806" defer></script>
-  <script src="health-coverage.js?v=f17e54415806" defer></script>
-  <script src="performance-insights.js?v=f17e54415806" defer></script>
-  <script src="product-suite.js?v=f17e54415806" defer></script>
-  <script src="adaptive-coach.js?v=f17e54415806" defer></script>
-  <script src="training-session.js?v=f17e54415806" defer></script>
-  <script src="navigation.js?v=f17e54415806" defer></script>
-  <script src="bootstrap.js?v=f17e54415806" defer></script>
+  <script src="vendor/dompurify.min.js?v=0e5f7f27cfb2" defer></script>
+  <script src="safe-dom.js?v=0e5f7f27cfb2" defer></script>
+  <script src="build-meta.js?v=0e5f7f27cfb2" defer></script>
+  <script src="auth.js?v=0e5f7f27cfb2" defer></script>
+  <script src="storage.js?v=0e5f7f27cfb2" defer></script>
+  <script src="ui-state.js?v=0e5f7f27cfb2" defer></script>
+  <script src="ui-shell.js?v=0e5f7f27cfb2" defer></script>
+  <script src="health-data.js?v=0e5f7f27cfb2" defer></script>
+  <script src="features.js?v=0e5f7f27cfb2" defer></script>
+  <script src="health-engine.js?v=0e5f7f27cfb2" defer></script>
+  <script src="health-coverage.js?v=0e5f7f27cfb2" defer></script>
+  <script src="performance-insights.js?v=0e5f7f27cfb2" defer></script>
+  <script src="product-suite.js?v=0e5f7f27cfb2" defer></script>
+  <script src="adaptive-coach.js?v=0e5f7f27cfb2" defer></script>
+  <script src="training-session.js?v=0e5f7f27cfb2" defer></script>
+  <script src="navigation.js?v=0e5f7f27cfb2" defer></script>
+  <script src="bootstrap.js?v=0e5f7f27cfb2" defer></script>
 </body>
 </html>

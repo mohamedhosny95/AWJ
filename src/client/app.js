@@ -476,7 +476,7 @@ const state = {
   reviews:saved.reviews||{}, fieldTest:saved.fieldTest||{}, voice:saved.voice!==false,
   syncQueue:saved.syncQueue||[], syncState:"idle", recoveryCheckins:saved.recoveryCheckins||[],
   daily:saved.daily||{nutrition:{},hygiene:{}}, habitOrder:Array.isArray(saved.habitOrder)?saved.habitOrder:[], cardioDraft:saved.cardioDraft||{}, programStart:saved.programStart||localDay(),
-  foodEntries:saved.foodEntries||[], water:saved.water||{}, foodDraft:null, foodNote:saved.foodNote||"", foodMealType:saved.foodMealType||"", foodLogMethod:saved.foodLogMethod||"Ingredients", foodBusy:false, foodPendingPayload:null,
+  foodEntries:saved.foodEntries||[], water:saved.water||{}, foodDraft:saved.foodDraft&&typeof saved.foodDraft==="object"&&!Array.isArray(saved.foodDraft)?saved.foodDraft:null, foodNote:saved.foodNote||"", foodMealType:saved.foodMealType||"", foodLogMethod:saved.foodLogMethod||"Ingredients", foodBusy:false, foodPendingPayload:null,
   bodyWeights:saved.bodyWeights||[], mealTemplates:saved.mealTemplates||[], sleepLogs:saved.sleepLogs||[],
   healthMetrics:saved.healthMetrics||{}, vitalsImportRuns:saved.vitalsImportRuns||{},
   pairBusy:false, pairMessage:"", reminderExpanded:{}, newTemplateOpen:false,
@@ -744,7 +744,8 @@ function journalInsightsCard(){
     }).join("")}</div>`
     :`<p class="journal-empty">${"Log the Journal from the Vitals tab for a few days, and any patterns tied to Recovery will show up here."}</p>`}</section>`;
 }
-function renderInsights(){
+function renderInsights(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.progress();return renderInsightsLegacy();}
+function renderInsightsLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="insights";state.activeTab="insights";persistDebounced();updatePrimaryTabs();
   const weekAgo=Date.now()-7*86400000;
   const history7=state.history.filter(h=>new Date(h.date).getTime()>=weekAgo),sessions7=history7.length;
@@ -797,8 +798,8 @@ function renderInsights(){
   document.querySelectorAll("[data-trend-horizon]").forEach(btn=>{btn.onclick=()=>{state.trendHorizon=btn.dataset.trendHorizon;persist();renderInsights();};});
 }
 function updatePrimaryTabs(){
-  const current=["care","vitals","health","more"].includes(state.activeTab)?"more":state.view==="history"?"insights":state.view==="settings"?"more":state.activeTab;
-  const labels={home:"Today",train:"Train",food:"Nutrition",insights:"Progress",more:"More"};
+  const current=state.view==="settings"?"":state.view==="history"?"insights":["care","vitals","health","more","wellbeing"].includes(state.activeTab)?"wellbeing":state.activeTab;
+  const labels=state.preferences?.language==="ar"?{home:"اليوم",train:"التمرين",food:"التغذية",wellbeing:"العافية",insights:"التقدم"}:{home:"Today",train:"Train",food:"Nutrition",wellbeing:"Wellbeing",insights:"Progress"};
   document.querySelectorAll("[data-app-tab]").forEach(button=>{button.setAttribute("aria-current",button.dataset.appTab===current?"page":"false");const span=button.querySelector("span");if(span)span.textContent=labels[button.dataset.appTab]||button.dataset.appTab;});
 }
 function focusViewHeading({scroll=true}={}){
@@ -928,6 +929,7 @@ function setPrimaryTab(tab){
   if(tab==="home")renderOverview();
   else if(tab==="food")renderNutrition();
   else if(tab==="care")renderHygiene();
+  else if(tab==="wellbeing")window.REP_TRAINING_UI?.wellbeing();
   else if(tab==="insights")renderInsights();
   else if(tab==="vitals")renderVitals();
   else renderHome();
@@ -977,7 +979,8 @@ function todayFuelSnippet(){
     </div>
   </section>`;
 }
-function renderOverview(){
+function renderOverview(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.today();return renderOverviewLegacy();}
+function renderOverviewLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="home-overview";state.activeTab="home";persistDebounced();updatePrimaryTabs();
   const day=currentDay(),streak=computeStreak(),recovery=computeRecoveryScore(),bedtime=computeBedtimeSuggestion();
   const items=buildInsights(),note=items[0];
@@ -1013,7 +1016,8 @@ function renderOverview(){
   document.querySelector("[data-today-log-act]")?.addEventListener("click",()=>showLogActivity());
 }
 
-function renderHome() {
+function renderHome(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.train();return renderHomeLegacy();}
+function renderHomeLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view = "home";state.activeTab="train";persistDebounced();updatePrimaryTabs();
   const day = currentDay(),u=U();
   const streak=computeStreak();
@@ -1673,7 +1677,7 @@ function updateMediaSession(action="idle",detail={}){
     const setInfo=detail.set!==undefined?`Set ${detail.set+1}`:"";
     navigator.mediaSession.metadata=new MediaMetadata({
       title:isRest?`Rest: ${detail.time||"Next Set"}`:exercise,
-      artist:"Rep Gym Companion",
+      artist:"AWJ",
       album:isRest?`${exercise} · ${setInfo}`:(session?.title||"Workout"),
       artwork:[
         {src:"icon-192.png",sizes:"192x192",type:"image/png"},
@@ -1864,7 +1868,8 @@ async function disablePushReminders(){
   if(state.view==="history")renderHistory();
 }
 
-function renderHistory(){
+function renderHistory(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.progress();return renderHistoryLegacy();}
+function renderHistoryLegacy(){
   stopSessionClock();document.body.classList.remove("workout-mode");state.view="history";state.activeTab="train";persist();updatePrimaryTabs();const u=U(),rows=state.history;
   const best={};rows.forEach(r=>Object.entries(r.loads||{}).forEach(([name,l])=>setsFromLog(l).forEach(s=>{const w=Number(s.weight)||0,reps=Number(s.reps)||0;if(!best[name]||w>best[name].weight||(w===best[name].weight&&reps>best[name].reps))best[name]={weight:w,reps};})));
   const streak=computeStreak();
@@ -1903,12 +1908,12 @@ function showDiagnostics(){
 function exportData(){
   state.lastBackupAt=new Date().toISOString();state.backupSnoozedUntil=null;persist();
   const errorLog=(()=>{try{return JSON.parse(localStorage.getItem(errorLogKey)||"[]");}catch{return [];}})();
-  const payload={app:"Rep Gym Companion",schema:3,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem(storageKey)||"{}"),diagnostics:errorLog};
+  const payload={app:"AWJ",schema:3,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem(storageKey)||"{}"),diagnostics:errorLog};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`rep-backup-${isoDay()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   if(state.view==="home")renderHome();
 }
 async function importData(event){
-  try{const payload=JSON.parse(await event.target.files[0].text());if(payload.app!=="Rep Gym Companion"||![1,2,3].includes(payload.schema)||typeof payload.data!=="object")throw Error("invalid");
+  try{const payload=JSON.parse(await event.target.files[0].text());if(!["AWJ","Rep Gym Companion"].includes(payload.app)||![1,2,3].includes(payload.schema)||typeof payload.data!=="object")throw Error("invalid");
     if(!confirm("This will replace the current app data. Continue?"))return;
     localStorage.setItem(storageKey,JSON.stringify(payload.data));location.reload();
   }catch{alert("That backup file is invalid or damaged.");event.target.value="";}
@@ -2468,7 +2473,8 @@ function bindVitalsTools(){
   document.querySelectorAll("[data-delete-sleep]").forEach(b=>b.onclick=()=>{deleteSleepLog(b.dataset.deleteSleep);renderVitals();});
   document.querySelectorAll(".journal-list [data-daily-key]").forEach(el=>el.onchange=()=>{if(el.checked&&navigator.vibrate)navigator.vibrate(30);const b=dailyBucket("journal");b.checked[el.dataset.dailyKey]=el.checked;persist();renderVitals();});
 }
-function renderVitals(){
+function renderVitals(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.recovery();return renderVitalsLegacy();}
+function renderVitalsLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="vitals";state.activeTab="vitals";persistDebounced();updatePrimaryTabs();
   
   app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("VITALS","Your readiness today.","Recovery and strain built from your own data, plus the option to import numbers straight from Apple Health screenshots.")}
@@ -2541,7 +2547,8 @@ function frequentMealsTray(){
   </div>`;
 }
 
-function renderNutrition(){
+function renderNutrition(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.nutrition();return renderNutritionLegacy();}
+function renderNutritionLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="nutrition";state.activeTab="food";state.foodMealType=state.foodMealType||autoMealType();persistDebounced();updatePrimaryTabs();const profile=foodProfile(),entries=todayFoodEntries(),totals=foodTotals(entries),water=Number(state.water[isoDay()])||0,note=state.foodNote||"";
   app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="recovery-head module-head food-head"><p class="eyebrow">${"FOOD TRACKER"}</p><h1>${"Write what you ate."}</h1><p>${"Just like your Food Tracking bot: add a note, photo, voice description, or barcode; review the estimate; then save."}</p><span class="guide-version">${"Nutrition values are estimates, not medical advice"}</span><p class="integration-disclosure">${"When analysis is used, the description or image is sent to Google Gemini. The meal is not sent to Notion until you save it."}</p></section><section class="food-profile"><div><small>${"TODAY'S PROFILE"}</small><strong>${profile.label}</strong><span style="display:inline-block;margin-top:4px;font-size:10px;font-weight:900;color:var(--orange);background:rgba(255,139,61,.12);padding:2px 7px;border-radius:6px;border:1px solid rgba(255,139,61,.25);">${profile.carbCycleBadge}</span></div><span>${entries.length} ${"entries"}<br>${syncStatusText()}</span></section>${reminderStrip("food")}${foodConnectionCard()}<section class="macro-dashboard">${meter("Calories",totals.calories,profile.calories,"kcal","#ffd36a")}${meter("Protein",totals.protein_g,profile.protein,"g")}${meter("Carbs",totals.carbs_g,profile.carbs,"g","var(--blue)")}${meter("Fat",totals.fat_g,profile.fat,"g","var(--orange)")}${macroDonutRing(totals,profile)}</section><section class="meal-composer"><div class="meal-composer-head"><div><small>${"NEW MEAL NOTE"}</small><h2>${"What did you eat?"}</h2></div><span class="estimate-pill">AI ESTIMATE</span></div>${frequentMealsTray()}<div class="quick-meal-chips" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;">${([["🍳 4 Eggs + 2 Toast","4 eggs and 2 toast slices with butter"],["🥤 Whey + Creatine","1 scoop whey protein and 5g creatine in water"],["🍗 200g Chicken + Rice","200g grilled chicken breast with 1.5 cup white rice"],["🥣 Oatmeal + PB + Banana","1 cup oatmeal, 2 tbsp peanut butter, 1 banana"],["🥩 200g Steak + Potatoes","200g beef steak and roasted potatoes"]]).map(([chip,desc])=>`<button class="quick-chip-btn" type="button" data-quick-meal="${esc(desc)}" style="padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;">${esc(chip)}</button>`).join("")}</div><div class="meal-type-row">${[["Breakfast","Breakfast"],["Lunch","Lunch"],["Dinner","Dinner"],["Snack","Snack"]].map(([type,label])=>`<button data-meal-type="${type}" class="${state.foodMealType===type?"is-active":""}">${label}</button>`).join("")}</div><textarea class="meal-note" data-food-note maxlength="1200" placeholder="${"Example: 180g grilled chicken, one cup of rice, and salad…"}">${esc(note)}</textarea><div class="log-method-row">${[["Ingredients","Ingredients"],["Restaurant","Restaurant"]].map(([method,label])=>`<button data-log-method="${method}" class="${state.foodLogMethod===method?"is-active":""}">${label}</button>`).join("")}</div><div class="meal-tools"><label>▣ ${"Photo"}<input data-food-photo type="file" accept="image/*" capture="environment"></label><label>▤ ${"Gallery"}<input data-food-gallery type="file" accept="image/*"></label><button data-food-voice>◉ ${"Voice"}</button><label>▥ ${"Barcode"}<input data-food-barcode type="file" accept="image/*" capture="environment"></label><button data-live-barcode type="button">🔍 ${"Live Scan"}</button></div><button class="analyze-meal" data-analyze-food ${state.foodBusy?"disabled":""}>${state.foodBusy?("Analyzing…"):("Analyze note")}</button><button class="analyze-meal" data-manual-food style="margin-top:7px;background:transparent;color:var(--muted);border:1px solid var(--line)">${"Save as note without AI"}</button><p class="composer-status ${state.foodError?"is-error":""}" data-food-status>${esc(state.foodStatus||"")}</p>${foodRetryControl()}</section>${foodDraftCard()}${mealTemplatesSection()}<div class="food-section-head"><h2>${"Today's trackers"}</h2></div>${supplementsCard()}${weightTrackerCard()}${waterTrackerCard(water,profile.water)}<div class="food-section-head"><h2>${"Today's notes"}</h2><span>${entries.length} ${"meals"}</span></div><section class="food-log">${entries.length?entries.map(foodEntryCard).join(""):`<div class="food-empty">${"No meals logged today. Write your first food note above."}</div>`}</section>`);
   document.querySelector(".food-connect")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(nutritionPlanNote()));const foodHeadings=[...document.querySelectorAll(".food-section-head h2")];if(foodHeadings.length)foodHeadings.at(-1).textContent="Food entries today";
@@ -2604,7 +2611,8 @@ function setFoodWater(amount){const next=Math.max(0,Math.min(Math.round(Number(a
 function changeFoodWater(delta){setFoodWater((Number(state.water[isoDay()])||0)+(Number(delta)||0));}
 function applyCustomWater(mode){const input=document.querySelector("[data-water-custom]"),amount=Number(input?.value);if(!input||!Number.isFinite(amount)||amount<=0||amount>20000){input?.setCustomValidity("Enter an amount from 1 to 20,000 ml.");input?.reportValidity();return;}input.setCustomValidity("");setFoodWater(mode==="set"?amount:(Number(state.water[isoDay()])||0)+amount);}
 function deleteFoodEntry(id){state.foodEntries=state.foodEntries.filter(entry=>entry.id!==id);queueNutritionSummary();persist();renderNutrition();}
-function renderHygiene(){
+function renderHygiene(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.routines();return renderHygieneLegacy();}
+function renderHygieneLegacy(){
   stopSessionClock();document.body.classList.remove("workout-mode");state.view="hygiene";state.activeTab="care";persistDebounced();updatePrimaryTabs();const g=REP_HEALTH_GUIDE.hygiene,b=dailyBucket("hygiene"),day=currentDay(),hair=g.hair[day],training=["Sunday","Monday","Tuesday","Wednesday","Thursday"].includes(day),afterWorkDay=["Sunday","Tuesday","Wednesday","Thursday"].includes(day),sections=[...g.morning.map((x,i)=>["morning",i,x]),...g.evening.map((x,i)=>["evening",i,x]),...hair.map((x,i)=>["hair",i,x]),...(training?g.postWorkout.map((x,i)=>["post",i,x]):[]),...(afterWorkDay?g.afterWork.map((x,i)=>["after",i,x]):[])],done=sections.filter(([p,i])=>b.checked[`${p}-${i}`]).length,percent=Math.round(done/sections.length*100),nonNegotiableDone=[Boolean(b.checked["morning-0"]&&b.checked["evening-2"]),Boolean(b.checked["evening-1"]),Boolean(b.checked["morning-1"]),Boolean(!training||b.checked["post-0"])];
   const complete=p=>{const group=sections.filter(x=>x[0]===p);return group.length>0&&group.every(([,i])=>b.checked[`${p}-${i}`]);};
   app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("DAILY CARE","Scan. Do. Done.","Morning, evening, post-workout, and the correct hair routine for today.")}
@@ -2845,7 +2853,24 @@ addEventListener("online",()=>{network();fetchPendingVitals();});addEventListene
 async function registerServiceWorker(){
   if(!("serviceWorker" in navigator)||!location.protocol.startsWith("http"))return;
   const reg=await navigator.serviceWorker.register(`./sw.js?v=${window.REP_BUILD_VERSION||"dev"}`);
-  reg.addEventListener("updatefound",()=>{const worker=reg.installing;worker?.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){const bar=document.createElement("div");bar.className="update-bar";bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);document.body.appendChild(bar);bar.querySelector("button").onclick=async()=>{persist();await window.REP_STORE?.flush();if(reg.waiting){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload(),{once:true});reg.waiting.postMessage({type:"SKIP_WAITING"});}else location.reload();};}});});
+  const showUpdate=()=>{
+    if(!reg.waiting||!navigator.serviceWorker.controller||document.querySelector(".update-bar"))return;
+    const bar=document.createElement("div");
+    bar.className="update-bar";
+    bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);
+    document.body.appendChild(bar);
+    bar.querySelector("button").onclick=async()=>{
+      try{
+        persist();
+        if(window.REP_STORE?.saveStatus==="failed")throw Error("Your changes are not saved on this device.");
+        await window.REP_STORE?.flush();
+        navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload(),{once:true});
+        reg.waiting?.postMessage({type:"SKIP_WAITING"});
+      }catch(error){showToast(`Update paused: ${String(error.message||error)}`);}
+    };
+  };
+  reg.addEventListener("updatefound",()=>{const worker=reg.installing;worker?.addEventListener("statechange",()=>{if(worker.state==="installed")showUpdate();});});
+  showUpdate();
   reg.update().catch(()=>{});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{});});
   addEventListener("pageshow",()=>reg.update().catch(()=>{}));
@@ -2932,7 +2957,7 @@ function consumeQuickLaunch(){
 // tab switches (setPrimaryTab) still work normally and aren't affected. A
 // manifest-shortcut launch (?quick=...) still lands here first, then
 // immediately layers its action on top, same as a manual tap would.
-window.REP_CORE_PAGES=Object.freeze({nutrition:renderNutrition,vitals:renderVitals,wellness:renderHygiene,history:renderHistory,insights:renderInsights});
+window.REP_CORE_PAGES=Object.freeze({nutrition:renderNutritionLegacy,vitals:renderVitalsLegacy,wellness:renderHygieneLegacy,history:renderHistoryLegacy,insights:renderInsightsLegacy});
 renderOverview();
 renderQuickLog();
 consumeQuickLaunch();

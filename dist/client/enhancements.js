@@ -1,4 +1,4 @@
-/* Rep Gym Companion v58 intelligence, safety, and flexibility layer.
+/* AWJ v58 intelligence, safety, and flexibility layer.
    Kept separate from the recovered v55 client so upgrades remain reviewable. */
 (function(){
   const APP_SCHEMA=22,features=window.REP_FEATURES,health=window.REP_HEALTH_ENGINE,syncCenter=window.REP_SYNC_CENTER,performance=window.REP_PERFORMANCE_INSIGHTS,adaptive=window.REP_ADAPTIVE_COACH,productSuite=window.REP_PRODUCT_SUITE;
@@ -26,7 +26,7 @@
     const schedule=clone(DEFAULT_SCHEDULE),targets=clone(DEFAULT_TARGETS);
     for(const day of DAY_NAMES){const incoming=value.schedule?.[day];if(incoming){schedule[day].morning=Boolean(incoming.morning);if(SCHEDULE_FOCUS_OPTIONS.includes(incoming.focus))schedule[day].focus=incoming.focus;}}
     for(const key of Object.keys(targets)){const incoming=value.targets?.[key]||{},isLegacy=LEGACY_TARGETS[key].some(old=>TARGET_FIELDS.every(field=>Number(incoming[field])===old[field]));if(isLegacy)continue;for(const field of TARGET_FIELDS){const n=Number(incoming[field]);if(Number.isFinite(n)&&n>=0)targets[key][field]=n;}}
-    return {weightUnit:value.weightUnit==="lb"?"lb":"kg",waterUnit:value.waterUnit==="oz"?"oz":"ml",schedule,targets};
+    return {weightUnit:value.weightUnit==="lb"?"lb":"kg",waterUnit:value.waterUnit==="oz"?"oz":"ml",themeMode:value.themeMode==="oled"?"oled":"default",themeAccent:["acid","cyan","flame","violet"].includes(value.themeAccent)?value.themeAccent:"acid",soundPack:["digital","click","bell"].includes(value.soundPack)?value.soundPack:"digital",language:value.language==="ar"?"ar":"en",schedule,targets};
   }
 
   state.preferences=normalizedPreferences(rawSaved.preferences);
@@ -71,7 +71,7 @@
 
   function statePayload(){
     const restTimer=state.timer?{remaining:state.timer.remaining,total:state.timer.total,paused:state.timer.paused,set:state.timer.set,targetEndTime:state.timer.targetEndTime}:null;
-    return {version:APP_SCHEMA,programReview:state.programReview,customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines),routineFavourites:state.routineFavourites,displayPreferences:state.displayPreferences,sessionSubstitutions:state.sessionSubstitutions,mediaMode:state.mediaMode,mediaQuality:state.mediaQuality,guideVersion:REP_HEALTH_GUIDE.version,activeTab:state.activeTab,healthView:state.healthView,session:state.session,index:state.index,completed:state.completed,muted:state.muted,checkin:saved.checkin||{},speed:state.speed,paused:state.paused,muscles:state.muscles,viewMode:state.viewMode,logs:state.logs,swaps:state.swaps,history:state.history,sessionStartedAt:state.sessionStartedAt,reviews:state.reviews,fieldTest:state.fieldTest,voice:state.voice,syncQueue:state.syncQueue,syncActivity:state.syncActivity,recoveryCheckins:state.recoveryCheckins,daily:state.daily,habitOrder:state.habitOrder,cardioDraft:state.cardioDraft,programStart:state.programStart,foodEntries:state.foodEntries,savedMeals:state.savedMeals,water:state.water,foodNote:state.foodNote,foodMealType:state.foodMealType,foodLogMethod:state.foodLogMethod,preferences:state.preferences,mealQuantities:state.mealQuantities,lastBackupAt:state.lastBackupAt,backupSnoozedUntil:state.backupSnoozedUntil,bodyWeights:state.bodyWeights,bodyMeasurements:state.bodyMeasurements,chargingPlan:state.chargingPlan,workoutChecks:state.workoutChecks,mealTemplates:state.mealTemplates,sleepLogs:state.sleepLogs,pushTime:state.pushTime,pushEndpoint:state.pushEndpoint,activeEnergy:state.activeEnergy,lastVitalsImportDate:state.lastVitalsImportDate,lastVitalsImportAt:state.lastVitalsImportAt,connectionCapabilities:state.connectionCapabilities,lastSyncedAt:state.lastSyncedAt,healthProfile:state.healthProfile,healthMetrics:state.healthMetrics,healthSummarySignatures:state.healthSummarySignatures,analyticsGoal:state.analyticsGoal,insightControls:state.insightControls,analyticsQuestions:state.analyticsQuestions,analyticsLastQuestion:state.analyticsLastQuestion,onboarding:state.onboarding,activeWorkoutPlan:state.activeWorkoutPlan,progressionProposals:state.progressionProposals,trainingTargets:state.trainingTargets,nutritionView:state.nutritionView,trainingView:state.trainingView,settingsSection:state.settingsSection,systemHealth:state.systemHealth,weekOverrides:state.weekOverrides,scheduleAdjustments:state.scheduleAdjustments,launchEvents:state.launchEvents,customExperiments:state.customExperiments,experimentCheckins:state.experimentCheckins,exerciseSubstitutions:state.exerciseSubstitutions,smartReminders:state.smartReminders,restTimer};
+    return {version:APP_SCHEMA,programReview:state.programReview,customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines),routineFavourites:state.routineFavourites,displayPreferences:state.displayPreferences,sessionSubstitutions:state.sessionSubstitutions,mediaMode:state.mediaMode,mediaQuality:state.mediaQuality,guideVersion:REP_HEALTH_GUIDE.version,activeTab:state.activeTab,healthView:state.healthView,session:state.session,index:state.index,completed:state.completed,muted:state.muted,checkin:saved.checkin||{},speed:state.speed,paused:state.paused,muscles:state.muscles,viewMode:state.viewMode,logs:state.logs,swaps:state.swaps,history:state.history,sessionStartedAt:state.sessionStartedAt,reviews:state.reviews,fieldTest:state.fieldTest,voice:state.voice,syncQueue:state.syncQueue,syncActivity:state.syncActivity,recoveryCheckins:state.recoveryCheckins,daily:state.daily,habitOrder:state.habitOrder,cardioDraft:state.cardioDraft,programStart:state.programStart,foodEntries:state.foodEntries,savedMeals:state.savedMeals,water:state.water,foodDraft:state.foodDraft,foodNote:state.foodNote,foodMealType:state.foodMealType,foodLogMethod:state.foodLogMethod,preferences:state.preferences,mealQuantities:state.mealQuantities,lastBackupAt:state.lastBackupAt,backupSnoozedUntil:state.backupSnoozedUntil,bodyWeights:state.bodyWeights,bodyMeasurements:state.bodyMeasurements,chargingPlan:state.chargingPlan,workoutChecks:state.workoutChecks,mealTemplates:state.mealTemplates,sleepLogs:state.sleepLogs,pushTime:state.pushTime,pushEndpoint:state.pushEndpoint,activeEnergy:state.activeEnergy,lastVitalsImportDate:state.lastVitalsImportDate,lastVitalsImportAt:state.lastVitalsImportAt,connectionCapabilities:state.connectionCapabilities,lastSyncedAt:state.lastSyncedAt,healthProfile:state.healthProfile,healthMetrics:state.healthMetrics,healthSummarySignatures:state.healthSummarySignatures,analyticsGoal:state.analyticsGoal,insightControls:state.insightControls,analyticsQuestions:state.analyticsQuestions,analyticsLastQuestion:state.analyticsLastQuestion,onboarding:state.onboarding,activeWorkoutPlan:state.activeWorkoutPlan,progressionProposals:state.progressionProposals,trainingTargets:state.trainingTargets,nutritionView:state.nutritionView,trainingView:state.trainingView,settingsSection:state.settingsSection,systemHealth:state.systemHealth,weekOverrides:state.weekOverrides,scheduleAdjustments:state.scheduleAdjustments,launchEvents:state.launchEvents,customExperiments:state.customExperiments,experimentCheckins:state.experimentCheckins,exerciseSubstitutions:state.exerciseSubstitutions,smartReminders:state.smartReminders,restTimer};
   }
   globalThis.persist=function(){if(state.dataRestoreInProgress)return;const payload=statePayload();window.REP_STORE?.persist(storageKey,payload);features?.scheduleSnapshot(payload);};
   state.syncQueue=Array.isArray(state.syncQueue)?state.syncQueue:[];
@@ -180,31 +180,6 @@
   deleteFoodEntry=function(id){const index=state.foodEntries.findIndex(entry=>entry.id===id),entry=state.foodEntries[index];if(!entry)return;state.foodEntries.splice(index,1);queueNutritionSummary();persist();renderNutrition();showUndo("Meal deleted.",()=>{state.foodEntries.splice(index,0,entry);queueNutritionSummary();persist();renderNutrition();});};
 
   window.REP_TRAINING_PREFERENCES?.normalize(state);
-  const PRIMARY_TABS=new Set(["home","train","food","more","insights"]);
-  function primaryTabForState(){return ["care","vitals","health"].includes(state.activeTab)?"more":PRIMARY_TABS.has(state.activeTab)?state.activeTab:"home";}
-  function activatePrimaryTab(tab){
-    if(tab==="health")tab=state.healthView==="care"?"care":"vitals";
-    state.activeTab=tab;persistDebounced();updatePrimaryTabs();
-    if(tab==="home")renderOverview();
-    else if(tab==="food")renderNutrition();
-    else if(tab==="care")renderHygiene();
-    else if(tab==="insights")renderInsights();
-    else if(tab==="vitals")renderVitals();
-    else if(tab==="more")window.REP_TRAINING_UI?.more();
-    else renderHome();
-    if(navigator.onLine&&localStorage.getItem(syncKeyStorage)&&typeof fetchPendingVitals==="function")setTimeout(()=>{fetchPendingVitals(false).catch(()=>{});},100);
-  }
-  function routeIdForPrimaryTab(tab){
-    if(tab==="home")return "today";
-    if(tab==="train")return "training-program";
-    if(tab==="more")return "more";
-    if(tab==="food")return `nutrition-${state.nutritionView}`;
-    if(tab==="health")return state.healthView==="care"?"health-wellness":"health-vitals";
-    if(tab==="care")return "health-wellness";
-    if(tab==="vitals")return "health-vitals";
-    return tab;
-  }
-  function healthNav(){const items=[["vitals","Vitals"],["care","Wellness"]];const nav=document.createElement("nav");nav.className="health-subnav";nav.setAttribute("aria-label","Health sections");nav.innerHTML=REP_SAFE_DOM.sanitize(items.map(([id,label])=>`<button data-health-view="${id}" class="${state.healthView===id?"is-active":""}" aria-current="${state.healthView===id?"page":"false"}">${label}</button>`).join(""));const header=app.querySelector(".module-head,.recovery-head");header?.insertAdjacentElement("afterend",nav);nav.querySelectorAll("[data-health-view]").forEach(button=>button.onclick=()=>setPrimaryTab(button.dataset.healthView));}
   const confidenceLabel=value=>({high:"High confidence",medium:"Medium confidence",low:"Low confidence"}[value]||value);
   function adaptiveTodayPlan(){
     const ready=health.readiness(state,isoDay(),state.healthProfile),recommendation=health.trainingRecommendation(state,isoDay(),state.healthProfile,ready);
@@ -217,14 +192,12 @@
     else{showToast("Recovery plan applied. Loaded training is paused today.");renderOverview();}
   }
   window.REP_APPLY_ADAPTIVE_TODAY=applyAdaptiveToday;
-  function bindAdaptiveActions(){document.querySelectorAll("[data-apply-adaptive]").forEach(button=>button.onclick=()=>applyAdaptiveToday());}
   function coachCard(compact=false,showAction=true){
     const ready=health.readiness(state,isoDay(),state.healthProfile),training=health.trainingRecommendation(state,isoDay(),state.healthProfile,ready),quality=health.dataQuality(state,isoDay(),state.healthProfile,ready),bed=health.bedtime(state,isoDay(),state.healthProfile),tone=ready.band||"unknown";
     const score=ready.score===null?"—":`${ready.score}%`,why=ready.reasons.length?ready.reasons:(["Log sleep and a recovery check-in to build a personal recommendation."]),plan=adaptive.todayPlan({state,focus:daySchedule().focus,recommendation:training,date:isoDay()}),applied=Boolean(plan.appliedAt);
     const importLabel=quality.lastImportDays===null?"No import yet":quality.needsImport?"Import needs attention":"Import is current";
     return `<section class="health-coach-card tone-${tone} ${compact?"is-compact":""}"><div class="health-coach-head"><div><small>${"ADAPTIVE TODAY PLAN"}</small><h2>${training.title}</h2></div><div class="readiness-score"><strong>${score}</strong><span>${confidenceLabel(ready.confidence)}</span></div></div><p>${training.detail}</p><div class="coach-reasons">${why.map(reason=>`<span>${esc(reason)}</span>`).join("")}</div><div class="adaptive-adjustments">${plan.adjustments.map(item=>`<span>✓ ${esc(item)}</span>`).join("")}</div>${showAction?`<button class="adaptive-apply" data-apply-adaptive type="button">${applied?("Applied · review plan →"):plan.targetSession?("Apply today's plan →"):("Apply recovery day")}</button>`:""}${compact?"":`<div class="coach-grid"><div><small>${"BEDTIME"}</small><strong>${bed.time}</strong><span>${`for ${bed.wakeTime} wake-up`}</span></div><div><small>${"DATA COVERAGE"}</small><strong>${ready.coverage}%</strong><span>${importLabel}</span></div></div><details><summary>${"How this was calculated"}</summary>${ready.components.map(item=>`<div class="component-row ${item.available?"":"is-missing"}"><span>${esc(item.label)}</span><strong>${item.available?`${item.value}%`:"—"}</strong><small>${esc(item.detail)}</small></div>`).join("")}<p class="medical-boundary">${"General wellness guidance, not a diagnosis. Never ignore symptoms because of a score."}</p></details>`}</section>`;
   }
-  function importQualityCard(){const quality=health.dataQuality(state,isoDay(),state.healthProfile),metrics=state.healthMetrics?.[isoDay()]||{},last=quality.lastImportDays===null?("Never imported"):quality.lastImportDays===0?("Today"):(`${quality.lastImportDays}d ago`),headline=quality.lastImportDays===null?("Connect Apple Health when ready"):quality.needsImport?("Check data import"):("Data is current");return `<section class="health-quality-card"><div><small>${"DATA PIPELINE"}</small><h2>${headline}</h2><p>${"Detailed history stays on this device; only daily summaries are sent to Notion."}</p></div><div class="quality-facts"><span><b>${last}</b>${"Last import"}</span><span><b>${quality.baselineNights}</b>${"Baseline nights"}</span><span><b>${metrics.steps?Number(metrics.steps).toLocaleString():"—"}</b>${"Steps today"}</span></div><button data-health-import-check>${"Check for new data"}</button><a href="https://github.com/mohamedhosny95/rep-gym-companion/tree/main/ios/RepHealthCompanion" target="_blank" rel="noopener">${"Set up the native Apple Health bridge ↗"}</a></section>`;}
   if(health){
     computeRecoveryScore=function(date=isoDay()){const result=health.readiness(state,date,state.healthProfile);return result.score===null?null:{score:result.score,band:result.band,calibrating:result.calibrating,confidence:result.confidence,components:result.components};};
     computeStrainScore=function(date=isoDay()){return health.strain(state,date);};
@@ -235,14 +208,6 @@
   applyVitalsEntry=function(entry){const report=baseApplyVitalsEntry(entry),date=entry.date||isoDay(),fields=["steps","exercise_minutes","stand_minutes","vo2_max","oxygen_saturation_pct","wrist_temperature_c","sleep_deep_hours","sleep_rem_hours","coverage_minutes","heart_rate_samples","workout_hr_samples","watch_battery_pct","source"];state.healthMetrics[date]={...(state.healthMetrics[date]||{})};for(const field of fields)if(entry[field]!==null&&entry[field]!==undefined&&entry[field]!=="")state.healthMetrics[date][field]=entry[field];return report;};
   const baseFetchPendingVitals=fetchPendingVitals;
   fetchPendingVitals=async function(showStatus=false){await baseFetchPendingVitals(showStatus);const date=state.lastVitalsImportDate,entry=state.sleepLogs.find(item=>item.date===date);if(!date||!entry)return;const ready=health.readiness(state,date,state.healthProfile),training=health.trainingRecommendation(state,date,state.healthProfile),metrics=state.healthMetrics?.[date]||{},summary=[`Readiness ${ready.score===null?"not available":`${ready.score}%`} (${ready.confidence} confidence, ${ready.coverage}% coverage)`,`Strain ${health.strain(state,date)}`,`Coach: ${training.title}`,metrics.steps?`Steps ${Math.round(metrics.steps)}`:"",metrics.vo2_max?`VO₂ max ${metrics.vo2_max}`:"","Wellness estimate; not a diagnosis."].filter(Boolean).join(" · "),signature=JSON.stringify([entry.hours,entry.hrv,entry.rhr,entry.resp,metrics,summary]);if(state.healthSummarySignatures[date]===signature)return;state.healthSummarySignatures[date]=signature;queueHealth("sleep",{date,sleep:entry.hours,notes:summary});};
-  const baseVitals=renderVitals,baseCare=renderHygiene;
-  renderVitals=function(){state.healthView="vitals";baseVitals();healthNav();document.querySelector(".health-subnav")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(`${coachCard()}${importQualityCard()}`));bindAdaptiveActions();document.querySelector("[data-health-import-check]")?.addEventListener("click",()=>fetchPendingVitals(true));};
-  function organizeWellness(){
-    const hour=new Date().getHours(),current=hour<12?("Morning"):hour<18?("Post-workout"):("Evening");const cards=[...document.querySelectorAll(".module-card")];
-    if(!state.wellnessExpanded)cards.forEach(card=>{const title=card.querySelector("h2")?.textContent||"";card.hidden=Boolean(title)&&title!==current&&!/Hair/i.test(title);});
-    const reference=document.querySelector("[data-view-care-plan]");if(reference&&!document.querySelector("[data-wellness-expand]")){const button=document.createElement("button");button.className="wellness-expand";button.dataset.wellnessExpand="";button.textContent=state.wellnessExpanded?("Show current routine"):("Show full daily routine");button.onclick=()=>{state.wellnessExpanded=!state.wellnessExpanded;renderHygiene();};reference.insertAdjacentElement("beforebegin",button);}
-  }
-  renderHygiene=function(){state.healthView="care";baseCare();healthNav();organizeWellness();};
   function progressionCard(proposals){
     if(!proposals.length)return "";
     const hasDeload=proposals.some(item=>item.status==="deload"),accepted=proposals.every(item=>state.trainingTargets[item.exercise]?.sourceSessionId===item.sourceSessionId);
@@ -276,11 +241,13 @@
   }
   window.applyThemeSettings=applyThemeSettings;
   applyThemeSettings();
+  function applyLanguageSettings(){const arabic=state.preferences.language==="ar";document.documentElement.lang=arabic?"ar":"en";document.documentElement.dir=arabic?"rtl":"ltr";updatePrimaryTabs();}
+  applyLanguageSettings();
 
   function settingsNav(active){return `<nav class="settings-nav" aria-label="${"Settings sections"}">${[["general","General"],["schedule","Schedule"],["targets","Targets"],["coach","Coach"],["sync","Sync"],["security","Security"]].map(([id,label])=>`<button data-settings-tab="${id}" class="${active===id?"is-active":""}" aria-current="${active===id?"page":"false"}">${label}</button>`).join("")}</nav>`;}
   function pwaInstallCard(){
     const isStandalone=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
-    if(isStandalone)return `<section class="settings-card" style="border-color:rgba(201,255,61,.3);background:linear-gradient(145deg,rgba(201,255,61,.06),var(--panel));"><small style="color:var(--acid);font-weight:900;">${"INSTALLED APP"}</small><h2>${"Rep Gym Companion is running as a Standalone PWA"}</h2><p style="margin:0;color:var(--muted);font-size:11px;">✓ ${"Full screen with fast offline caching and no browser bar."}</p></section>`;
+    if(isStandalone)return `<section class="settings-card"><small style="color:var(--acid);font-weight:900;">${"INSTALLED APP"}</small><h2>${"AWJ is running as a Standalone PWA"}</h2><p style="margin:0;color:var(--muted);font-size:11px;">✓ ${"Full screen with fast offline caching and no browser bar."}</p></section>`;
     return `<section class="settings-card pwa-install-card" style="border-color:rgba(125,201,255,.3);background:linear-gradient(145deg,rgba(125,201,255,.07),var(--panel));"><small style="color:var(--blue);font-weight:900;">${"INSTALL ON IPHONE"}</small><h2>${"Add to Home Screen for Native Experience"}</h2><div style="display:grid;gap:8px;margin:10px 0 12px;font-size:12px;color:var(--text);"><div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);"><b>1</b><span>${"Tap the <b>Share (⎋)</b> icon at the bottom of Safari"}</span></div><div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);"><b>2</b><span>${"Scroll down and tap <b>Add to Home Screen (+)</b>"}</span></div></div><button class="settings-primary" data-install-settings style="background:var(--blue);color:#03202e;">${"Install / Add to Home Screen"}</button></section>`;
   }
   function circadianRemindersCard(){
@@ -311,21 +278,22 @@
   function generalSettings(){
     const themeMode=state.preferences?.themeMode||"default",themeAccent=state.preferences?.themeAccent||"acid",soundPack=state.preferences?.soundPack||"digital";
     return `${pwaInstallCard()}<section class="settings-card"><small>${"YOUR PREFERENCES"}</small><h2>${"Make the app feel familiar"}</h2>
-      <div class="segmented-setting"><span>${"Theme Mode"}</span><div><button data-theme-mode="default" class="${themeMode==="default"?"is-active":""}">${"Charcoal"}</button><button data-theme-mode="oled" class="${themeMode==="oled"?"is-active":""}">🖤 ${"OLED Black"}</button></div></div>
+      <div class="segmented-setting"><span>${"Language / اللغة"}</span><div><button data-language="en" class="${state.preferences.language==="en"?"is-active":""}">English</button><button data-language="ar" class="${state.preferences.language==="ar"?"is-active":""}">العربية</button></div></div>
+      <div class="segmented-setting"><span>${"Theme Mode"}</span><div><button data-theme-mode="default" class="${themeMode==="default"?"is-active":""}">${"Emerald & Ivory"}</button><button data-theme-mode="oled" class="${themeMode==="oled"?"is-active":""}">${"Night Emerald"}</button></div></div>
       <div class="segmented-setting"><span>${"Sound Pack"}</span><div>
         <button data-sound-pack="digital" class="${soundPack==="digital"?"is-active":""}">${"Digital"}</button>
         <button data-sound-pack="click" class="${soundPack==="click"?"is-active":""}">${"Clicks"}</button>
         <button data-sound-pack="bell" class="${soundPack==="bell"?"is-active":""}">${"Gong"}</button>
       </div></div>
       <div class="segmented-setting"><span>${"Accent"}</span><div>
-        <button data-theme-accent="acid" class="${themeAccent==="acid"?"is-active":""}"><span style="color:#c9ff3d;">●</span> ${"Lime"}</button>
-        <button data-theme-accent="cyan" class="${themeAccent==="cyan"?"is-active":""}"><span style="color:#38bdf8;">●</span> ${"Cyan"}</button>
-        <button data-theme-accent="flame" class="${themeAccent==="flame"?"is-active":""}"><span style="color:#fb923c;">●</span> ${"Flame"}</button>
-        <button data-theme-accent="violet" class="${themeAccent==="violet"?"is-active":""}"><span style="color:#c084fc;">●</span> ${"Violet"}</button>
+        <button data-theme-accent="acid" class="${themeAccent==="acid"?"is-active":""}"><span style="color:#146b52;">●</span> ${"Emerald"}</button>
+        <button data-theme-accent="cyan" class="${themeAccent==="cyan"?"is-active":""}"><span style="color:#136b77;">●</span> ${"Teal"}</button>
+        <button data-theme-accent="flame" class="${themeAccent==="flame"?"is-active":""}"><span style="color:#995036;">●</span> ${"Copper"}</button>
+        <button data-theme-accent="violet" class="${themeAccent==="violet"?"is-active":""}"><span style="color:#694b9b;">●</span> ${"Violet"}</button>
       </div></div>
       ${[["weightUnit","Weight",["kg","lb"]],["waterUnit","Water",["ml","oz"]]].map(([key,label,values])=>`<div class="segmented-setting"><span>${label}</span><div>${values.map(value=>`<button data-unit="${key}" data-value="${value}" class="${state.preferences[key]===value?"is-active":""}">${value==="oz"?"fl oz":value}</button>`).join("")}</div></div>`).join("")}
       <button class="quiet-setting" data-run-onboarding>${"Run guided setup again"}</button>
-      <button class="quiet-setting" data-install-settings>${"Install Rep Gym Companion on this device"}</button>
+      <button class="quiet-setting" data-install-settings>${"Install AWJ on this device"}</button>
       <p>${"Stored values stay in kilograms and milliliters, so switching display units never changes your history."}</p></section>
       ${circadianRemindersCard()}
       <section class="settings-card data-migration-card"><small>${"DATA MIGRATION & BACKFILL"}</small><h2>${"Import from Strong, Hevy, or Apple Health"}</h2><p>${"Drop your CSV or XML export to backfill historical workouts, body weights, and meals."}</p><label class="settings-primary" style="display:inline-block;cursor:pointer;text-align:center;padding:10px 16px;margin-top:8px;">📥 ${"Choose File (CSV/XML)"}<input type="file" accept=".csv,.xml,.json" data-import-file style="display:none;"></label><span class="import-status-msg" data-import-status style="display:block;margin-top:8px;font-size:12px;color:var(--acid);"></span></section>`;
@@ -354,6 +322,7 @@
     document.querySelector("[data-settings-back]")?.addEventListener("click",()=>navigation?.back("today"));
     document.querySelectorAll("[data-settings-tab]").forEach(button=>button.onclick=()=>navigateTo(`settings-${button.dataset.settingsTab}`,()=>renderSettings(button.dataset.settingsTab)));
     document.querySelectorAll("[data-theme-mode]").forEach(button=>button.onclick=()=>{state.preferences.themeMode=button.dataset.themeMode;persist();applyThemeSettings();renderSettings("general");});
+    document.querySelectorAll("[data-language]").forEach(button=>button.onclick=()=>{state.preferences.language=button.dataset.language;persist();applyLanguageSettings();renderSettings("general");});
     document.querySelectorAll("[data-theme-accent]").forEach(button=>button.onclick=()=>{state.preferences.themeAccent=button.dataset.themeAccent;persist();applyThemeSettings();renderSettings("general");});
     document.querySelectorAll("[data-sound-pack]").forEach(button=>button.onclick=()=>{state.preferences.soundPack=button.dataset.soundPack;persist();if(window.playChime)window.playChime();renderSettings("general");});
     document.querySelector("[data-install-settings]")?.addEventListener("click",installApp);
@@ -365,11 +334,11 @@
         }
         try{
           const reg=await navigator.serviceWorker?.ready;
-          if(reg?.showNotification) await reg.showNotification("⚡ Rep Gym Companion: Today's Readiness 88%",{body:"High readiness today. Today's plan: Chest & Back.",icon:"./icon-192.png",badge:"./icon-192.png"});
-          else new Notification("⚡ Rep Gym Companion: Today's Readiness 88%",{body:"High readiness today."});
+          if(reg?.showNotification) await reg.showNotification("⚡ AWJ: Today's Readiness 88%",{body:"High readiness today. Today's plan: Chest & Back.",icon:"./icon-192.png",badge:"./icon-192.png"});
+          else new Notification("⚡ AWJ: Today's Readiness 88%",{body:"High readiness today."});
           showToast("Test notification sent successfully!");
         }catch{
-          try{new Notification("⚡ Rep Gym Companion: Test Notification",{body:"Notifications are working perfectly!"});showToast("Test notification sent successfully!");}catch(e){showToast(String(e.message||e));}
+          try{new Notification("⚡ AWJ: Test Notification",{body:"Notifications are working perfectly!"});showToast("Test notification sent successfully!");}catch(e){showToast(String(e.message||e));}
         }
       }else{showToast("Notifications are not supported in this browser.");}
     });
@@ -393,17 +362,16 @@
     document.querySelector("[data-backup-snooze]")?.addEventListener("click",()=>{snoozeBackupReminder();renderSettings("security");});
     features?.backupHistory().then(dates=>{const status=document.querySelector("[data-backup-status]"),history=document.querySelector("[data-backup-history]");if(status)status.textContent=dates.length?(`Latest: ${new Date(dates[0]).toLocaleString()}`):("A restore point will be created after the next change.");if(history&&dates.length>1){history.innerHTML=REP_SAFE_DOM.sanitize(dates.slice(1).map((date,index)=>`<button data-restore-index="${index+1}">${new Date(date).toLocaleString(undefined)}</button>`).join(""));history.querySelectorAll("[data-restore-index]").forEach(button=>button.onclick=()=>restoreSnapshot(Number(button.dataset.restoreIndex)));}});
   }
-  function loadOptionalScript(src,globalName){if(window[globalName])return Promise.resolve();return new Promise((resolve,reject)=>{const existing=document.querySelector(`script[data-optional="${src}"]`);if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return;}const script=document.createElement("script");script.src=`${src}?v=${window.REP_BUILD_VERSION||"f17e54415806"}`;script.dataset.optional=src;script.onload=resolve;script.onerror=()=>reject(Error(`Could not load ${src}`));document.head.appendChild(script);});}
+  function loadOptionalScript(src,globalName){if(window[globalName])return Promise.resolve();return new Promise((resolve,reject)=>{const existing=document.querySelector(`script[data-optional="${src}"]`);if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return;}const script=document.createElement("script");script.src=`${src}?v=${window.REP_BUILD_VERSION||"0e5f7f27cfb2"}`;script.dataset.optional=src;script.onload=resolve;script.onerror=()=>reject(Error(`Could not load ${src}`));document.head.appendChild(script);});}
   async function createPairHandoff(){if(!repAuth.isPaired())return;state.pairHandoffBusy=true;renderSettings("security");try{await loadOptionalScript("qrcode.js","qrcode");const response=await repAuth.fetch("/api/pair/handoff",{method:"POST"}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||`Pairing failed (${response.status})`);const qr=qrcode(0,"M");qr.addData(data.url);qr.make();state.pairHandoff={url:data.url,expiresAt:data.expiresAt,qr:qr.createDataURL(6,16)};}catch(error){showToast(String(error.message||error));}finally{state.pairHandoffBusy=false;renderSettings("security");}}
-  async function shareHandoff(preferShare){const url=state.pairHandoff?.url;if(!url)return;try{if(preferShare&&navigator.share)await navigator.share({title:"Pair Rep Gym Companion",url});else await navigator.clipboard.writeText(url);showToast("Pairing link copied.");}catch{showToast("Could not share the link.");}}
-  async function exportEncrypted(passphrase){try{if(!passphrase)passphrase=prompt("Enter a backup passphrase (at least 8 characters):");if(passphrase===null)return;persist();const inner={app:"Rep Gym Companion",schema:APP_SCHEMA,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:statePayload(),assets:{progressPhotos:await features.exportProgressPhotos()}} ,payload=await features.encryptExport(inner,passphrase);features.downloadJson(payload,`health-os-backup-${isoDay()}.json`);state.lastBackupAt=new Date().toISOString();state.backupSnoozedUntil=null;persist();showToast("Encrypted backup downloaded, including progress photos.");}catch(error){showToast(String(error.message||error));}}
+  async function shareHandoff(preferShare){const url=state.pairHandoff?.url;if(!url)return;try{if(preferShare&&navigator.share)await navigator.share({title:"Pair AWJ",url});else await navigator.clipboard.writeText(url);showToast("Pairing link copied.");}catch{showToast("Could not share the link.");}}
+  async function exportEncrypted(passphrase){try{if(!passphrase)passphrase=prompt("Enter a backup passphrase (at least 8 characters):");if(passphrase===null)return;persist();const inner={app:"AWJ",schema:APP_SCHEMA,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:statePayload(),assets:{progressPhotos:await features.exportProgressPhotos()}} ,payload=await features.encryptExport(inner,passphrase);features.downloadJson(payload,`awj-backup-${isoDay()}.json`);state.lastBackupAt=new Date().toISOString();state.backupSnoozedUntil=null;persist();showToast("Encrypted backup downloaded, including progress photos.");}catch(error){showToast(String(error.message||error));}}
   function safeBackupData(data){if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid backup data.");const text=JSON.stringify(data);if(text.length>25_000_000||text.includes('"__proto__"')||text.includes('"prototype"'))throw Error("Backup is too large or unsafe.");for(const key of ["history","foodEntries","bodyWeights","mealTemplates","sleepLogs","syncQueue","customRoutines"]){if(data[key]!==undefined&&!Array.isArray(data[key]))throw Error(`Invalid ${key} data.`);}return data;}
   async function importSecureBackup(event){const file=event.target.files?.[0];if(!file)return;try{if(file.size>250*1024*1024)throw Error("Backup is too large.");const payload=JSON.parse(await file.text());let inner;if(payload.encrypted){const passphrase=prompt("Enter the backup passphrase:");if(passphrase===null)return;inner=await features.decryptExport(payload,passphrase);}else inner=payload;const data=safeBackupData(inner.data||inner);if(!confirm("This replaces current app data and restores encrypted progress photos. Continue?"))return;state.dataRestoreInProgress=true;await features?.createDeviceSnapshot(statePayload());await window.REP_STORE?.replace(storageKey,data);await features.importProgressPhotos(inner.assets?.progressPhotos||[]);location.reload();}catch(error){state.dataRestoreInProgress=false;showToast(String(error.message||error));event.target.value="";}}
   async function restoreSnapshot(index){try{const snapshot=await features.restoreDeviceSnapshot(index);if(!confirm("Restore this automatic snapshot?"))return;state.dataRestoreInProgress=true;await window.REP_STORE?.replace(storageKey,safeBackupData(snapshot.data));location.reload();}catch(error){state.dataRestoreInProgress=false;showToast(String(error.message||error));}}
-  async function deleteLocalData(){if(!confirm("Delete all Rep Gym Companion data on this device?"))return;if(!confirm("This cannot be undone. Are you sure?"))return;await repAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});await window.REP_STORE?.clear();localStorage.removeItem(storageKey);repAuth.clear();localStorage.removeItem(errorLogKey);indexedDB?.deleteDatabase("rep-device-vault-v1");location.reload();}
+  async function deleteLocalData(){if(!confirm("Delete all AWJ data on this device?"))return;if(!confirm("This cannot be undone. Are you sure?"))return;await repAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});await window.REP_STORE?.clear();localStorage.removeItem(storageKey);repAuth.clear();localStorage.removeItem(errorLogKey);indexedDB?.deleteDatabase("rep-device-vault-v1");location.reload();}
   exportData=function(){return exportEncrypted();};
   importData=importSecureBackup;
-  const baseHistory=renderHistory;renderHistory=function(){baseHistory();const exportButton=document.querySelector("[data-export]");if(exportButton)exportButton.textContent="Export encrypted backup";const tools=document.querySelector(".data-tools");if(tools&&!tools.querySelector("[data-open-settings]")){const button=document.createElement("button");button.dataset.openSettings="";button.textContent="Settings & security";tools.prepend(button);button.onclick=()=>navigateTo("settings-security",()=>renderSettings("security"));}};
 
   async function claimPairFromUrl(){const url=new URL(location.href),fromUrl=url.searchParams.get("pair"),token=fromUrl||sessionStorage.getItem("rep-pair-handoff-v1");if(!token)return;if(fromUrl){sessionStorage.setItem("rep-pair-handoff-v1",token);url.searchParams.delete("pair");history.replaceState(history.state||{},"",`${url.pathname}${url.search}${url.hash}`);}try{const response=await repAuth.fetch("/api/pair/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({token})}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||`Pairing failed (${response.status})`);repAuth.markPaired();state.connectionCapabilities={foodAi:Boolean(data.foodAi),notion:Boolean(data.notion),vitalsAi:Boolean(data.vitalsAi),push:Boolean(data.push)};sessionStorage.removeItem("rep-pair-handoff-v1");persist();showToast("This device is securely paired.");}catch(error){if(navigator.onLine){sessionStorage.removeItem("rep-pair-handoff-v1");showToast(String(error.message||error));}}}
   async function probeSystemHealth(render=false){if(!repAuth.isPaired()||!navigator.onLine)return;try{const response=await repAuth.fetch("/api/system-health"),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||`Health check failed (${response.status})`);state.systemHealth=data;state.connectionCapabilities={...(state.connectionCapabilities||{}),notion:Boolean(data.notion?.configured),notionHealthy:Boolean(data.notion?.healthy),foodAi:Boolean(data.services?.foodAi),vitalsAi:Boolean(data.services?.vitalsAi),push:Boolean(data.services?.push)};persist();if(render){if(state.view==="settings")renderSettings(state.settingsSection);else if(state.view==="nutrition")renderNutrition();}}catch(error){state.systemHealth={checkedAt:new Date().toISOString(),notion:{configured:Boolean(state.connectionCapabilities?.notion),healthy:false,error:String(error.message||error)}};if(state.connectionCapabilities)state.connectionCapabilities.notionHealthy=false;persist();if(render&&state.view==="settings")renderSettings(state.settingsSection);}}
@@ -417,32 +385,8 @@
     try{const response=await repAuth.fetch("/api/pair/devices"),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||"Could not load devices.");host.innerHTML=REP_SAFE_DOM.sanitize(`<small>${"CONNECTED DEVICES"}</small>${data.devices.map(device=>`<div class="device-row"><div><strong>${device.current?("This device"):"Browser"}</strong><span>${esc(device.label||"")} · ${new Date(device.lastSeenAt||device.createdAt).toLocaleDateString(undefined)}</span></div><button data-revoke-device="${esc(device.id)}">${"Revoke"}</button></div>`).join("")||`<p>${"No registered devices."}</p>`}`);host.querySelectorAll("[data-revoke-device]").forEach(button=>button.onclick=async()=>{const revoke=await repAuth.fetch("/api/pair/devices",{method:"DELETE",headers:{"content-type":"application/json"},body:JSON.stringify({deviceId:button.dataset.revokeDevice})});if(!revoke.ok)return showToast("Could not revoke device.");const current=data.devices.find(device=>device.id===button.dataset.revokeDevice)?.current;if(current)repAuth.clear();renderSettings("security");});}catch(error){host.innerHTML=REP_SAFE_DOM.sanitize(`<p>${esc(String(error.message||error))}</p>`);}
   }
   const renderSettingsCore=renderSettings;
-  renderSettings=function(section=state.settingsSection){renderSettingsCore(section);if(section==="security")loadConnectedDevices();if(["security","sync"].includes(section)){const stale=!state.systemHealth?.checkedAt||Date.now()-new Date(state.systemHealth.checkedAt).getTime()>5*60*1000;if(stale)probeSystemHealth(true);}};
+  renderSettings=function(section=state.settingsSection){renderSettingsCore(section);window.AWJ_LOCALE?.apply();if(section==="security")loadConnectedDevices();if(["security","sync"].includes(section)){const stale=!state.systemHealth?.checkedAt||Date.now()-new Date(state.systemHealth.checkedAt).getTime()>5*60*1000;if(stale)probeSystemHealth(true);}};
   window.renderRepSettings=renderSettings;
-
-  function activateTrainingRoute(view){state.trainingView=view;if(view==="history"){state.activeTab="train";persist();updatePrimaryTabs();renderHistory();return;}activatePrimaryTab("train");}
-  function activateNutritionRoute(view){state.nutritionView=view;activatePrimaryTab("food");}
-  function activateHealthRoute(view){state.healthView=view;activatePrimaryTab(view);}
-  function installNavigationRoutes(){
-    if(!navigation)return;
-    navigation.register([
-      {id:"more",path:"/more",title:"More",activate:()=>window.REP_TRAINING_UI?.more()},
-      {id:"today",path:"/today",title:"Today",activate:()=>activatePrimaryTab("home")},
-      {id:"training-today",path:"/training/today",title:"Training",activate:()=>activateTrainingRoute("today")},
-      {id:"training-program",path:"/train",aliases:["/training/program","/program-active"],title:"Program",activate:()=>activateTrainingRoute("program")},
-      {id:"training-history",path:"/progress/history",aliases:["/training/history"],title:"History",activate:()=>activateTrainingRoute("history")},
-      {id:"nutrition-log",path:"/nutrition/log",title:"Log meal",activate:()=>activateNutritionRoute("log")},
-      {id:"nutrition-today",path:"/nutrition/today",title:"Nutrition",activate:()=>activateNutritionRoute("today")},
-      {id:"nutrition-plan",path:"/nutrition/plan",title:"Nutrition plan",activate:()=>activateNutritionRoute("plan")},
-      {id:"health-vitals",path:"/more/recovery",aliases:["/health/vitals"],title:"Vitals",activate:()=>activateHealthRoute("vitals")},
-      {id:"health-wellness",path:"/more/routines",aliases:["/health/wellness"],title:"Wellness",activate:()=>activateHealthRoute("care")},
-      {id:"insights",path:"/progress",aliases:["/insights"],title:"Progress",activate:()=>activatePrimaryTab("insights")},
-      ...["general","schedule","targets","coach","sync","security"].map(section=>({id:`settings-${section}`,path:`/settings/${section}`,title:"Settings",activate:()=>renderSettings(section)}))
-    ]);
-    navigation.setTabResolver(routeIdForPrimaryTab);
-    navigation.start({fallback:routeIdForPrimaryTab(primaryTabForState())});
-  }
-  installNavigationRoutes();
 
   let onboardingStep=0,onboardingDraft=null;
   function readOnboardingStep(){

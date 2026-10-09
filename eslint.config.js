@@ -34,5 +34,9 @@ export default tseslint.config(
     rules: {
       "no-unused-vars": ["warn", { args: "after-used", varsIgnorePattern: "^_" }]
     }
+  },
+  {
+    files: ["src/client/training-first-ui.js", "src/client/screens/**/*.js"],
+    languageOptions: { sourceType: "module" }
   }
 );
