@@ -45,7 +45,7 @@
       route.activate();
       renderedId=id;
       document.documentElement.dataset.route=id;
-      if(route.title)document.title=`${route.title} · Health OS`;
+      if(route.title)document.title=`${route.title} · Rep Gym Companion`;
       if(scroll)window.scrollTo({top:0,left:0,behavior:"auto"});
       requestAnimationFrame(()=>{
         if(requested!==activation)return;

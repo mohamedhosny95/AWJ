@@ -2,23 +2,27 @@
 // on a local port, drives it with Playwright, and fails the run (non-zero exit)
 // on any assertion failure or any console/page error encountered along the way.
 // Run with: node scripts/e2e-smoke.mjs
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import axe from "axe-core";
 import http from "node:http";
-import { createReadStream, existsSync, statSync } from "node:fs";
-import { extname, join, normalize } from "node:path";
+import { createReadStream, existsSync, statSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..", "dist", "client");
 const port = 8934;
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".mp4": "video/mp4" };
 
+let originUnavailable=false;
 const server = http.createServer((req, res) => {
+  if(originUnavailable){req.socket.destroy();return;}
   const urlPath = decodeURIComponent(req.url.split("?")[0]);
   let filePath = normalize(join(root, urlPath === "/" ? "/index.html" : urlPath));
   if (!filePath.startsWith(root) || !existsSync(filePath) || statSync(filePath).isDirectory()) {
     res.writeHead(404); res.end("not found"); return;
   }
+  if(req.url.endsWith('?partial-demo')){res.writeHead(206,{'content-type':'video/mp4','content-range':'bytes 0-15/1000','content-length':16});res.end(Buffer.alloc(16));return;}
+  if(req.url.endsWith('?interrupted-demo')){setTimeout(()=>{if(res.destroyed)return;res.writeHead(200,{'content-type':'video/mp4','content-length':statSync(filePath).size});createReadStream(filePath).pipe(res);},200);return;}
   const length=statSync(filePath).size,headers={"content-type":MIME[extname(filePath)]||"application/octet-stream","accept-ranges":"bytes"};
   const range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range||"");
   if(range){const start=Number(range[1]),end=range[2]?Math.min(Number(range[2]),length-1):length-1;if(start>=length||end<start){res.writeHead(416,{...headers,"content-range":`bytes */${length}`});res.end();return;}res.writeHead(206,{...headers,"content-range":`bytes ${start}-${end}/${length}`,"content-length":end-start+1});createReadStream(filePath,{start,end}).pipe(res);return;}
@@ -44,6 +48,8 @@ async function assertAccessibleView(page,label){
   assertTrue(result.overflow<=1,`${label} has no horizontal viewport overflow`);
 }
 async function assertAxe(page,label){
+  // Check the usable settled state, independently of optional screenshot delays.
+  await page.evaluate(async()=>{const running=document.getAnimations().filter(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime));await Promise.race([Promise.all(running.map(animation=>animation.finished.catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,360))]);});
   await page.evaluate(p => { if(window.__repVitals) window.__repVitals.phase = "axe:" + p; }, label);
   const result=await page.evaluate(async()=>window.axe.run(document,{runOnly:{type:"tag",values:["wcag2a","wcag2aa"]}}));
   await page.evaluate(() => { if(window.__repVitals) window.__repVitals.phase = "post-axe"; });
@@ -55,16 +61,20 @@ async function assertAxe(page,label){
 await new Promise(resolve => server.listen(port, resolve));
 const baseUrl = `http://localhost:${port}`;
 
-const browser = await chromium.launch({
+const webkitMode=process.env.REP_E2E_BROWSER==="webkit";
+const browser = webkitMode?await webkit.launch():await chromium.launch({
   channel: existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined,
   args: ["--no-sandbox"]
 });
-const consoleErrors = [];
+const consoleErrors = [],expectedNetworkDiagnostics=[];let testingNetworkFailure=false,reportMetrics=null;
 try {
-  const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  const capture=process.env.REP_E2E_CAPTURE_DIR;if(capture)mkdirSync(capture,{recursive:true});
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 },hasTouch:true,isMobile:true,...(capture?{recordVideo:{dir:capture,size:{width:390,height:844}}}:{}) });
   const page = await context.newPage();
+  const captureScreen=async name=>{if(capture){await page.waitForTimeout(320);await page.screenshot({path:join(capture,name+".png")});}};
   await page.addInitScript(()=>{
-    window.__repVitals={lcp:0,cls:0,longTask:0,appLongTask:0,longTasks:[],phase:"init"};
+    window.__repVitals={lcp:0,cls:0,interactionMs:0,longTask:0,appLongTask:0,longTasks:[],phase:"init"};
+    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(entry.interactionId)window.__repVitals.interactionMs=Math.max(window.__repVitals.interactionMs,entry.duration);})).observe({type:"event",durationThreshold:16,buffered:true});}catch{}
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>window.__repVitals.lcp=Math.max(window.__repVitals.lcp,entry.startTime))).observe({type:"largest-contentful-paint",buffered:true});}catch{}
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(!entry.hadRecentInput)window.__repVitals.cls+=entry.value;})).observe({type:"layout-shift",buffered:true});}catch{}
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{
@@ -82,539 +92,153 @@ try {
     })).observe({type:"longtask",buffered:true});}catch{}
   });
   await page.addInitScript({content:axe.source});
-  page.on("pageerror", err => consoleErrors.push(`pageerror: ${err.message}`));
-  page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(`console.error: ${msg.text()}`); });
+  page.on("pageerror", err => {consoleErrors.push(`pageerror: ${err.message}`);console.log(`BROWSER ERROR: ${err.stack||err.message}`);});
+  page.on("console",msg=>{if(msg.type()!=="error")return;const text=msg.text();if(webkitMode&&testingNetworkFailure&&/^Failed to load resource:.*(network connection was lost|connection terminated unexpectedly|cancelled)/i.test(text)){expectedNetworkDiagnostics.push(text);return;}consoleErrors.push(`console.error: ${text}`);});
 
-  await page.goto(baseUrl, { waitUntil: "load" });
-  await page.waitForSelector('html[data-app-ready="true"]', { timeout: 10000 });
-  await page.waitForSelector(".onboarding-backdrop", { timeout: 10000 });
-  assertTrue(await page.locator(".onboarding-backdrop").count()===1,"Guided setup opens on a true first run");
-  assertTrue(await page.locator('[name="setup-goal"]:checked').getAttribute("value")==="strength","Guided setup starts with a clear strength goal");
-  await page.click("[data-onboarding-next]");
-  assertTrue(await page.locator("[data-setup-days]").count()===1,"Guided setup captures schedule and available equipment");
-  await page.selectOption("[data-setup-days]","3");
-  await page.click("[data-onboarding-next]");
-  assertTrue(await page.locator("[data-setup-wake]").count()===1,"Guided setup captures units, sleep timing, and optional connections");
-  await page.click("[data-onboarding-next]");
-  await page.waitForSelector(".onboarding-backdrop",{state:"detached",timeout:10000});
-  const setupState=await page.evaluate(()=>({onboarding:state.onboarding,schedule:state.preferences.schedule,goal:state.analyticsGoal.type}));
-  assertTrue(Boolean(setupState.onboarding.completedAt)&&setupState.onboarding.skipped===false,"Guided setup persists a completed profile");
-  assertTrue(Object.values(setupState.schedule).filter(day=>day.focus==="gym").length===3,"Guided setup creates the requested three-day schedule");
-  await page.waitForSelector("text=TODAY", { timeout: 10000 });
-  assertTrue(true, "Today tab loads on cold start");
-  assertTrue((await page.locator('[data-app-tab="home"][aria-current="page"]').count()) > 0, "Today tab is marked active on cold start");
-  assertTrue(page.url().endsWith("#/today"),"Cold start has a shareable Today URL");
-  await page.click('[data-app-tab="insights"]');
-  assertTrue(page.url().endsWith("#/insights"),"Primary navigation updates the URL");
-  await page.goBack();
-  await page.waitForSelector('[data-app-tab="home"][aria-current="page"]');
-  assertTrue(/^Good (morning|afternoon|evening|night)\.$/.test(await page.locator("main h1").textContent()),"Browser Back returns to the previous primary section");
-  await page.goForward();
-  await page.waitForSelector('[data-app-tab="insights"][aria-current="page"]');
-  assertTrue(await page.locator("main h1").textContent()==="What your data says.","Browser Forward restores the primary section");
-  assertTrue(page.url().endsWith("#/insights"),"Browser Forward restores the exact route URL");
-  await page.goBack();
-  await page.waitForSelector('[data-app-tab="home"][aria-current="page"]');
-  assertTrue(await page.locator(".health-coach-card").count() === 1, "Today Coach appears on the first cold-start Home render");
-  const backupCheck=await page.evaluate(async()=>{const sample={app:"Rep Gym Companion",data:{foodEntries:[{id:"recovery-drill"}]}},encrypted=await window.REP_FEATURES.encryptExport(sample,"recovery-drill-passphrase"),restored=await window.REP_FEATURES.decryptExport(encrypted,"recovery-drill-passphrase");let tamperRejected=false;try{await window.REP_FEATURES.decryptExport({...encrypted,format:"older-format"},"recovery-drill-passphrase");}catch{tamperRejected=true;}return {roundTrip:JSON.stringify(sample)===JSON.stringify(restored),schema:encrypted.schema,tamperRejected};});
-  assertTrue(backupCheck.roundTrip&&backupCheck.schema===5,"Schema-5 encrypted backup completes a recovery round trip");
-  assertTrue(backupCheck.tamperRejected,"Encrypted backup rejects a tampered version header");
-  const expectedHabits = new Date().getDay() === 5 ? 12 : 11;
-  assertTrue(await page.locator("[data-habit-id]").count() === expectedHabits, `Today shows the requested daily habits (${expectedHabits})`);
-  assertTrue(!(await page.locator(".habit-tracker").evaluate(el=>el.open)),"Daily habits start collapsed so quick logging stays prominent");
-  await page.locator(".habits-summary").click();
-  await page.click('[data-habit-id="sleep"]');
-  assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "A habit can be checked off");
-  await page.evaluate(()=>window.REP_STORE.flush());
-  await page.reload({waitUntil:"load"});
-  await page.waitForSelector('html[data-app-ready="true"]',{timeout:10000});
-  assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Habit completion survives a reload");
-  assertTrue(await page.locator('.habit-head-actions a[href*="20e4226c53694ea79692dff9839a132f"]').count() === 1, "Habit tracker links to the Habit Log inside the Workout Hub");
-  if(!(await page.locator(".habit-tracker").evaluate(el=>el.open)))await page.locator(".habits-summary").click();
-  await page.click('[data-habit-reorder]');
-  const firstHabitBefore=await page.locator('[data-habit-card]').first().getAttribute('data-habit-card');
-  await page.locator(`[data-habit-order-id="${firstHabitBefore}"][data-habit-move="down"]`).click();
-  const firstHabitAfter=await page.locator('[data-habit-card]').first().getAttribute('data-habit-card');
-  assertTrue(firstHabitAfter!==firstHabitBefore,"Habit order can be changed with accessible controls");
-  await page.evaluate(()=>window.REP_STORE.flush());
-  await page.reload({waitUntil:"load"});
-  await page.waitForSelector('html[data-app-ready="true"]',{timeout:10000});
-  assertTrue(await page.locator('[data-habit-card]').first().getAttribute('data-habit-card')===firstHabitAfter,"Custom habit order survives a reload");
-
-  await page.click('[data-app-tab="train"]');
-  await page.waitForTimeout(300);
-  await page.waitForSelector("text=Move well.", { timeout: 10000 });
-  assertTrue(true, "Training tab loads");
-  assertTrue(await page.locator('.today-training-action').count() === 1, "Training opens on the focused Today view");
-  assertTrue(await page.locator('[data-start-cardio-fallback][data-session-id="cardio"]:visible').count() === 1, "Today exposes cardio when there is no football or padel");
-  assertTrue(await page.locator('[data-start-cardio-fallback]').evaluate(el=>el.getBoundingClientRect().height >= 44), "Cardio fallback keeps a 44px touch target");
-  await assertAccessibleView(page,"Training Today");
-  assertTrue(await page.locator('.workout-guard').count() === 0, "Training preflight stays out of the daily page until it is needed");
-  await page.click('[data-start-today]');
-  await page.waitForTimeout(150);
-  assertTrue(await page.locator('.workout-preflight-panel').count() === 1, "Starting a plan opens the short preflight step when checks are missing");
-  await page.click('[data-close-preflight]');
-  await page.click('[data-training-view="program"]');
-  await page.waitForTimeout(200);
-  assertTrue(await page.locator('.program-discovery').count() === 1, "Program opens the contextual workout library");
-  assertTrue(page.url().endsWith("#/training/program"),"Training subviews have shareable URLs");
-  await page.goBack();
-  await page.waitForSelector('[data-training-view="today"][aria-current="page"]');
-  assertTrue(page.url().endsWith("#/training/today"),"Browser Back restores the exact Training subview");
-  await page.goForward();
-  await page.waitForSelector('[data-training-view="program"][aria-current="page"]');
-  assertTrue(await page.locator('.program-session-card.has-session-media').count() === 6, "Every real workout plan has contextual discovery media");
-  assertTrue(await page.locator('.program-session-card.is-recommended').count() === 1, "Program marks today's real scheduled plan");
-  await page.click('[data-program-filter="sport"]');
-  assertTrue(await page.locator('.program-session-card[data-program-category="sport"]:visible').count() === 3, "Sport filter keeps football, padel, and outdoor plans visible");
-  assertTrue(await page.locator('[data-log-activity]:visible').count() === 0, "Filtered discovery removes unrelated actions");
-  await page.click('[data-program-filter="all"]');
-
-  await page.click('[data-session="football"]');
-  await page.waitForTimeout(150);
-  assertTrue(await page.locator('.preview-row [data-player-key]').count()===7,"Every football step resolves through the reviewed media catalogue");
-  await page.locator('.preview-row').first().locator('summary').click();
-  const footballPlayer=page.locator('[data-exercise-media="Football Warm-up Jog"]');
-  await footballPlayer.locator('[data-media-play]').click();
-  await page.waitForFunction(()=>document.querySelector('[data-exercise-media="Football Warm-up Jog"] video')?.currentTime>0);
-  assertTrue(await footballPlayer.locator('video').count()===1,"Football jogging uses a continuous real male video");
-  assertTrue(await footballPlayer.locator('img').count()===1,"Video keeps its matching poster ready");
-  await page.click('[data-cancel-preview]');
-  await page.click('[data-session="padel"]');
-  await page.locator('.preview-row').first().locator('summary').click();
-  assertTrue(await page.locator('.preview-row [data-player-key]').count()===7,"Every padel step has a reviewed media or cue fallback");
-  assertTrue(await page.locator('[data-exercise-media="Padel Warm-up Jog"] [data-media-play]:visible').count()===0,"Still references do not expose fabricated playback");
-  await page.click('[data-cancel-preview]');
-
-  // Regression guard: tapping a session must show a preview, not jump straight in.
-  await page.click('[data-session="gym"]');
-  await page.waitForTimeout(300);
-  assertTrue(await page.locator(".preview-row").count() > 0, "Session tap shows a preview instead of auto-starting");
-  assertTrue(!(await page.evaluate(() => document.body.classList.contains("workout-mode"))), "Preview does not engage workout-mode");
-
-  await page.click("[data-start-session]");
-  await page.waitForTimeout(300);
-  assertTrue(await page.evaluate(() => document.body.classList.contains("workout-mode")), "Start workout enters the player");
-  assertTrue((await page.evaluate(() => window.scrollY)) <= 1, "Active workout opens at the progress header instead of preserving preview scroll");
-  await page.waitForSelector('.exercise-hero-stage .exercise-media-poster[src]');
-  assertTrue(await page.locator('.exercise-hero-stage [data-media-play]:visible').count()===0,"Stationary-bike still has no playback controls");
-  for(const [selector,label] of [[".exercise-hero-stage .exercise-media","persistent exercise media"],[".hero-muscle-label","adjacent muscle information"],[".current-set-card","current set focus"],[".workout-primary-action","primary set action"]])assertTrue(await page.locator(selector).count()===1,`Active workout exposes its ${label}`);
-  assertTrue((await page.locator('link[data-rep-media-preload="next"]').getAttribute('href')).includes('leg-press'),"Only the next exercise's selected media is preloaded");
-  const initialMediaTelemetry=await page.evaluate(()=>window.REP_TELEMETRY.snapshot().media);
-  assertTrue(initialMediaTelemetry.loads>=1&&initialMediaTelemetry.failures===0,"Reviewed poster load/decode telemetry records without failures");
-  assertTrue(!(await page.locator(".topbar").isVisible()), "Generic app utilities stay out of the focused workout header");
-  for (const width of [375,390,430]) {
-    await page.setViewportSize({width,height:844});
-    assertTrue(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `Active workout has no horizontal overflow at ${width}px`);
-  }
-  await page.setViewportSize({width:390,height:900});
-  await page.click("[data-exercise-timer]");
-  assertTrue(await page.locator(".timed-ring").count() === 1, "Timed exercise opens a prominent progress ring");
-  await page.click("[data-timed-pause]");
-  assertTrue(await page.locator(".workout-timed-mode.is-paused").count() === 1, "Timed exercise can pause without completing the set");
-  await page.click("[data-timed-add]");
-  assertTrue((await page.locator("[data-timed-total]").textContent()).includes("5:15"), "Timed exercise extension updates the real total");
-  await page.click("[data-timed-close]");
-
-  // Regression guard: the rest-timer dock must not block Next/Previous.
-  while (await page.locator(".set-button:not(.is-done)").count() > 0) {
-    await page.locator(".set-button:not(.is-done)").first().click().catch(() => {});
-    await page.waitForTimeout(30);
-  }
-  await page.waitForTimeout(100);
-  const nextBtn = page.locator("[data-next]");
-  let nextClickable = true;
-  try { await nextBtn.click({ timeout: 3000 }); } catch { nextClickable = false; }
-  assertTrue(nextClickable, "Next exercise button is reachable while the rest timer is active");
-  await page.waitForTimeout(250);
-  assertTrue(await page.locator(".live-set-entry").count() === 1, "Strength exercise exposes quick entry backed by the set log");
-  assertTrue(await page.locator('.exercise-hero-stage [data-media-view]').count()===2,"Leg press has two real static reference positions");
-  assertTrue(await page.locator('.exercise-hero-stage video').count()===0,"Photo positions are never morphed into movement");
-  await page.locator('.exercise-hero-stage [data-media-view="1"]').click();
-  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage img')?.alt.includes('Position 2'));
-  const logField=page.locator('.set-card-row [data-log="reps"]').first();
-  await logField.focus();
-  await page.evaluate(()=>renderExercise());
-  assertTrue(await logField.evaluate(el=>el===document.activeElement),"Logging updates preserve detailed-field focus");
-  assertTrue(await page.evaluate(()=>{const field=document.querySelector('[data-live-log][data-log="reps"]');field.focus();renderExercise();return field===document.activeElement&&field===document.querySelector('[data-live-log][data-log="reps"]');}),"Quick logging keeps the same focused input during unrelated updates");
-  await page.fill('[data-live-log][data-log="reps"]',"8");
-  const activeSetIndex=await page.locator('[data-live-log][data-log="reps"]').getAttribute("data-log-set");
-  const detailedRepValues=await page.locator(`.set-card-row [data-log="reps"][data-log-set="${activeSetIndex}"]`).evaluateAll(inputs=>inputs.map(input=>input.value));
-  assertTrue(detailedRepValues.length===1&&detailedRepValues[0]==="8", "Quick reps stay synchronized with the matching detailed set row");
-  await page.click('[data-live-reps-step="1"]');
-  assertTrue(await page.locator('[data-live-log][data-log="reps"]').inputValue() === "9", "Manual rep control updates the current logged set");
-
-  while (await page.locator(".set-button:not(.is-done)").count() > 0) {
-    await page.locator(".set-button:not(.is-done)").first().click().catch(() => {});
-    await page.waitForTimeout(40);
-  }
-  await page.waitForTimeout(120);
-  assertTrue(await page.locator("#timerNextPreview:not(.is-hidden)").count() === 1, "Final rest opens a dedicated next-exercise preview");
-  assertTrue((await page.locator("#timerPreviewName").textContent()).includes("Back Extension"), "Rest preview is connected to the real next exercise");
-  assertTrue(await page.locator("#timerPreviewVisual .exercise-media-poster").count() > 0, "Rest preview reuses the next exercise media");
-  await page.click("#timerNextNow");
-  await page.waitForTimeout(200);
-  assertTrue((await page.locator(".workout-identity h1").textContent()).includes("Back Extension"), "Start now advances directly from rest to the previewed exercise");
-
-  // finish the rest of the session
-  for (let i = 0; i < 10; i++) {
-    if (await page.locator(".complete").count() > 0) break;
-    while (await page.locator(".set-button:not(.is-done)").count() > 0) {
-      await page.locator(".set-button:not(.is-done)").first().click().catch(() => {});
-      await page.waitForTimeout(30);
-    }
-    const btn = page.locator("[data-next]");
-    if (!(await btn.count())) break;
-    const label = await btn.textContent();
-    await btn.click().catch(() => {});
-    await page.waitForTimeout(100);
-    if (/finish/i.test(label || "")) break;
-  }
-  await page.waitForSelector(".complete", { timeout: 8000 }).catch(() => {});
-  assertTrue(await page.locator(".complete").count() > 0, "Session completes and shows the completion screen");
-  assertTrue(await page.locator(".complete-stat-grid > div").count() >= 3, "Completion handoff summarizes real session metrics");
-  assertTrue(await page.locator("[data-history-after]").count() === 1, "Completion handoff links directly to session history");
-  await page.click("[data-home]").catch(() => {});
-  await page.waitForTimeout(300);
-
-  await page.click('[data-training-view="history"]');
-  await page.waitForTimeout(300);
-  const historyText = await page.locator(".history-list").evaluate(el => el.textContent).catch(() => "");
-  assertTrue(historyText.includes("Gym"), "Completed session appears in History");
-  assertTrue(await page.locator(".activity-overview .history-summary > div").count() === 4, "Activity overview summarizes only real history totals");
-  assertTrue(await page.locator(".personal-best-grid .pb-card").count() === 0, "Activity does not invent a personal best without a logged load");
-  assertTrue(await page.locator(".history-utilities:not([open])").count() === 1, "Activity keeps data and connection utilities progressively disclosed");
-  assertTrue(await page.locator(".history-utilities [data-export]").count() === 1, "Activity refinement preserves backup export access");
-  await page.click("#homeButton");
-  await page.waitForTimeout(200);
-
-  // activity logging
-  await page.click('[data-app-tab="train"]');
-  await page.click('[data-training-view="program"]');
-  await page.locator(".training-advanced").evaluate(element=>element.open=true);
-  await page.click("[data-log-activity]");
-  await page.waitForTimeout(300);
-  await page.fill("[data-activity-minutes]", "40");
-  await page.fill("[data-activity-calories]", "300");
-  await page.click("[data-save-activity]");
-  await page.waitForTimeout(300);
-  assertTrue(await page.locator(".activity-panel").count() === 0, "Activity panel closes after save");
-
-  // Complete every remaining priority session through the real player. This
-  // covers the home/plank, football-pitch, padel-court, and treadmill paths;
-  // the gym session was completed above.
-  for(const [sessionId,label,requiredExercise] of [
-    ["morning","Morning activation","Plank"],
-    ["football","Football","Football Build-up Strides"],
-    ["padel","Padel","Padel Sport-Specific Warm-up"],
-    ["cardio","Treadmill cardio","Incline Treadmill Walk"]
-  ]){
-    await page.click('[data-app-tab="train"]');
-    if(!(await page.locator(".program-discovery").count()))await page.click('[data-training-view="program"]');
-    await page.click(`[data-session="${sessionId}"]`);await page.click("[data-start-session]");
-    const visited=[];
-    for(let exercise=0;exercise<20;exercise++){
-      if(await page.locator(".complete").count())break;
-      visited.push((await page.locator(".workout-identity h1").textContent().catch(()=>""))||"");
-      while(await page.locator(".set-button:not(.is-done)").count()){
-        await page.locator(".set-button:not(.is-done)").first().click().catch(()=>{});await page.waitForTimeout(25);
-      }
-      const next=page.locator("[data-next]");if(!(await next.count()))break;
-      await next.click().catch(()=>{});await page.waitForTimeout(80);
-    }
-    await page.waitForSelector(".complete",{timeout:5000}).catch(()=>{});
-    assertTrue(await page.locator(".complete").count()===1,`${label} completes through the real workout player`);
-    assertTrue(visited.some(name=>name.includes(requiredExercise)),`${label} reaches ${requiredExercise} with real session state`);
-    await page.click("[data-home]");await page.waitForTimeout(120);
-  }
-
-  // recovery + sleep (sleep tracker lives on the Vitals tab)
-  await page.click('[data-app-tab="health"]');
-  await page.waitForTimeout(300);
-  await page.click('[data-health-view="vitals"]');
-  await page.waitForTimeout(200);
-  const healthNavPosition = await page.locator(".health-subnav").evaluate(el => getComputedStyle(el).position);
-  assertTrue(healthNavPosition === "relative", "Health section selector stays in the page flow instead of floating over content");
-  assertTrue(await page.locator('[data-health-view]').count()===2&&await page.locator('[data-health-view="insights"]').count()===0,"Health contains only Vitals and Wellness; Insights has one destination");
-  assertTrue(await page.locator(".health-coach-card").count() === 1, "Explainable Today Coach appears in Vitals");
-  assertTrue(await page.locator(".health-quality-card").count() === 1, "Health import quality card appears in Vitals");
-  const summaryHeight=await page.evaluate(()=>document.documentElement.scrollHeight);
-  assertTrue(summaryHeight<2230,`Vitals summary stays focused (height ${summaryHeight}px)`);
-  await page.click('[data-workflow="log"]');
-  await page.waitForTimeout(150);
-  assertTrue(await page.locator('.sleep-card:visible').count()===1,"Health logging has a dedicated workflow");
-  assertTrue(await page.locator('.health-quality-card:visible').count()===0,"Connection diagnostics stay out of the logging workflow");
-  await assertAccessibleView(page,"Health Log");
-  await page.fill("[data-sleep-bedtime]", "23:00");
-  await page.fill("[data-sleep-wake]", "06:00");
-  await page.click(".sleep-form button[type=submit]");
-  await page.waitForTimeout(300);
-  const sleepSummary = await page.locator(".sleep-summary strong").first().textContent().catch(() => "");
-  assertTrue(/\d/.test(sleepSummary || ""), "Sleep log saves and shows computed hours");
-  await page.click("#homeButton");
-  await page.waitForTimeout(200);
-
-  // food
-  await page.click('[data-app-tab="food"]');
-  await page.waitForTimeout(300);
-  const composerTop=await page.locator('.meal-composer').evaluate(element=>element.getBoundingClientRect().top);
-  assertTrue(composerTop<900,`Meal composer is reachable in the first mobile screen (${Math.round(composerTop)}px)`);
-  assertTrue(await page.locator('.food-connect:visible').count()===0,"Connection setup does not block normal meal logging");
-  await assertAccessibleView(page,"Nutrition Log");
-  await page.fill("[data-food-note]", "test meal");
-  await page.click("[data-manual-food]");
-  await page.waitForTimeout(300);
-  if (await page.locator("[data-save-food]").count()) {
-    await page.click("[data-save-food]");
-    await page.waitForTimeout(300);
-  }
-  assertTrue(await page.locator(".food-log article, .food-entry").count() > 0, "Manual food entry is saved and listed");
-  assertTrue((await page.locator(".food-sync-state").count()) > 0, "Food entry shows its durable save state");
-  assertTrue(await page.locator("[data-food-sync-now]").count() === 0, "Food has no category-level sync button");
-  await page.goto(`${baseUrl}/#/nutrition/plan`,{waitUntil:"load"});
-  await page.waitForSelector('html[data-app-ready="true"]',{timeout:10000});
-  await page.waitForSelector('[data-nutrition-view="plan"][aria-current="page"]');
-  assertTrue(await page.locator('[data-app-tab="food"][aria-current="page"]').count()===1,"A direct Nutrition Plan URL restores its parent and exact subview");
-
-  // insights
-  await page.click('[data-app-tab="insights"]');
-  await page.waitForTimeout(300);
-  assertTrue(await page.locator(".progress-overview .progress-feature").count() === 1, "Progress leads with a real seven-day training summary");
-  assertTrue(await page.locator(".insight-stats article").count() > 0, "Insights stats render");
-  assertTrue(await page.locator("[data-product-weekly]").count() === 1, "One consolidated weekly report renders");
-  assertTrue(await page.locator("[data-product-experiments]").count()===1,"One experiment entry point renders");
-  await page.locator(".insights-more > summary").click();
-  assertTrue(await page.locator(".performance-analytics").count() === 1, "Performance Intelligence renders as one integrated insight layer");
-  assertTrue(await page.locator("[data-analytics-goal]").count() === 1, "Goal forecast controls render");
-  assertTrue(await page.locator(".quality-domain-list article").count() === 4, "Whole-app data quality covers four domains");
-  await page.fill("#askDataQuestion", "How consistent is my protein?");
-  await page.click("[data-ask-data] button");
-  await page.waitForTimeout(100);
-  assertTrue(await page.locator(".data-answer details span").count() >= 1, "Ask Your Data returns inspectable evidence");
-  assertTrue(await page.locator(".local-only").textContent() === "No upload", "Ask Your Data is explicitly local-only");
-  await assertAccessibleView(page,"Performance Insights");
-
-  await page.click("#settingsButton");
-  await page.waitForSelector('[data-reminder-time="bedtime"]');
-  const reminderSuggestion=await page.evaluate(()=>({
-    windDown:document.querySelector('[data-reminder-time="bedtime"]')?.value,
-    bedtime:window.REP_HEALTH_ENGINE.bedtime(state,isoDay(),state.healthProfile).time,
-    workoutDays:document.querySelector(".reminder-schedule-note")?.textContent,
-    enabled:[...document.querySelectorAll("[data-reminder-enabled]")].some(input=>input.checked)
-  }));
-  const [bedHour,bedMinute]=reminderSuggestion.bedtime.split(":").map(Number);
-  const expectedWindDown=(bedHour*60+bedMinute-30+1440)%1440;
-  assertTrue(reminderSuggestion.windDown===`${String(Math.floor(expectedWindDown/60)).padStart(2,"0")}:${String(expectedWindDown%60).padStart(2,"0")}`,"Wind-down suggestion precedes the calculated bedtime by 30 minutes");
-  assertTrue(reminderSuggestion.workoutDays?.includes("Training:")&&!reminderSuggestion.enabled,"Reminders use the saved training schedule and remain opt-in");
-  await page.click('[data-settings-tab="sync"]');
-  await page.waitForTimeout(200);
-  assertTrue(await page.locator(".sync-center").count() === 1, "Unified Sync Center opens from Settings");
-  assertTrue((await page.locator(".destination-link").getAttribute("href")).includes("6433f54c687e4813869aaadeaf3acaab"), "Sync Center keeps the canonical View of Food Entries link");
-  assertTrue(await page.locator("[data-sync-all]").count() === 1, "Sync Center exposes exactly one Sync everything action");
-  assertTrue(await page.locator('#syncButton[aria-label="Sync everything"]').count() === 1, "Header exposes one-tap Sync everything action");
-  assertTrue(await page.locator("[data-sync-retry-all]").count() === 1, "Sync Center exposes recovery controls for the durable outbox");
-
-  await page.waitForTimeout(200);
-  await page.click('[data-settings-tab="coach"]');
-  await page.waitForSelector('[data-health-profile="wakeTime"]');
-  assertTrue(await page.locator('[data-health-profile="wakeTime"]').count() === 1, "Personal baseline settings are editable");
-  assertTrue(page.url().endsWith("#/settings/coach"),"Settings sections have exact route URLs");
-  await page.click('[data-settings-back]');
-  await page.waitForSelector('.sync-center');
-  assertTrue(page.url().endsWith("#/settings/sync"),"Settings Back returns to the previous Settings section");
-
-  const serviceWorkerReady=await page.evaluate(()=>Promise.race([navigator.serviceWorker.ready.then(()=>true),new Promise(resolve=>setTimeout(()=>resolve(false),5000))]));
-  if(serviceWorkerReady){
-    await context.setOffline(true);
-    await page.reload({waitUntil:"domcontentloaded"});
-    await page.waitForSelector('html[data-app-ready="true"]',{timeout:10000});
-    assertTrue(await page.locator("main h1").count()>0,"A first controlled reload starts fully offline from the precache");
-    
-    // Offline mutation & outbox persistence test
-    await page.click('[data-app-tab="food"]');
-    await page.waitForTimeout(200);
-    await page.click('[data-nutrition-view="log"]');
-    await page.fill("[data-food-note]", "offline protein smoothie");
-    await page.click("[data-manual-food]");
-    await page.waitForTimeout(200);
-    if (await page.locator("[data-save-food]").count()) {
-      await page.click("[data-save-food]");
-      await page.waitForTimeout(200);
-    }
-    const offlineFoodLogged = (await page.locator(".food-log article, .food-entry").count()) > 0;
-    assertTrue(offlineFoodLogged, "Offline food entry is logged and displayed while disconnected");
-    await context.setOffline(false);
-  }else {
-    console.log("SKIP: Service worker readiness is not available in this local browser environment");
-    // Verify offline outbox queuing logic directly
-    await context.setOffline(true);
-    await page.click('[data-app-tab="food"]');
-    await page.waitForTimeout(200);
-    await page.click('[data-nutrition-view="log"]');
-    await page.fill("[data-food-note]", "offline recovery bowl");
-    await page.click("[data-manual-food]");
-    await page.waitForTimeout(200);
-    if (await page.locator("[data-save-food]").count()) {
-      await page.click("[data-save-food]");
-      await page.waitForTimeout(200);
-    }
-    assertTrue((await page.locator(".food-log article, .food-entry").count()) > 0, "Offline food entry is preserved during network loss");
-    await context.setOffline(false);
-  }
-
-  await context.setOffline(false);
-  for(const [tab,label] of [["home","Today"],["train","Training"],["food","Nutrition"],["health","Health"],["insights","Insights"]]){
-    await page.click(`[data-app-tab="${tab}"]`);await page.waitForTimeout(300);await assertAxe(page,label);
-  }
-  const vitals=await page.evaluate(()=>window.__repVitals);
-  if(vitals.longTasks&&vitals.longTasks.length){
-    console.log("Main thread long tasks (>50ms):");
-    for(const t of vitals.longTasks){
-      console.log(`  - [${t.phase}] ${t.duration}ms (start: ${t.startTime}ms, name: ${t.name})`);
-    }
-  }
-  assertTrue(vitals.lcp>0&&vitals.lcp<=2500,`LCP stays within the 2.5s mobile budget (${Math.round(vitals.lcp)}ms)`);
-  assertTrue(vitals.cls<=0.1,`CLS stays within the 0.1 budget (${vitals.cls.toFixed(3)})`);
-  assertTrue(vitals.appLongTask<=200,`Longest application main-thread task stays within 200ms (${Math.round(vitals.appLongTask)}ms)`);
-  await page.emulateMedia({reducedMotion:"reduce"});
-  await page.click('[data-app-tab="train"]');await page.waitForTimeout(50);
-  const reducedMotion=await page.evaluate(()=>{const node=document.querySelector(".view-enter")||document.querySelector("main");const style=getComputedStyle(node);return {matches:matchMedia("(prefers-reduced-motion: reduce)").matches,animation:parseFloat(style.animationDuration)||0,transition:parseFloat(style.transitionDuration)||0};});
-  assertTrue(reducedMotion.matches&&reducedMotion.animation<=0.001&&reducedMotion.transition<=0.001,"Reduced-motion mode suppresses non-essential animation");
-  await page.emulateMedia({reducedMotion:"no-preference"});
-
-  // The app is mobile-primary. Exercise every primary destination at the
-  // compact widths we support instead of treating one 390 px viewport as a
-  // proxy for the entire phone range.
-  const indicatorChecks=[];
-  for(const width of [320,360,375,390,393,414,430]){
-    await page.setViewportSize({width,height:900});
-    for(const tab of ["home","train","food","health","insights"]){
-      await page.click(`[data-app-tab="${tab}"]`);
-      await page.waitForTimeout(350);
-      const layout=await page.evaluate(()=>{const nav=document.querySelector(".app-tabs"),active=nav.querySelector('[aria-current="page"]'),navBox=nav.getBoundingClientRect(),activeBox=active.getBoundingClientRect(),pseudo=getComputedStyle(nav,"::before"),indicatorLeft=navBox.left+parseFloat(getComputedStyle(nav).borderLeftWidth)+parseFloat(pseudo.left)+new DOMMatrixReadOnly(pseudo.transform).m41,indicatorWidth=parseFloat(pseudo.width);return {overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,targets:[...nav.querySelectorAll("button")].map(button=>Math.min(button.getBoundingClientRect().width,button.getBoundingClientRect().height)),indicatorError:Math.max(Math.abs(indicatorLeft-activeBox.left),Math.abs(indicatorWidth-activeBox.width)),offenders:[...document.querySelectorAll("body *")].filter(element=>{const box=element.getBoundingClientRect();return box.right>document.documentElement.clientWidth+1||box.left<-1;}).slice(0,6).map(element=>`${element.tagName.toLowerCase()}.${element.className||""}[${Math.round(element.getBoundingClientRect().left)},${Math.round(element.getBoundingClientRect().right)}]`)};});
-      indicatorChecks.push({width,tab,error:layout.indicatorError});
-      assertTrue(layout.overflow<=1,`${tab} has no horizontal overflow at ${width}px${layout.overflow>1?` (${layout.overflow}px: ${layout.offenders.join(", ")})`:""}`);
-      assertTrue(layout.targets.every(size=>size>=44),`primary navigation keeps 44px touch targets at ${width}px`);
-    }
-  }
-  const worstIndicator=indicatorChecks.sort((a,b)=>b.error-a.error)[0];
-  assertTrue(worstIndicator.error<=0.5,`primary navigation indicator stays aligned across phone widths (worst ${worstIndicator.error.toFixed(2)}px at ${worstIndicator.width}px on ${worstIndicator.tab})`);
-
-  for(const device of [
-    {name:"Honor 20 Pro portrait",width:360,height:780,landscape:false},
-    {name:"iPhone 15 Pro portrait",width:393,height:852,landscape:false},
-    {name:"Honor 20 Pro landscape",width:780,height:360,landscape:true},
-    {name:"iPhone 15 Pro landscape",width:852,height:393,landscape:true}
-  ]){
-    await page.setViewportSize({width:device.width,height:device.height});
-    await page.click('[data-app-tab="home"]');
-    await page.waitForTimeout(100);
-    const layout=await page.evaluate(()=>{
-      const nav=document.querySelector(".app-tabs"),box=nav.getBoundingClientRect(),buttons=[...nav.querySelectorAll("button")];
-      return {overflow:document.documentElement.scrollWidth-window.innerWidth,navBottom:window.innerHeight-box.bottom,minTarget:Math.min(...buttons.map(button=>Math.min(button.getBoundingClientRect().width,button.getBoundingClientRect().height))),direction:getComputedStyle(buttons[0]).flexDirection};
-    });
-    assertTrue(layout.overflow<=1&&layout.navBottom>=-1,`${device.name} keeps navigation inside the viewport without horizontal overflow`);
-    assertTrue(layout.minTarget>=44,`${device.name} keeps every primary action at least 44px`);
-    if(device.landscape)assertTrue(layout.direction==="row",`${device.name} uses the compact landscape navigation`);
-  }
-
-  // Integrated adaptive-plan and next-session handoff coverage. This uses
-  // controlled local state so no physical watch or phone bridge is required.
-  await page.setViewportSize({width:390,height:900});
-  await page.evaluate(()=>{
-    const today=isoDay();state.sessionStartedAt=null;state.preferences.schedule[currentDay()]={morning:true,focus:"gym"};
-    state.sleepLogs=state.sleepLogs.filter(item=>item.date!==today);
-    state.recoveryCheckins=[{date:today,soreness:4,energy:2,sleep:7,pain:false,notes:"controlled e2e fatigue"}];
-    renderOverview();
-  });
-  assertTrue(await page.locator(".adaptive-adjustments").count()===1,"Adaptive Today Plan explains its concrete workout changes");
-  const todayAction=page.locator("[data-goto-train]");
-  const actionBox=await todayAction.boundingBox();
-  assertTrue(Boolean(actionBox)&&actionBox.y+actionBox.height<844,"Today's main workout action stays in the first phone viewport");
-  assertTrue(await page.locator("#app [data-apply-adaptive]").count()===0,"Today has one primary workout action");
-  await todayAction.click();
-  const appliedPlan=await page.evaluate(()=>state.activeWorkoutPlan);
-  assertTrue(appliedPlan?.mode==="reduced"&&appliedPlan?.targetSession==="gymLite","One tap applies reduced sets, exercise selection, and load policy");
-  await page.evaluate(()=>{
-    const now=Date.now(),record={id:now,date:new Date(now).toISOString(),session:"gym",duration:2400,calories:210,sets:2,loads:{},entries:[{exercise:"Chest Press",set:1,weight:60,reps:12,rpe:7},{exercise:"Chest Press",set:2,weight:60,reps:12,rpe:7}]};
-    state.session="gym";state.history=[record,...state.history];state.progressionProposals=[];renderComplete();
-  });
-  assertTrue(await page.locator(".next-targets-card").count()===1,"Workout completion generates an exact next-session target card");
-  assertTrue(await page.locator(".next-targets-card").getByText(/Chest Press/).count()===1,"Next-session target identifies the completed lift");
-  await page.click("[data-accept-progression]");
-  const targetApplied=await page.evaluate(()=>({target:state.trainingTargets["Chest Press"],set:state.logs["Chest Press"]?.sets?.[0]}));
-  assertTrue(Boolean(targetApplied.target?.acceptedAt)&&String(targetApplied.set?.weight)===String(targetApplied.target?.targetWeight),"One tap prefills the accepted weight for the next session");
-
-  // Custom routine persistence, exact technique and logging regression.
-  await page.click('[data-home]');
-  await page.waitForSelector('[data-training-view="program"]');
-  if(!(await page.locator('.program-discovery').count()))await page.click('[data-training-view="program"]');
-  await page.click('[data-create-new-routine]');
-  await page.fill('[data-routine-title]',"QA Saved Circuit");
-  await page.selectOption('[data-add-ex-select]',{label:"Dumbbell Lateral Raise (Shoulders)"});
-  assertTrue(await page.inputValue('[data-routine-title]')==="QA Saved Circuit","Adding exercises preserves the routine title");
-  await page.click('[data-save-routine]');
-  await page.evaluate(()=>window.REP_STORE.flush());
-  await page.reload({waitUntil:"load"});
+  await page.goto(baseUrl,{waitUntil:"load"});
   await page.waitForSelector('html[data-app-ready="true"]');
-  const qaRoutine=page.locator('.custom-routine-card').filter({hasText:"QA Saved Circuit"});
-  assertTrue(await qaRoutine.count()===1,"Saved custom routine survives a full reload");
-  await qaRoutine.locator('[data-launch-custom]').click();
-  await page.locator('.preview-row').filter({hasText:"Dumbbell Lateral Raise"}).locator('summary').click();
-  await page.waitForSelector('[data-exercise-media="Dumbbell Lateral Raise"] img[src]');
-  assertTrue((await page.locator('[data-exercise-media="Dumbbell Lateral Raise"] img').getAttribute('src')).includes('dumbbell-lateral-raise'),"Lateral raise uses its exact male reference photo");
-  assertTrue(await page.locator('.preview-row').filter({hasText:"Dumbbell Lateral Raise"}).locator('.cinematic-motion').count()===0,"Lateral raise never borrows chest-press media");
-  await page.click('[data-download-workout]');
-  await page.waitForFunction(()=>document.querySelector('[data-media-status]')?.textContent.startsWith('Workout downloaded'),undefined,{timeout:20000});
-  await page.evaluate(()=>{state.sessionStartedAt=null;state.workoutChecks[isoDay()]={watch:true,workout:true};});
-  await page.click('[data-start-session]');
-  await page.fill('[data-live-log][data-log="weight"]',"20");
-  await page.fill('[data-live-log][data-log="reps"]',"10");
-  await page.click('[data-next]');
-  await page.evaluate(()=>window.REP_STORE.flush());
-  await page.reload({waitUntil:"load"});
-  await page.waitForSelector('html[data-app-ready="true"]');
-  await qaRoutine.locator('[data-launch-custom]').click();
-  await page.click('[data-start-session]');
-  await page.click("[data-tempo-coach]");
-  await page.waitForSelector('.timed-mode .exercise-media-poster[src]');
-  assertTrue(await page.locator('.timed-mode .exercise-media-poster').count()===1,"Tempo dialog uses the same reviewed male reference");
-  await page.click("[data-tempo-close]");
-  const customLogged=await page.evaluate(()=>({session:state.session,reps:state.logs["Incline Dumbbell Press"].sets[0].reps,weight:state.logs["Incline Dumbbell Press"].sets[0].weight,done:state.completed[`${state.session}-0`]}));
-  assertTrue(customLogged.session.startsWith('custom-')&&customLogged.reps==="10"&&customLogged.weight==="20"&&customLogged.done.includes(0),"Custom workout resumes with saved weights, reps and completed sets");
+  assertTrue(await page.locator('.onboarding-backdrop').count()===1,'Setup opens on a fresh profile');
+  await page.click('[data-onboarding-next]');await page.click('[data-onboarding-next]');await page.click('[data-onboarding-next]');
+  await page.waitForSelector('.onboarding-backdrop',{state:'detached'});
+  await page.evaluate(()=>{state.preferences.schedule[currentDay()]={morning:true,focus:'gym'};renderOverview();});
+  assertTrue(await page.locator('main h1').textContent()==='Today','Today has one clear screen title');
+  assertTrue(await page.locator('[data-today-start]').textContent()==='Start workout','Today exposes the scheduled workout directly');
+  assertTrue((await page.locator('[data-today-start]').boundingBox()).y<500,'Start workout is in the first phone viewport');
+  await captureScreen('today');
+  assertTrue(await page.locator('.readiness-note').count()===1,'Today has one readiness recommendation');
+  assertTrue(!(await page.locator('.habit-tracker').evaluate(x=>x.open)),'Daily routines are collapsed by default');
+  await page.locator('.habits-summary').click();await page.click('[data-habit-id="sleep"]');
+  await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count()===1,'Habit records survive reload');
+  await page.click('[data-today-checkin]');await page.waitForSelector('[data-morning-checkin]');
+  await page.selectOption('[data-morning-checkin] [name="energy"]','4');await page.selectOption('[data-morning-checkin] [name="soreness"]','2');
+  await page.locator('.rep-modal-sheet .sheet-close').focus();await page.keyboard.press('Shift+Tab');assertTrue(await page.locator('[data-morning-checkin] button[type="submit"]').evaluate(el=>el===document.activeElement),'Check-in sheet keeps keyboard focus inside');
+  await page.waitForTimeout(260);await assertAxe(page,'Recovery check-in');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
+  assertTrue(await page.evaluate(()=>state.recoveryCheckins[0].energy)===4,'Quick check-in saves the existing recovery record');
+  await page.click('[data-today-checkin]');await page.check('[data-morning-checkin] [name="illness"]');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
+  assertTrue(await page.locator('[data-today-start]').textContent()==='Review recovery','Illness keeps the existing pause recommendation on Today');
+  await page.evaluate(()=>showSessionPreview('gym'));await page.click('[data-start-session]');await page.waitForSelector('[data-review-recovery]');
+  assertTrue(await page.locator('[data-acknowledge-workout]').count()===1,'A workout started from the library retains the symptom warning');await page.click('[data-review-recovery]');await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
+  await page.evaluate(()=>{state.recoveryCheckins=[];REP_HEALTH_COVERAGE.invalidateCache(state);REP_HEALTH_ENGINE.invalidateCache(state);REP_NAVIGATION.navigate('today');});
+  const destinations=[['home','Today','/today'],['train','Train','/train'],['food','Nutrition','/nutrition/today'],['insights','Progress','/progress'],['more','More','/more']];
+  for(const [tab,title,path] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);assertTrue(page.url().endsWith('#'+path),title+' has a stable route');await captureScreen(tab);await assertAccessibleView(page,title);await assertAxe(page,title);}
+  await page.goBack();await page.waitForSelector('.progress-overview');assertTrue(page.url().endsWith('#/progress'),'Browser Back restores Progress');
+  await page.goForward();await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/more'),'Browser Forward restores More');
+  await page.click('[data-more-route="health-vitals"]');await page.waitForSelector('.recovery-sleep');
+  assertTrue(await page.locator('.health-subnav,.health-workflow-nav').count()===0,'Recovery does not stack navigation layers');
+  await page.locator('.recovery-sleep>summary').click();await page.fill('[data-sleep-bedtime]','22:15');await page.fill('[data-sleep-wake]','06:15');await page.click('[data-sleep-form] button[type="submit"]');
+  await page.waitForSelector('.recovery-sleep');assertTrue(await page.evaluate(()=>state.sleepLogs.some(x=>x.hours===8)),'Existing sleep logic stays connected to Recovery');
+  await page.click('[data-more-back]');await page.click('[data-more-route="settings-general"]');await page.waitForSelector('[data-reminder-time="bedtime"]');
+  assertTrue(await page.locator('[data-app-tab="more"][aria-current="page"]').count()===1,'Settings belongs to More');
+  await page.click('[data-settings-tab="coach"]');await page.waitForSelector('[data-health-profile="wakeTime"]');await page.click('[data-settings-back]');await page.waitForSelector('[data-reminder-time="bedtime"]');
+  await page.click('[data-app-tab="food"]');await page.waitForSelector('.nutrition-actions');await page.click('[data-nutrition-log]');
+  await page.fill('[data-food-note]','plain eggs and toast');await page.click('[data-manual-food]');await page.waitForSelector('[data-save-food]');await page.click('[data-save-food]');
+  await page.waitForSelector('.nutrition-actions');assertTrue(await page.evaluate(()=>state.foodEntries.length>0),'Manual food entry works without AI setup');
+  await page.click('[data-nutrition-water]');await page.waitForSelector('.water-card:visible');await page.click('[data-water-delta="250"]');
+  assertTrue(await page.evaluate(()=>state.water[isoDay()])===250,'Water tracking stays connected');
+    await page.click('#settingsButton');await page.waitForSelector('[data-reminder-time="bedtime"]');
+  const reminder=await page.evaluate(()=>({windDown:document.querySelector('[data-reminder-time="bedtime"]').value,bedtime:REP_HEALTH_ENGINE.bedtime(state,isoDay(),state.healthProfile).time,enabled:[...document.querySelectorAll('[data-reminder-enabled]')].some(x=>x.checked)}));
+  const [bedHour,bedMinute]=reminder.bedtime.split(':').map(Number),windDown=(bedHour*60+bedMinute-30+1440)%1440;
+  assertTrue(reminder.windDown===`${String(Math.floor(windDown/60)).padStart(2,'0')}:${String(windDown%60).padStart(2,'0')}`&&!reminder.enabled,'Existing calculated reminders remain opt-in');
+  await page.click('[data-settings-tab="sync"]');await page.waitForSelector('.sync-center');assertTrue(await page.locator('[data-sync-all]').count()===1&&await page.locator('[data-sync-retry-all]').count()===1,'Connections preserves sync and retry controls');
+await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise-library');
+  await page.click('[data-train-jump="library"]');assertTrue(await page.locator('[data-library-search]').evaluate(el=>el===document.activeElement),'Find exercise shortcut focuses the existing search');
+  await page.fill('[data-library-search]','lateral');assertTrue((await page.locator('[data-library-exercise]').allTextContents()).every(x=>/lateral/i.test(x)),'Exercise search uses canonical exercise names');
+  await page.selectOption('[data-library-equipment]','machines');assertTrue(!(await page.locator('[data-library-results]').textContent()).includes('Dumbbell Lateral Raise'),'Equipment filtering removes incompatible exercises');
+  await page.fill('[data-library-search]','');await page.selectOption('[data-library-equipment]','all');
+  await page.click('[data-routine-favourite="gym"]');await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  assertTrue(await page.locator('[data-routine-favourite="gym"][aria-pressed="true"]').count()===1,'Routine favourites survive a reload');
+  await page.click('[data-create-new-routine]');await page.fill('[data-routine-title]','QA Saved Circuit');
+  const option=await page.locator('[data-add-ex-select]').evaluate(x=>[...x.options].find(o=>o.textContent.includes('Dumbbell Lateral Raise')).value);await page.selectOption('[data-add-ex-select]',option);
+  assertTrue(await page.locator('[data-routine-title]').inputValue()==='QA Saved Circuit','Adding exercises preserves the routine draft');
+  await page.click('[data-save-routine]');await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  assertTrue(await page.locator('[data-routine-card]').filter({hasText:'QA Saved Circuit'}).count()===1,'Custom routines survive a full reload');
+  await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');
+  await page.evaluate(()=>{state.sleepLogs=[];state.recoveryCheckins=[];state.healthMetrics={};REP_HEALTH_COVERAGE.invalidateCache(state);REP_HEALTH_ENGINE.invalidateCache(state);renderOverview();});await page.click('[data-today-start]');await page.waitForSelector('.workout-player');
+  assertTrue(await page.locator('.workout-preflight-panel').count()===0,'Missing wearable data does not block manual workout logging');
+  assertTrue(await page.locator('.workout-identity h1').textContent()==='Stationary Bike','Scheduled session starts at the correct exercise');
+  assertTrue(await page.locator('.exercise-hero-stage [data-media-play]:visible').count()===0,'A static exercise has no fabricated playback controls');
+  await page.click('[data-exercise-timer]');await page.waitForSelector('.workout-timed-mode');await page.click('[data-timed-pause]');assertTrue(await page.locator('.workout-timed-mode.is-paused').count()===1,'The existing timed exercise can pause');await page.click('[data-timed-add]');assertTrue((await page.locator('[data-timed-total]').textContent()).includes('5:15'),'Timed exercise extension changes the real total');await page.click('[data-timed-close]');await page.waitForSelector('.workout-timed-mode',{state:'detached'});
+  await page.locator('.set-log-panel>summary').click();await page.click('.simple-set-history [data-set="0"]');assertTrue(await page.evaluate(()=>state.completed['gym-0'].includes(0)),'Timed and warm-up sets have editable history rows');await page.waitForTimeout(310);await page.click('.simple-set-history [data-set="0"]');assertTrue(await page.evaluate(()=>state.completed['gym-0'].length)===0,'A completed timed set can be corrected from its history');await page.locator('.set-log-panel>summary').click();await page.waitForTimeout(310);
 
-  await page.evaluate(()=>{state.session='gym';state.index=3;state.sessionStartedAt=Date.now();state.exerciseSubstitutions['Chest Press']='Push-Up';state.completed['gym-3']=[];state.mediaQuality='720';renderExercise();});
-  await page.waitForSelector('.exercise-hero-stage video');
-  await page.locator('.exercise-hero-stage [data-media-rate]').selectOption('0.5');
-  await page.locator('.exercise-hero-stage [data-media-replay]').click();
-  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.currentTime>0.1);
-  const continuity=await page.evaluate(()=>{const video=document.querySelector('.exercise-hero-stage video'),time=video.currentTime;state.logs['Push-ups'].sets[0].reps='12';renderExercise();return {same:video===document.querySelector('.exercise-hero-stage video'),timePreserved:document.querySelector('.exercise-hero-stage video').currentTime>=time,rate:video.playbackRate};});
-  assertTrue(continuity.same&&continuity.timePreserved&&continuity.rate===0.5,"Logging keeps the same video, position and selected playback speed");
-  await page.locator('.exercise-hero-stage [data-media-quality]').selectOption('1080');
-  await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.getAttribute('src').includes('1080'));
-  assertTrue(await page.evaluate(()=>state.mediaQuality)==='1080',"Video quality preference is saved");
-  await page.emulateMedia({reducedMotion:'reduce'});
-  await page.evaluate(()=>{state.index=2;renderExercise();state.index=3;renderExercise();});
-  await page.waitForSelector('.exercise-hero-stage video');
-  assertTrue(await page.locator('.exercise-hero-stage video').evaluate(el=>el.paused),"Reduced motion uses a static poster until Play is requested");
-  await page.emulateMedia({reducedMotion:'no-preference'});
-  const offlineAsset=await page.evaluate(async()=>{const assets=REP_MEDIA_PLAYER.assets({name:'Push-ups'},{allQualities:true});await REP_WORKOUT_MEDIA.download(assets);return assets.find(a=>a.type==='video').src;});
-  await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
-  await context.setOffline(true);
-  const offlineRange=await page.evaluate(async src=>{const response=await fetch(src,{headers:{Range:'bytes=0-15'}});return {status:response.status,length:(await response.arrayBuffer()).byteLength,range:response.headers.get('content-range')};},offlineAsset);
-  assertTrue(offlineRange.status===206&&offlineRange.length===16&&offlineRange.range.startsWith('bytes 0-15/'),"Complete cached videos support byte-range seeking offline");
-  await page.reload();
-  await page.waitForSelector('html[data-app-ready="true"]');
-  assertTrue(await page.locator('[data-app-tab="train"]').count()===1,"Offline cold reload restores the application shell");
-  await context.setOffline(false);
+  await page.click('[data-next]');await page.waitForTimeout(310);await page.click('[data-next]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Leg Press');
+  for(const [width,height] of [[390,844],[360,780],[320,667]]){await page.setViewportSize({width,height});const layout=await page.evaluate(()=>{const button=document.querySelector('[data-next]'),input=document.querySelector('[data-live-log][data-log="reps"]'),media=document.querySelector('.exercise-hero-stage');return {button:button.getBoundingClientRect().bottom,input:input.getBoundingClientRect().bottom,media:media.getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth};});assertTrue(layout.button<=height&&layout.input<height-70,`Inputs and Log Set are visible at ${width} × ${height}`);assertTrue(layout.media<=240&&layout.overflow<=1,`Compact media and no overflow at ${width}px`);}
+  await page.setViewportSize({width:320,height:667});await page.locator('.set-log-panel>summary').click();
+  const setRows=await page.locator('.set-log-panel').evaluate(panel=>({overflow:panel.scrollWidth-panel.clientWidth,fields:[...panel.querySelectorAll('.set-input-wrap input')].map(el=>({width:el.getBoundingClientRect().width,font:parseFloat(getComputedStyle(el).fontSize)})),targets:[...panel.querySelectorAll('button')].map(el=>Math.min(el.getBoundingClientRect().width,el.getBoundingClientRect().height))}));
+  assertTrue(setRows.overflow<=1&&setRows.fields.every(x=>x.width>=55&&x.font>=16),'Set-history fields remain readable at 320px');assertTrue(setRows.targets.every(x=>x>=44),'Set-history actions have 44px touch targets');await page.locator('.set-log-panel').scrollIntoViewIfNeeded();await captureScreen('mobile-set-history');await page.locator('.set-log-panel>summary').click();
+  await page.setViewportSize({width:852,height:393});await page.evaluate(()=>window.scrollTo(0,0));await assertAccessibleView(page,'Landscape workout');await captureScreen('mobile-landscape');
+  await page.setViewportSize({width:390,height:844});await captureScreen('workout');await assertAxe(page,'Workout current set');assertTrue(await page.locator('.exercise-hero-stage video').count()===0,'Photographed positions are never morphed into motion');assertTrue(await page.locator('[data-live-log][data-log="weight"]').inputValue()==='','No starting weight is invented');
+  await page.locator('[data-live-log][data-log="weight"]').focus();await page.keyboard.press('Enter');assertTrue(await page.locator('[data-live-log][data-log="reps"]').evaluate(el=>el===document.activeElement),'Keyboard Next moves from weight to reps without logging');await page.keyboard.press('Enter');await page.keyboard.press('Enter');assertTrue(await page.evaluate(()=>!(state.completed['gym-1']||[]).length),'Keyboard Done does not complete an unlogged set');
+  await page.locator('[data-live-log][data-log="reps"]').focus();await page.setViewportSize({width:390,height:480});await page.waitForFunction(()=>document.body.classList.contains('is-keyboard-open'));
+  const keyboard=await page.evaluate(()=>({button:document.querySelector('[data-next]').getBoundingClientRect().bottom,input:document.querySelector('[data-live-log][data-log="reps"]').getBoundingClientRect().bottom,height:visualViewport.height,focus:document.activeElement.dataset.log}));
+  assertTrue(keyboard.button<=keyboard.height+1&&keyboard.input<keyboard.button&&keyboard.focus==='reps','Resized-keyboard layout keeps the input and Log Set reachable');await captureScreen('mobile-keyboard');await page.click('[data-keyboard-dismiss]');await page.waitForFunction(()=>!document.body.classList.contains('is-keyboard-open'));await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.scrollTo(0,0));
+  await page.locator('[data-live-log][data-log="reps"]').focus();
+  await page.evaluate(()=>{const viewport=visualViewport;window.__viewportMock={height:480,scale:1};Object.defineProperty(viewport,'height',{configurable:true,get:()=>__viewportMock.height});Object.defineProperty(viewport,'scale',{configurable:true,get:()=>__viewportMock.scale});viewport.dispatchEvent(new Event('resize'));});
+  await page.waitForFunction(()=>document.body.classList.contains('is-keyboard-open'));
+  assertTrue(await page.locator('[data-next]').evaluate(el=>el.getBoundingClientRect().bottom<=480),'Overlay-keyboard geometry raises Log Set above the obscured area');
+  await page.evaluate(()=>{__viewportMock.scale=2;visualViewport.dispatchEvent(new Event('resize'));});await page.waitForFunction(()=>!document.body.classList.contains('is-keyboard-open'));
+  assertTrue(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--keyboard-bottom'))==='0px','Pinch zoom is not mistaken for an open keyboard');
+  await page.evaluate(()=>{delete visualViewport.height;delete visualViewport.scale;document.activeElement.blur();visualViewport.dispatchEvent(new Event('resize'));});await page.evaluate(()=>window.scrollTo(0,0));
+  await page.fill('[data-live-log][data-log="weight"]','40');await page.fill('[data-live-log][data-log="reps"]','10');await page.fill('[data-live-log][data-log="rpe"]','7');
+  const inputClarity=await page.locator('[data-live-log][data-log="reps"]').evaluate(el=>{const box=el.getBoundingClientRect(),context=document.createElement('canvas').getContext('2d');context.font=getComputedStyle(el).font;return {width:el.clientWidth,needed:context.measureText(el.value).width,exposed:document.elementFromPoint(box.x+box.width/2,box.y+box.height/2)===el};});assertTrue(inputClarity.width>=inputClarity.needed+8&&inputClarity.exposed,'Current reps are legible and not covered by an overlay');
+  await page.evaluate(()=>{document.querySelector('[data-live-log][data-log="reps"]').focus();Object.defineProperty(visualViewport,'height',{configurable:true,value:480});visualViewport.dispatchEvent(new Event('resize'));});await page.waitForFunction(()=>document.body.classList.contains('is-keyboard-open'));
+  await page.waitForTimeout(310);await page.locator('[data-next]').dispatchEvent('click');await page.locator('[data-next]').dispatchEvent('click');assertTrue(await page.evaluate(()=>state.completed['gym-1'].length)===1,'Rapid double taps cannot log two sets');assertTrue(await page.locator('#timerDock:not(.is-hidden)').count()===1,'Logging enters the rest state');assertTrue(!(await page.locator('.workout-action-band').isVisible()),'Rest and logging do not overlap');await page.waitForFunction(()=>!document.body.classList.contains('is-keyboard-open'));assertTrue(await page.evaluate(()=>!document.activeElement.matches('[data-log]')),'Logging a set dismisses the editor before rest');await page.evaluate(()=>{delete visualViewport.height;visualViewport.dispatchEvent(new Event('resize'));});
+  await page.waitForTimeout(320);await captureScreen('rest');await assertAxe(page,'Rest state');const restLayout=await page.locator('#timerDock').evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,bottom:box.bottom};});assertTrue(restLayout.left>=0&&restLayout.right<=390&&restLayout.bottom<=844,'The rest dock stays fully within the phone viewport');assertTrue(await page.locator('#timerAdd').isVisible()&&await page.locator('#timerSkip').isVisible(),'Rest shows +15 seconds and Skip together');const restTarget=await page.evaluate(()=>state.timer.targetEndTime);await page.evaluate(()=>REP_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#timerDock').isVisible()===false,'Browsing Today hides workout rest controls');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.targetEndTime)===restTarget,'Returning to the workout preserves the absolute rest target');await page.click('#timerPause');const pausedRemaining=await page.evaluate(()=>state.timer.remaining);await page.evaluate(()=>REP_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.paused),'Paused rest stays paused when returning to the workout');await page.click('#timerPause');await page.waitForFunction(previous=>state.timer.remaining<previous,pausedRemaining,{timeout:2500});assertTrue(await page.evaluate(()=>Boolean(state.timer.interval)),'A restored paused timer resumes a working countdown');await page.locator('.undo-bar button').click();assertTrue(await page.evaluate(()=>state.completed['gym-1'].length)===0,'Undo restores the previous completion state');assertTrue(await page.evaluate(()=>state.timer)===null,'Undo restores the preceding timer state');assertTrue(await page.locator('.current-set-card .workout-undo').count()===0,'Undo clears its local set control');
+  for(let attempt=0;attempt<8&&await page.evaluate(()=>state.index===1);attempt++){if(await page.locator('#timerDock:not(.is-hidden)').count())await page.click('#timerSkip');await page.waitForTimeout(310);await page.click('[data-next]');}
+  await page.waitForFunction(()=>state.index===2);await page.locator('.workout-advanced>summary').click();await page.click('[data-jump-exercise]');await page.waitForFunction(()=>state.index===3);
+  await page.click('[data-swap-modal]');await page.click('[data-select-swap="Push-ups"]');await page.waitForSelector('.workout-identity h1');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
+  assertTrue(await page.evaluate(()=>state.exerciseSubstitutions['Chest Press']||null)===null,'A session swap does not edit saved routine preferences');
+  await page.locator('[data-media-expand]').click();await page.selectOption('[data-media-rate]','0.5');await page.click('[data-media-replay]');await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.currentTime>0.1);
+  const continuity=await page.evaluate(()=>{const v=document.querySelector('.exercise-hero-stage video'),time=v.currentTime,input=document.querySelector('[data-live-log][data-log="reps"]');input.focus();input.value='12';input.dispatchEvent(new Event('input',{bubbles:true}));renderExercise();return {same:v===document.querySelector('.exercise-hero-stage video'),position:v.currentTime>=time,focus:input===document.activeElement,rate:v.playbackRate};});
+  assertTrue(continuity.same&&continuity.position&&continuity.focus&&continuity.rate===0.5,'Logging preserves player, position, speed and focus');
+  const nativeMode=await page.evaluate(async()=>{const video=document.querySelector('.exercise-hero-stage video');video.dispatchEvent(new Event('webkitbeginfullscreen'));const entered=video.getAttribute('src').includes('-1080-');video.dispatchEvent(new Event('webkitendfullscreen'));return {entered,restored:video.getAttribute('src').includes('-720-'),same:video===document.querySelector('.exercise-hero-stage video')};});assertTrue(nativeMode.entered&&nativeMode.restored&&nativeMode.same,'Native fullscreen events select HD then restore phone quality without replacing the player');
+  await captureScreen('expanded-demo');await page.selectOption('[data-media-quality]','1080');assertTrue(await page.evaluate(()=>state.mediaQuality)==='1080','Video quality preference saves');await page.locator('[data-media-expand]').click();
+  await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');
+  assertTrue(await page.locator('[data-today-start]').textContent()==='Resume workout','Today offers the active session after reload');await page.click('[data-today-start]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
+  assertTrue(await page.evaluate(()=>state.logs['Push-ups'].sets[0].reps)==='12','Resume preserves the logged fields and session swap');
+  await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>{state.index=2;renderExercise();state.index=3;renderExercise();});assertTrue(await page.locator('video').evaluate(x=>x.paused),'Reduced motion keeps the demonstration paused');await page.emulateMedia({reducedMotion:'no-preference'});
+  const asset=await page.evaluate(async()=>{const a=REP_MEDIA_PLAYER.assets({name:'Push-ups'},{allQualities:true});await REP_WORKOUT_MEDIA.download(a);return a.find(x=>x.type==='video').src;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));testingNetworkFailure=true;if(webkitMode)originUnavailable=true;else await context.setOffline(true);const range=await page.evaluate(async src=>{const r=await fetch(src,{headers:{Range:'bytes=0-15'}});return {status:r.status,length:(await r.arrayBuffer()).byteLength};},asset);assertTrue(range.status===206&&range.length===16,webkitMode?'Cached video ranges work with the origin unavailable':'Offline videos provide actual byte ranges');
+  await page.reload();await page.waitForSelector('html[data-app-ready="true"]');assertTrue(await page.locator('[data-app-tab]').count()===5,webkitMode?'Cold reload restores the shell with the origin unavailable':'Offline cold reload restores the shell');if(webkitMode)originUnavailable=false;else await context.setOffline(false);
+  const interruptedSrc=asset+'?interrupted-demo';
+  const interrupted=await page.evaluate(async src=>{const control=new AbortController();setTimeout(()=>control.abort(),30);const result=await REP_WORKOUT_MEDIA.download([{src,type:'video',bytes:1}],()=>{},{signal:control.signal});return {result,inspection:await REP_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1}])};},interruptedSrc);
+  assertTrue(interrupted.result.aborted&&!interrupted.inspection.complete,'Interrupted downloads are not marked complete');
+  const partialSrc=asset+'?partial-demo';
+  const partial=await page.evaluate(async src=>{const result=await REP_WORKOUT_MEDIA.download([{src,type:'video',bytes:1000}]);return {result,inspection:await REP_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1000}])};},partialSrc);
+  assertTrue(!partial.result.complete&&!partial.inspection.complete,'A partial 206 response cannot become a complete offline video');testingNetworkFailure=false;
+  await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');await page.click('[data-today-start]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
+  await page.waitForTimeout(310);await page.click('[data-next]');await page.click('#timerSkip');await page.click('[data-swap-modal]');await page.click('[data-select-swap=""]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Chest Press');
+  await page.locator('.set-log-panel>summary').click();await page.fill('[data-log="reps"][data-log-set="0"][data-log-exercise="Push-ups"]','11');
+  assertTrue(await page.evaluate(()=>state.logs['Push-ups'].sets[0].reps)==='11','Editing a completed swapped set updates the performed exercise');
+  await page.fill('[data-live-log][data-log="weight"]','42');await page.fill('[data-live-log][data-log="reps"]','10');
+  for(let attempt=0;attempt<50&&await page.locator('[data-finish-workout]').count()===0;attempt++){if(await page.locator('#timerDock:not(.is-hidden)').count())await page.click('#timerSkip');await page.waitForTimeout(310);await page.click('[data-next]');}
+  await page.waitForSelector('[data-finish-workout]');await captureScreen('completion');
+  const completed=await page.evaluate(()=>({record:state.history[0],swaps:state.sessionSubstitutions}));assertTrue(completed.record.entries.some(x=>x.exercise==='Push-ups'&&x.reps==='11')&&completed.record.entries.some(x=>x.exercise==='Chest Press'&&x.weight==='42'),'Completion records each exercise actually performed');assertTrue(completed.swaps===null,'Session substitutions expire when the workout ends');
+  assertTrue((await page.locator('[data-finish-workout]').boundingBox()).y<844,'Finish stays in the first completion viewport');await assertAccessibleView(page,'Completion');await assertAxe(page,'Completion');
+  await page.locator('.completion-next details>summary').click();await page.click('[data-accept-progression]');assertTrue(await page.evaluate(()=>Boolean(state.trainingTargets['Chest Press'].acceptedAt)),'Next-session targets use the existing accepted-target state');
+  await page.click('[data-finish-workout]');await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('[data-today-start]').textContent()!=='Resume workout','Finish returns to Today without a stale resume');
+  await page.click('[data-app-tab="insights"]');await page.waitForSelector('.progress-history');assertTrue(await page.locator('.progress-overview,.exercise-progress,.next-step').count()===3,'Progress answers the three intended questions');assertTrue(await page.locator('[data-ask-data]').count()===1,'Detailed analytics remains reachable in Progress');await page.click('[data-open-weekly]');assertTrue(await page.locator('.progress-analysis').evaluate(el=>el.open),'Weekly report opens directly from the Progress shortcut');await page.locator('.progress-analysis>summary').click();assertTrue(await page.locator('[data-accept-progression]').count()===1,'Accepted next-session targets remain visible in Progress');assertTrue(await page.locator('[data-product-weekly]').count()===1&&await page.locator('[data-product-experiments]').count()===1,'The weekly report and experiment tools remain available');
+  await page.locator('.progress-analysis>summary').click();await page.locator('.performance-analytics .insights-more>summary').click();await page.fill('#askDataQuestion','How consistent is my protein?');await page.click('[data-ask-data] button');assertTrue(await page.locator('.data-answer details span').count()>0,'Detailed analytics returns inspectable evidence');assertTrue(await page.locator('.local-only').textContent()==='No upload','Existing data analysis remains local');
 
-  assertTrue(consoleErrors.length === 0, `No console/page errors during the run (found ${consoleErrors.length})`);
-  if (consoleErrors.length) console.log(consoleErrors.join("\n"));
+  await page.fill('[data-history-search]','missing exercise');assertTrue((await page.locator('[data-history-results]').textContent()).includes('No')||(await page.locator('[data-history-results]').textContent()).includes('first workout'),'History search has an honest empty state');
+  await page.evaluate(()=>{state.sessionStartedAt=null;state.history.push({session:'gym',date:new Date().toISOString(),duration:1200,sets:1,entries:[{exercise:'Chest Press',weight:'40',reps:'10'}]});renderInsights();});await page.fill('[data-history-search]','Chest Press');assertTrue((await page.locator('[data-history-results]').textContent()).includes('Chest Press'),'History searches exercise records');
+  await page.evaluate(()=>{REP_NAVIGATION.navigate('training-program');REP_NAVIGATION.navigate('nutrition-today');REP_NAVIGATION.navigate('more');});await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/more'),'Rapid navigation commits only the winning screen');
+  for(const width of [320,360,375,390,414,430]){await page.setViewportSize({width,height:844});for(const [tab,title] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);await assertAccessibleView(page,`${title} ${width}px`);const navSize=await page.locator('#appTabs').evaluate(el=>Math.min(...[...el.querySelectorAll('button')].map(b=>Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height))));assertTrue(navSize>=44,`${title} navigation targets remain 44px at ${width}px`);}}
+  await page.setViewportSize({width:932,height:430});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#appTabs').evaluate(el=>{const box=el.getBoundingClientRect();return box.width>box.height&&box.bottom<=innerHeight;}),'Wide touch phones keep bottom navigation in landscape');
+  await page.setViewportSize({width:852,height:393});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');await assertAccessibleView(page,'Landscape Today');
+  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const rows=[...document.querySelectorAll('main *,#appTabs *')].map(el=>[el,parseFloat(getComputedStyle(el).fontSize)]);for(const [el,size] of rows)el.style.fontSize=`${size*2}px`;});await assertAccessibleView(page,'Text scaling');await page.evaluate(()=>document.querySelectorAll('main *,#appTabs *').forEach(el=>el.style.fontSize=''));
+  const vitals=await page.evaluate(()=>__repVitals);if(vitals.lcp>0)assertTrue(vitals.lcp<=2500,`LCP within budget (${Math.round(vitals.lcp)} ms)`);assertTrue(vitals.cls<=0.1,`CLS within budget (${vitals.cls.toFixed(3)})`);
+  if(await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('event')))assertTrue(vitals.interactionMs<=200,`Observed interaction duration within 200 ms (${Math.round(vitals.interactionMs)} ms)`);
+  reportMetrics={build:await page.evaluate(()=>REP_BUILD_VERSION),lcpMs:vitals.lcp||null,cls:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('layout-shift'))?vitals.cls:null,maxObservedInteractionMs:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('event'))?vitals.interactionMs:null,longTaskMs:vitals.appLongTask,browser:(webkitMode?'WebKit':'Chrome')+' with touch/mobile emulation; no physical device certification',networkTest:webkitMode?'Local server forcibly disconnects requests; offline-emulation bug microsoft/playwright#42775':'BrowserContext offline mode',expectedNetworkDiagnostics};
+  if(capture)writeFileSync(join(capture,'metrics.json'),JSON.stringify(reportMetrics,null,2));
+  await context.close();
+  assertTrue(consoleErrors.length===0,`No console/page errors (${consoleErrors.length})`);if(consoleErrors.length)console.log(consoleErrors.join('\n'));
+
 } finally {
   await browser.close();
   server.close();
 }
 
+if(process.env.REP_E2E_REPORT){mkdirSync(dirname(process.env.REP_E2E_REPORT),{recursive:true});writeFileSync(process.env.REP_E2E_REPORT,JSON.stringify({...reportMetrics,checks,passed:checks-failures.length,failures},null,2)+'\n');}
 console.log(`\n${checks - failures.length}/${checks} checks passed.`);
 if (failures.length) {
   console.error("\nFAILED:\n" + failures.map(f => `  - ${f}`).join("\n"));

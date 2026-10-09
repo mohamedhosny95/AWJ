@@ -1,8 +1,10 @@
-# Premium Mobile Redesign Plan and Handoff
+# Archived cinematic redesign plan and handoff
 
-Status: Phase 1 complete; Phase 2 polished through the expanded cinematic motion pass; Phase 3 discovery complete; the redesign was squash-merged into `main` (PR #69, commit `15732ca`) with physical-device certification and the authenticated staging Notion contract explicitly waived. Phase 4 (Activity/Progress) first pass complete on `main`. Both waived gates remain open — see "Recommended next work" below for what actually was and wasn't re-verified in the most recent session.
+**Superseded on 8 October 2026:** [Training-first redesign](TRAINING_FIRST_REDESIGN.md) is the current direction. Compact fitted media, one set editor, Today / Train / Nutrition / Progress / More, truthful native footage and explicitly labelled stills replace the large cinematic stage, muscle overlays and photo-motion cycles below. The following phases are historical records, not implementation instructions.
 
-This document preserves the product direction, implementation rules, completed work, validation evidence, and remaining roadmap agreed during the redesign conversation. It is the handoff source of truth for continuing this work without losing the original constraints.
+Historical status: Phase 1 complete; Phase 2 polished through the expanded cinematic motion pass; Phase 3 discovery complete; the redesign was squash-merged into `main` (PR #69, commit `15732ca`) with physical-device certification and the authenticated staging Notion contract explicitly waived. Phase 4 (Activity/Progress) first pass complete on `main`. Both waived gates remain open — see "Recommended next work" below for what actually was and wasn't re-verified in the most recent session.
+
+This document preserves the product direction, implementation rules, completed work, validation evidence, and remaining roadmap agreed during the redesign conversation. It retains historical decisions; use the current training-first document for future work.
 
 ## Product direction
 

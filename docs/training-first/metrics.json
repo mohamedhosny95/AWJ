@@ -1,0 +1,8 @@
+{
+  "build": "803f5166949a",
+  "lcpMs": 84,
+  "cls": 0.001,
+  "clsPrecision": "Rounded to three decimals in the browser regression log",
+  "maxObservedInteractionMs": 40,
+  "browser": "Desktop Chrome with mobile viewports, without capture delays; no physical device certification"
+}

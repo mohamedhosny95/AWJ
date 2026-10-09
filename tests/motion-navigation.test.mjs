@@ -39,5 +39,5 @@ test('navigation restores focus after the winning route is actually rendered',()
   ctx.REP_NAVIGATION.register([{id:'a',title:'A',activate:()=>seen.push('a')},{id:'b',title:'B',activate:()=>seen.push('b')}]);
   ctx.REP_NAVIGATION.start({fallback:'a'});assert.deepEqual(seen,['a']);assert.equal(queued.length,0,'first render is immediate');seen.length=0;
   ctx.REP_NAVIGATION.navigate('b');queued[0]();frames.forEach(callback=>callback());
-  assert.deepEqual(seen,['b','focus']);assert.equal(ctx.document.title,'B · Health OS');assert.equal(ctx.REP_NAVIGATION.current(),'b');
+  assert.deepEqual(seen,['b','focus']);assert.equal(ctx.document.title,'B · Rep Gym Companion');assert.equal(ctx.REP_NAVIGATION.current(),'b');
 });

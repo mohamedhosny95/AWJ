@@ -86,13 +86,15 @@ try {
   await sourcePage.locator('.habits-summary').click();
   await sourcePage.click('[data-habit-id="sleep"]');
   await sourcePage.click('[data-app-tab="food"]');
+  await sourcePage.click('[data-nutrition-log]');
   await sourcePage.fill("[data-food-note]", "recovery drill meal");
   await sourcePage.click("[data-manual-food]");
   await sourcePage.waitForTimeout(250);
   if (await sourcePage.locator("[data-save-food]").count()) await sourcePage.click("[data-save-food]");
   await sourcePage.evaluate(() => window.REP_STORE.flush());
-  check(await sourcePage.locator(".food-log article, .food-entry").count() > 0, "Recovery fixture contains a meal");
+  check(await sourcePage.evaluate(()=>state.foodEntries.some(entry=>entry.food_name==="recovery drill meal")), "Recovery fixture contains a meal");
 
+  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;REP_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');REP_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();REP_STORE.flush();});
   await sourcePage.click("#settingsButton");
   await sourcePage.click('[data-settings-tab="security"]');
   await sourcePage.fill("[data-backup-passphrase]", passphrase);
@@ -116,11 +118,15 @@ try {
   await restorePage.setInputFiles("[data-backup-import]", backupPath);
   await restoredLoad;
   await restorePage.waitForSelector('html[data-app-ready="true"]', { timeout: 10000 });
+  const restoredPreferences=await restorePage.evaluate(()=>({favourites:state.routineFavourites,display:state.displayPreferences,selected:REP_TRAINING_PREFERENCES.selectedExercise(state,{name:'Chest Press'}),performed:REP_TRAINING_PREFERENCES.performedExercise(state,{name:'Chest Press'},0)}));
+  check(restoredPreferences.favourites.includes('gym')&&restoredPreferences.display.expandedDemo,'Fresh profile restores favourites and display preferences');
+  check(restoredPreferences.selected==='Push-ups'&&restoredPreferences.performed==='Push-ups','Encrypted backup preserves the active-session substitution and performed set');
   await restorePage.click("#homeButton");
   await restorePage.locator('.habits-summary').click();
   await restorePage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await restorePage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Fresh profile restores the habit record");
   await restorePage.click('[data-app-tab="food"]');
+  await restorePage.waitForSelector('.food-log');
   check((await restorePage.locator(".food-log").textContent()).includes("recovery drill meal"), "Fresh profile restores the meal record");
   await restoreContext.close();
 

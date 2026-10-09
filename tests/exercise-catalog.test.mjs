@@ -27,8 +27,7 @@ test('substitutions replace instructions and preserve the programme prescription
 test('all built-in, builder and substitution options resolve to available male media or their own guide',()=>{
   const ctx=context(),catalog=ctx.window.REP_EXERCISES;vm.runInContext(read('technique-guides.js'),ctx);
   vm.runInContext(read('product-suite.js'),ctx);vm.runInContext(read('performance-insights.js'),ctx);
-  const builder=read('custom-workouts.js').match(/const MASTER_EXERCISES = (\[[^]*?\n  \]);/)[1];
-  const names=vm.runInContext(`(${builder}).map(ex=>ex.name)`,ctx);
+  const names=ctx.window.REP_EXERCISES.list().filter(ex=>['weighted','bodyweight'].includes(ex.logMode)).map(ex=>ex.name);
   for(const list of Object.values(ctx.REP_PERFORMANCE_INSIGHTS.EXERCISE_SUBSTITUTIONS))names.push(...list);
   for(const original of ['Leg Press','Back Extension','Hip Thrust Machine','Chest Press','Seated Cable Row','Lat Pulldown'])names.push(...ctx.REP_PRODUCT_SUITE.availableSubstitutions(original,['dumbbells','bodyweight','bands','machines']).map(x=>x.name));
   for(const name of names){const item=catalog.get(name);assert.ok(item,`definition missing: ${name}`);assert.equal(item.mediaPresentation,'male');assert.ok(item.photo||item.atlas||ctx.window.REP_TECHNIQUE.guideFor(item)||item.isHold,`own guide missing: ${name}`);}

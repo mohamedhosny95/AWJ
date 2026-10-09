@@ -1,6 +1,6 @@
 {
-  "name": "Health OS",
-  "short_name": "Health OS",
+  "name": "Rep Gym Companion",
+  "short_name": "Rep Gym Companion",
   "description": "Fast, offline daily training, nutrition, and care guidance.",
   "start_url": "./index.html",
   "scope": "./",

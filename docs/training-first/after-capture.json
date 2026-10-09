@@ -1,0 +1,16 @@
+{
+  "variant": "after",
+  "framePacing": {
+    "samples": 1015,
+    "medianMs": 16.7,
+    "p95Ms": 16.7,
+    "maxMs": 66.6,
+    "over33_4Ms": 2,
+    "scope": "Desktop requestAnimationFrame intervals across this local walkthrough"
+  },
+  "build": "803f5166949a",
+  "viewport": "390 × 844",
+  "fixture": "Fresh local profile, gym schedule, 40kg × 10 reps at RPE7; exercise index selected for comparison",
+  "scope": "Desktop Chrome recording; no physical-device certification",
+  "errors": []
+}

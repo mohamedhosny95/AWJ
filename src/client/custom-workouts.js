@@ -2,26 +2,7 @@
    Allows creating, editing, and executing fully customized workout programs and splits. */
 
 (function(){
-  const MASTER_EXERCISES = [
-    { name: "Incline Dumbbell Press", category: "Chest", motion: "inclinedbpress", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Flat Dumbbell Bench", category: "Chest", motion: "inclinedbpress", defaultSets: 3, defaultReps: "8–10", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Cable Fly", category: "Chest", motion: "inclinedbpress", defaultSets: 3, defaultReps: "12–15", defaultRpe: "8", defaultRest: 60 },
-    { name: "Lat Pulldown", category: "Back", motion: "latpulldown", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Neutral Grip Lat Pulldown", category: "Back", motion: "latpulldown", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Chest-Supported Row", category: "Back", motion: "latpulldown", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Leg Press", category: "Quads", motion: "legpress", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Bulgarian Split Squat", category: "Quads", motion: "legpress", defaultSets: 3, defaultReps: "8–10", defaultRpe: "8", defaultRest: 90 },
-    { name: "Back Extension", category: "Posterior Chain", motion: "backextension", defaultSets: 3, defaultReps: "12–15", defaultRpe: "7", defaultRest: 60 },
-    { name: "Hip Thrust Machine", category: "Glutes", motion: "backextension", defaultSets: 3, defaultReps: "10–12", defaultRpe: "7–8", defaultRest: 90 },
-    { name: "Lying Leg Curl", category: "Hamstrings", motion: "legpress", defaultSets: 3, defaultReps: "10–12", defaultRpe: "8", defaultRest: 60 },
-    { name: "Dumbbell Lateral Raise", category: "Shoulders", motion: "inclinedbpress", defaultSets: 3, defaultReps: "12–15", defaultRpe: "8", defaultRest: 60 },
-    { name: "Cable Lateral Raise", category: "Shoulders", motion: "inclinedbpress", defaultSets: 3, defaultReps: "12–15", defaultRpe: "8", defaultRest: 60 },
-    { name: "Face Pull", category: "Shoulders", motion: "latpulldown", defaultSets: 3, defaultReps: "15–20", defaultRpe: "8", defaultRest: 60 },
-    { name: "Incline Dumbbell Curl", category: "Arms", motion: "latpulldown", defaultSets: 3, defaultReps: "10–12", defaultRpe: "8", defaultRest: 60 },
-    { name: "Cable Tricep Pushdown", category: "Arms", motion: "inclinedbpress", defaultSets: 3, defaultReps: "10–12", defaultRpe: "8", defaultRest: 60 },
-    { name: "Tricep Rope Extension", category: "Arms", motion: "inclinedbpress", defaultSets: 3, defaultReps: "12–15", defaultRpe: "8", defaultRest: 60 },
-    { name: "Hanging Knee Raise", category: "Core", motion: "backextension", defaultSets: 3, defaultReps: "12–15", defaultRpe: "8", defaultRest: 60 }
-  ];
+  const MASTER_EXERCISES = window.REP_EXERCISES.list().filter(x=>['weighted','bodyweight'].includes(x.logMode)).map(x=>({name:x.name,category:x.targetMuscles||x.category||'Exercise',motion:x.motion,defaultSets:x.routineDefaults?.sets||3,defaultReps:x.routineDefaults?.reps||'10–12',defaultRpe:x.routineDefaults?.rpe||'7–8',defaultRest:x.routineDefaults?.rest??90}));
 
   function getCustomRoutines(){
     if(!window.state) return [];

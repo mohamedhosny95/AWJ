@@ -1,4 +1,7 @@
 (async function(){
+  // Chromium can resize its layout viewport for the keyboard; WebKit uses VisualViewport.
+  if('virtualKeyboard' in navigator){const viewport=document.querySelector('meta[name="viewport"]');if(viewport&&!viewport.content.includes('interactive-widget'))viewport.content+=', interactive-widget=resizes-content';}
+
   const version=window.REP_BUILD_VERSION||"__BUILD_VERSION__";
   const load=src=>new Promise((resolve,reject)=>{
     const script=document.createElement("script");
@@ -28,6 +31,7 @@
     await load("media-contract.js");
     await load("motion.js");
     await load("exercise-catalog.js");
+    await load("training-preferences.js");
     await load("media-player.js");
     await load("technique-guides.js");
     await load("workout-media.js");
@@ -42,6 +46,7 @@
     await load("health-ui.js");
     await load("performance-ui.js");
     await load("product-suite-ui.js");
+    await load("training-first-ui.js");
     document.querySelector("#commandPaletteButton")?.addEventListener("click",()=>window.REP_COMMAND_PALETTE?.open());
     document.documentElement.dataset.appReady="true";
     delete window.REP_HYDRATED_STATE;
@@ -50,7 +55,7 @@
     if(app){
       app.replaceChildren();
       const section=document.createElement("section"),title=document.createElement("strong"),message=document.createElement("p"),retry=document.createElement("button");
-      section.className="startup-error";title.textContent="Health OS could not start.";message.textContent=String(error.message||error);retry.textContent="Retry";retry.addEventListener("click",()=>location.reload());
+      section.className="startup-error";title.textContent="Rep Gym Companion could not start.";message.textContent=String(error.message||error);retry.textContent="Retry";retry.addEventListener("click",()=>location.reload());
       section.append(title,message,retry);app.append(section);
     }
   }
