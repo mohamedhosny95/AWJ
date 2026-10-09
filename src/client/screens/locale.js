@@ -33,15 +33,24 @@ function translate(value){
   return value;
 }
 export const localizeText=value=>document.documentElement.lang==='ar'?translate(value):value;
+const originalText=new WeakMap(),originalAttributes=new WeakMap();
 export function applyLocale(root=document){
-  if(document.documentElement.lang!=='ar')return;
+  const isArabic=document.documentElement.lang==='ar';
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
   while(walker.nextNode()){
     const node=walker.currentNode,parent=node.parentElement;
     if(!parent||parent.closest('script,style,textarea,input,option,[data-user-content]'))continue;
-    node.textContent=translate(node.textContent||'');
+    const current=node.textContent||'',previous=originalText.get(node);
+    if(isArabic){const original=previous&&translate(previous)===current?previous:current;originalText.set(node,original);node.textContent=translate(original);}
+    else if(previous!==undefined){node.textContent=previous;originalText.delete(node);}
   }
   root.querySelectorAll?.('[aria-label],[placeholder],[title]').forEach(element=>{
-    for(const attribute of ['aria-label','placeholder','title']){const value=element.getAttribute(attribute);if(value)element.setAttribute(attribute,translate(value));}
+    let originals=originalAttributes.get(element);
+    if(!originals){originals=new Map();originalAttributes.set(element,originals);}
+    for(const attribute of ['aria-label','placeholder','title']){
+      const value=element.getAttribute(attribute);if(!value)continue;
+      if(isArabic){const previous=originals.get(attribute),original=previous&&translate(previous)===value?previous:value;originals.set(attribute,original);element.setAttribute(attribute,translate(original));}
+      else if(originals.has(attribute)){element.setAttribute(attribute,originals.get(attribute));originals.delete(attribute);}
+    }
   });
 }

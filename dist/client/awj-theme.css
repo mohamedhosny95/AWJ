@@ -91,6 +91,18 @@ body:has(.update-bar) main{padding-bottom:calc(182px + var(--safe-bottom))}
 .training-first-app .readiness-note details,.training-first-app .history-result{border-color:var(--line)}
 .training-first-app .habit-toggle{background:var(--panel-2);color:var(--text);border-color:var(--line)}
 .training-first-app .habit-toggle.is-complete,.training-first-app .habit-toggle[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink)}
+.training-first-app .habit-toggle[aria-pressed="true"] .habit-copy small,.training-first-app .habit-toggle[aria-pressed="true"] .habit-copy em,.training-first-app .habit-toggle[aria-pressed="true"] .habit-icon,.training-first-app .habit-card.is-done .habit-check{color:var(--acid-ink)}
+.training-first-app .module-subnav button.is-active,.training-first-app .workflow-nav button.is-active,.training-first-app .segmented-setting button.is-active{background:var(--acid);color:var(--acid-ink)}
+.training-first-app .water-check,.training-first-app .module-checklist label,.training-first-app .meal-tools label{background:var(--panel-2);color:var(--text);border-color:var(--line)}
+.training-first-app .water-actions button:first-child{color:var(--orange)}
+.training-first-app .water-custom button:last-child{background:var(--blue);color:var(--acid-ink)}
+.training-first-app.workout-mode,.training-first-app.workout-mode .app-shell,.training-first-app .workout-header,.training-first-app .workout-session-header{background:var(--bg);color:var(--text)}
+.training-first-app .workout-identity .exercise-swap-btn,.training-first-app .workout-identity .swap-button{background:var(--panel);color:var(--acid);border-color:var(--line)}
+.training-first-app .primary{background:var(--acid);color:var(--acid-ink);border-color:var(--acid)}
+.training-first-app .timer-copy span{color:var(--muted)}
+.training-first-app .timer-ring::after{background:var(--panel)}
+.training-first-app .complete-stat-grid div{background:var(--panel-2);border-color:var(--line)}
+.training-first-app .complete-stat-grid span{color:var(--muted)}
 .training-first-app .save-status.has-pending{border-color:var(--orange)}
 .training-first-app .save-status.save-failed{border-color:var(--orange);color:var(--orange)}
 .awj-save-warning{position:fixed;z-index:110;top:calc(65px + var(--safe-top));left:max(12px,var(--safe-left));right:max(12px,var(--safe-right));max-width:720px;margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:2px solid var(--orange);border-radius:13px;background:var(--panel);color:var(--text);box-shadow:0 14px 35px rgba(0,0,0,.14);font-size:13px;font-weight:700}

@@ -1,5 +1,5 @@
 importScripts("./media-contract.js");
-const BUILD_VERSION="6b0302a09873";
+const BUILD_VERSION="a037030e1e52";
 const CACHE = `rep-companion-${BUILD_VERSION}`;
 const MEDIA_CACHE = REP_MEDIA_CONTRACT.CACHE_NAME;
 const versioned=path=>`${path}?v=${BUILD_VERSION}`;
@@ -9,7 +9,9 @@ self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).the
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE && k !== MEDIA_CACHE).map(k => caches.delete(k)));
+    // A tab running the preceding build can still request its versioned tools.
+    const previousCore=keys.filter(k=>k.startsWith('rep-companion-')&&k!==CACHE).slice(-1);
+    await Promise.all(keys.filter(k=>k.startsWith('rep-companion-')&&k!==CACHE&&!previousCore.includes(k)).map(k=>caches.delete(k)));
     await self.clients.claim();
   })());
   // Fetched after activation so the app becomes usable immediately instead of

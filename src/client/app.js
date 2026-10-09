@@ -580,6 +580,7 @@ function persist() {
 let persistTimer=null;
 function persistDebounced(){
   if (state.previewMode) return;
+  window.REP_STORE?.markPending?.();
   if(persistTimer)clearTimeout(persistTimer);
   persistTimer=setTimeout(()=>{persistTimer=null;persist();},400);
 }

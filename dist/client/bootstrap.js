@@ -2,7 +2,7 @@
   // Chromium can resize its layout viewport for the keyboard; WebKit uses VisualViewport.
   if('virtualKeyboard' in navigator){const viewport=document.querySelector('meta[name="viewport"]');if(viewport&&!viewport.content.includes('interactive-widget'))viewport.content+=', interactive-widget=resizes-content';}
 
-  const version=window.REP_BUILD_VERSION||"6b0302a09873";
+  const version=window.REP_BUILD_VERSION||"a037030e1e52";
   const pendingScripts=new Map();
   const load=src=>{
     if(pendingScripts.has(src))return pendingScripts.get(src);

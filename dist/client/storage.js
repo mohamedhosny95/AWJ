@@ -746,6 +746,7 @@
     replace,
     clear,
     get saveStatus(){return saveStatus;},
+    markPending:()=>reportSave("saving"),
     dbName:DB_NAME,
     largeKeys:[...LARGE_KEYS],
     get conflicts(){return [...recordedConflicts];},

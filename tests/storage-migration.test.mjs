@@ -5,9 +5,11 @@ function createMockIndexedDB() {
   const stores = new Map();
   return {
     _stores: stores,
+    _failOpen: false,
     open(name, version) {
       const request = { result: null, error: null, onsuccess: null, onerror: null, onupgradeneeded: null };
       setTimeout(() => {
+        if(this._failOpen){request.error=Error("Device storage unavailable");request.onerror?.();return;}
         if (!stores.has("records")) stores.set("records", new Map());
         const db = {
           createObjectStore(storeName) {
@@ -119,4 +121,30 @@ test("storage.js single-step migration backfills missing LARGE_KEYS from legacy 
   mockStorage.setItem = () => { throw Error("Quota exceeded"); };
   assert.equal(store.persist("rep-gym-companion-v1", hydrated), false);
   assert.equal(store.saveStatus, "failed");
+});
+
+test("unavailable storage preserves legacy data instead of hydrating an empty success",async()=>{
+  const mockIDB=createMockIndexedDB(),mockStorage=createMockLocalStorage();
+  globalThis.window=globalThis;globalThis.indexedDB=mockIDB;globalThis.localStorage=mockStorage;
+  globalThis.document={addEventListener(){}};globalThis.addEventListener=()=>{};
+  const legacy=JSON.stringify({history:[{id:"keep-me",session:"gym"}],preferences:{weightUnit:"lb"}});
+  mockStorage.setItem("rep-gym-companion-v1",legacy);mockIDB._failOpen=true;
+  await import("../src/client/storage.js?unavailable-test");
+  await assert.rejects(globalThis.REP_STORE.hydrate("rep-gym-companion-v1"),/unavailable/);
+  assert.equal(mockStorage.getItem("rep-gym-companion-v1"),legacy);
+  assert.equal(globalThis.REP_STORE.saveStatus,"failed");
+});
+
+test("a failed durable write stays retryable and is confirmed only after recovery",async()=>{
+  const mockIDB=createMockIndexedDB(),mockStorage=createMockLocalStorage();
+  globalThis.window=globalThis;globalThis.indexedDB=mockIDB;globalThis.localStorage=mockStorage;
+  globalThis.document={addEventListener(){}};globalThis.addEventListener=()=>{};
+  await import("../src/client/storage.js?retry-test");const store=globalThis.REP_STORE;
+  await store.hydrate("rep-gym-companion-v1");mockIDB._failOpen=true;
+  store.persist("rep-gym-companion-v1",{history:[{id:"new-set",session:"gym"}]});
+  assert.equal(store.saveStatus,"saving");
+  await assert.rejects(store.flush(),/unavailable/);assert.equal(store.saveStatus,"failed");
+  mockIDB._failOpen=false;await store.flush();
+  assert.equal(mockIDB._stores.get("records").get("state:history")[0].id,"new-set");
+  assert.equal(store.saveStatus,"saved");
 });
