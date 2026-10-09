@@ -95,7 +95,7 @@
     let selectedBarId = options.barId || "olympic";
 
     const modal = document.createElement("div");
-    modal.className = "rep-modal-backdrop plate-calc-backdrop";
+    modal.className = "awj-modal-backdrop plate-calc-backdrop";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-label",  "Barbell Plate Calculator");
@@ -116,8 +116,8 @@
           return `<span class="plate-badge" style="background:${def?.color||'#9e9e9e'};color:${def?.textColor||'#fff'};">${count} × ${kg}kg</span>`;
         }).join("");
 
-      modal.innerHTML = REP_SAFE_DOM.sanitize(`
-        <div class="rep-modal-sheet plate-calc-sheet">
+      modal.innerHTML = AWJ_SAFE_DOM.sanitize(`
+        <div class="awj-modal-sheet plate-calc-sheet">
           <div class="sheet-header">
             <div>
               <small style="color:var(--acid);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;">${ "BARBELL PLATE CALCULATOR"}</small>
@@ -193,7 +193,7 @@
     document.body.appendChild(modal);
   }
 
-  window.REP_PLATE_CALCULATOR = {
+  window.AWJ_PLATE_CALCULATOR = {
     calculatePlates,
     openPlateCalculator
   };

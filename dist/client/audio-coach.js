@@ -1,4 +1,4 @@
-/* Hands-Free Audio Voice Coach & Spoken Rest Timers for Health OS.
+/* Hands-Free Audio Voice Coach & Spoken Rest Timers for AWJ.
    Provides real-time spoken coaching, set completion feedback, and rest countdowns. */
 
 (function(){
@@ -52,7 +52,7 @@
   // Web Audio Synth Chimes
   function playTone(freq = 880, type = "sine", duration = 0.15){
     try {
-      const ctx = window._repAudioCtx || (window._repAudioCtx = new (window.AudioContext || window.webkitAudioContext)());
+      const ctx = window._awjAudioCtx || (window._awjAudioCtx = new (window.AudioContext || window.webkitAudioContext)());
       if(ctx.state === "suspended") ctx.resume();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -107,7 +107,7 @@
     speak(msg);
   }
 
-  window.REP_AUDIO_COACH = {
+  window.AWJ_AUDIO_COACH = {
     speak,
     playTone,
     announceSetComplete,

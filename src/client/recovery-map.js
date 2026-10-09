@@ -104,7 +104,7 @@
     </section>`;
   }
 
-  window.REP_RECOVERY_MAP = {
+  window.AWJ_RECOVERY_MAP = {
     computeMuscleReadiness,
     renderRecoveryMap
   };

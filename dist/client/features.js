@@ -1,6 +1,6 @@
-window.REP_FEATURES=(function(){
+window.AWJ_FEATURES=(function(){
   const encoder=new TextEncoder(),decoder=new TextDecoder();
-  const DB_NAME="rep-device-vault-v1",STORE="vault";
+  const DB_NAME=AWJ_COMPAT.vaultDb,STORE="vault";
   const b64=bytes=>{let text="";for(const byte of bytes)text+=String.fromCharCode(byte);return btoa(text);};
   const unb64=text=>{const raw=atob(String(text||"")),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return bytes;};
   function openVault(){return new Promise((resolve,reject)=>{if(!indexedDB)return reject(Error("Device backup is unavailable."));const request=indexedDB.open(DB_NAME,1);request.onupgradeneeded=()=>request.result.createObjectStore(STORE);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
@@ -13,18 +13,18 @@ window.REP_FEATURES=(function(){
   async function restoreDeviceSnapshot(index=0){const history=await vaultGet("snapshots")||[],record=history[index]||await vaultGet("latest");if(!record)throw Error("No automatic device backup is available yet.");const key=await deviceKey(),plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(record.iv)},key,unb64(record.ciphertext));return {data:JSON.parse(decoder.decode(plain)),createdAt:record.createdAt};}
   async function backupHistory(){try{const history=await vaultGet("snapshots")||[],latest=await vaultGet("latest");return (history.length?history:(latest?[latest]:[])).map(record=>record.createdAt);}catch{return [];}}
   async function backupStatus(){return (await backupHistory())[0]||null;}
-  let snapshotTimer=null,lastSnapshotAt=Number(localStorage.getItem("rep-last-device-snapshot-at")||0);
+  let snapshotTimer=null,lastSnapshotAt=Number(localStorage.getItem(AWJ_COMPAT.snapshotAtKey)||0);
   function scheduleSnapshot(data){
     const minimumInterval=6*60*60*1000;
     if(Date.now()-lastSnapshotAt<minimumInterval)return;
     clearTimeout(snapshotTimer);
-    const run=()=>createDeviceSnapshot(data).then(()=>{lastSnapshotAt=Date.now();localStorage.setItem("rep-last-device-snapshot-at",String(lastSnapshotAt));}).catch(()=>{});
+    const run=()=>createDeviceSnapshot(data).then(()=>{lastSnapshotAt=Date.now();localStorage.setItem(AWJ_COMPAT.snapshotAtKey,String(lastSnapshotAt));}).catch(()=>{});
     snapshotTimer=setTimeout(()=>{if("requestIdleCallback" in window)requestIdleCallback(run,{timeout:3000});else run();},1500);
   }
   async function passphraseKey(passphrase,salt,usage){const material=await crypto.subtle.importKey("raw",encoder.encode(passphrase),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:250000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,usage);}
-  const backupHeader=(createdAt,app="AWJ")=>({app,schema:5,encrypted:true,cipher:"AES-256-GCM",kdf:"PBKDF2-SHA256",iterations:250000,format:"rep-health-export/v5",createdAt});
+  const backupHeader=(createdAt,app="AWJ",format=AWJ_COMPAT.backupFormat)=>({app,schema:5,encrypted:true,cipher:"AES-256-GCM",kdf:"PBKDF2-SHA256",iterations:250000,format,createdAt});
   async function encryptExport(data,passphrase){if(String(passphrase).length<8)throw Error("Use a passphrase with at least 8 characters.");const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),key=await passphraseKey(passphrase,salt,["encrypt"]),plain=encoder.encode(JSON.stringify(data)),header=backupHeader(new Date().toISOString()),additionalData=encoder.encode(JSON.stringify(header)),cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData},key,plain);return {...header,salt:b64(salt),iv:b64(iv),ciphertext:b64(new Uint8Array(cipher))};}
-  async function decryptExport(payload,passphrase){if(!payload?.encrypted||![4,5].includes(payload?.schema))throw Error("This is not a supported encrypted AWJ backup.");if(payload.schema===5&&(!["Rep Gym Companion","AWJ"].includes(payload.app)||payload.cipher!=="AES-256-GCM"||payload.kdf!=="PBKDF2-SHA256"||payload.iterations!==250000||payload.format!=="rep-health-export/v5"||!payload.createdAt))throw Error("The encrypted backup header is invalid.");const key=await passphraseKey(passphrase,unb64(payload.salt),["decrypt"]);try{const algorithm={name:"AES-GCM",iv:unb64(payload.iv)};if(payload.schema===5)algorithm.additionalData=encoder.encode(JSON.stringify(backupHeader(payload.createdAt,payload.app)));const plain=await crypto.subtle.decrypt(algorithm,key,unb64(payload.ciphertext));return JSON.parse(decoder.decode(plain));}catch{throw Error("The passphrase is incorrect or the backup is damaged.");}}
+  async function decryptExport(payload,passphrase){if(!payload?.encrypted||![4,5].includes(payload?.schema))throw Error("This is not a supported encrypted AWJ backup.");if(payload.schema===5&&(![AWJ_COMPAT.previousAppName,"AWJ"].includes(payload.app)||payload.cipher!=="AES-256-GCM"||payload.kdf!=="PBKDF2-SHA256"||payload.iterations!==250000||![AWJ_COMPAT.backupFormat,AWJ_COMPAT.legacyBackupFormat].includes(payload.format)||!payload.createdAt))throw Error("The encrypted backup header is invalid.");const key=await passphraseKey(passphrase,unb64(payload.salt),["decrypt"]);try{const algorithm={name:"AES-GCM",iv:unb64(payload.iv)};if(payload.schema===5)algorithm.additionalData=encoder.encode(JSON.stringify(backupHeader(payload.createdAt,payload.app,payload.format)));const plain=await crypto.subtle.decrypt(algorithm,key,unb64(payload.ciphertext));return JSON.parse(decoder.decode(plain));}catch{throw Error("The passphrase is incorrect or the backup is damaged.");}}
   function downloadJson(payload,filename){const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);}
   async function saveProgressPhoto(input){
     const bytes=input?.bytes instanceof Uint8Array?input.bytes:new Uint8Array(input?.bytes||[]);if(!bytes.length||bytes.length>3_000_000)throw Error("Use a photo smaller than 3 MB after processing.");

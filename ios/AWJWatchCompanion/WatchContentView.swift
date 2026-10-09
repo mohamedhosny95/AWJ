@@ -1,6 +1,6 @@
 //
 //  WatchContentView.swift
-//  Rep Gym Companion - watchOS SwiftUI View
+//  AWJ - watchOS SwiftUI View
 //
 
 import SwiftUI

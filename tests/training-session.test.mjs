@@ -1,8 +1,9 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 await import("../src/client/training-session.js");
 
-const sessionModule = globalThis.REP_TRAINING_SESSION;
+const sessionModule = globalThis.AWJ_TRAINING_SESSION;
 
 const mockSessions = {
   morning: {

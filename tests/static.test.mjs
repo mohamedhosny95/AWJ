@@ -1,3 +1,4 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile,readdir,access,stat} from "node:fs/promises";
@@ -20,7 +21,7 @@ test("primary navigation keeps its active indicator aligned and uses the central
   assert.match(navigation,/history\[replace\?"replaceState":"pushState"\]/);
   assert.match(navigation,/addEventListener\("popstate"/);
   assert.match(navigation,/routeFromLocation/);
-  const shell=await read("src/client/training-first-ui.js");
+  const shell=await read("src/client/app-shell.js");
   for(const path of ["/train","/progress/history","/nutrition/","/more/routines","/progress"])assert.ok(shell.includes(path));
   assert.match(shell,/path:'\/settings\/'\+section/);
   assert.doesNotMatch(enhancements,/restoringPrimaryTabHistory|rememberPrimaryTab/);
@@ -41,12 +42,12 @@ test("all dynamic HTML sinks pass through the shared sanitizer",async()=>{
   const safeDom=await read("src/client/safe-dom.js");assert.match(safeDom,/DOMPurify\.sanitize/);assert.match(safeDom,/FORBID_TAGS/);assert.match(safeDom,/FORBID_ATTR/);
   for(const name of files){
     const source=await read(`src/client/${name}`),assignments=[...source.matchAll(/innerHTML\s*=\s*/g)],insertions=[...source.matchAll(/insertAdjacentHTML\([^,]+,\s*/g)];
-    for(const match of [...assignments,...insertions])assert.ok(source.slice(match.index+match[0].length).startsWith("REP_SAFE_DOM.sanitize("),`${name} has an unsanitized HTML sink`);
+    for(const match of [...assignments,...insertions])assert.ok(source.slice(match.index+match[0].length).startsWith("AWJ_SAFE_DOM.sanitize("),`${name} has an unsanitized HTML sink`);
   }
 });
 
 test("the content-versioned service worker uses network-first navigation and never caches API responses",async()=>{
-  const sw=await read("dist/client/sw.js"),meta=await read("dist/client/build-meta.js"),version=meta.match(/REP_BUILD_VERSION="([a-f0-9]{12})"/)?.[1];assert.ok(version,"content build version is generated");assert.match(sw,new RegExp(`rep-companion-\\$\\{BUILD_VERSION\\}`));assert.match(sw,/\.\/auth\.js/);assert.match(sw,/\.\/sync-center\.js/);assert.match(sw,/\.\/health-coverage\.js/);assert.match(sw,/\.\/performance-insights\.js/);assert.match(sw,/pathname\.startsWith\("\/api\/"\)/);
+  const sw=await read("dist/client/sw.js"),meta=await read("dist/client/build-meta.js"),version=meta.match(/AWJ_BUILD_VERSION="([a-f0-9]{12})"/)?.[1];assert.ok(version,"content build version is generated");assert.match(sw,new RegExp(`awj-companion-\\$\\{BUILD_VERSION\\}`));assert.match(sw,/\.\/auth\.js/);assert.match(sw,/\.\/sync-center\.js/);assert.match(sw,/\.\/health-coverage\.js/);assert.match(sw,/\.\/performance-insights\.js/);assert.match(sw,/pathname\.startsWith\("\/api\/"\)/);
   assert.match(sw,/request\.mode === "navigate"/);assert.doesNotMatch(sw,/qrcode\.js/);
   assert.match(sw,/\.\/navigation\.js/);
 });
@@ -242,7 +243,7 @@ test("health navigation stays in document flow and synchronization uses a verifi
 test("durable state is split into IndexedDB and optional assets load on demand",async()=>{
   const storage=await read("dist/client/storage.js"),enhancements=await read("dist/client/enhancements.js");
   assert.match(storage,/indexedDB\.open/);assert.match(storage,/syncQueue/);assert.match(storage,/outbox/);assert.match(storage,/foodEntries/);assert.match(storage,/pagehide/);
-  assert.match(enhancements,/loadOptionalScript\("qrcode\.js","qrcode"\)/);assert.match(enhancements,/REP_BUILD_VERSION/);
+  assert.match(enhancements,/loadOptionalScript\("qrcode\.js","qrcode"\)/);assert.match(enhancements,/AWJ_BUILD_VERSION/);
 });
 
 test("daily habits are durable, streak-aware, and included in direct sync",async()=>{
@@ -251,40 +252,40 @@ test("daily habits are durable, streak-aware, and included in direct sync",async
   assert.doesNotMatch(habits,/Fasting|en:"Charity"|30 minutes/);assert.match(habits,/Read pages of the Quran/);
   assert.match(habits,/state\.daily\.habits/);assert.match(habits,/payloadForDate/);assert.match(habits,/Habit tracker:/);assert.match(habits,/function streak/);assert.match(habits,/Last 7 days/);
   assert.match(habits,/state\.habitOrder/);assert.match(habits,/data-habit-reorder/);assert.match(habits,/data-habit-move/);assert.match(habits,/dragstart/);assert.match(habits,/Open Habit Log/);assert.match(habits,/queueHealth\("habit"/);
-  assert.match(sync,/state\.daily\?\.habits/);assert.match(sync,/REP_HABITS\?\.payloadForDate/);assert.match(sync,/payloadForHabit/);assert.match(app,/state\.daily\?\.habits/);assert.match(sw,/\.\/habits\.js/);
+  assert.match(sync,/state\.daily\?\.habits/);assert.match(sync,/AWJ_HABITS\?\.payloadForDate/);assert.match(sync,/payloadForHabit/);assert.match(app,/state\.daily\?\.habits/);assert.match(sw,/\.\/habits\.js/);
   assert.match(worker,/function habitProperties/);assert.match(worker,/existingHabitPage/);assert.match(worker,/NOTION_HABIT_DATA_SOURCE_ID/);
 });
 
 test("startup and social assets stay within their performance budgets",async()=>{
-  const social=await stat(join(root,"dist","client","rep-social-preview.png")),html=await read("dist/client/index.html"),sw=await read("dist/client/sw.js");
+  const social=await stat(join(root,"dist","client","awj-social-preview.png")),html=await read("dist/client/index.html"),sw=await read("dist/client/sw.js");
   assert.ok(social.size<300_000,`social preview is ${social.size} bytes`);
   assert.doesNotMatch(html,/src="app\.js/);assert.doesNotMatch(html,/src="enhancements\.js/);assert.match(html,/src="navigation\.js/);assert.doesNotMatch(sw,/qrcode\.js/);
 });
 
 test("timer chimes and the audio coach share one browser audio context",async()=>{
   const app=await read("dist/client/app.js"),coach=await read("dist/client/audio-coach.js");
-  assert.match(app,/window\._repAudioCtx=new \(window\.AudioContext\|\|window\.webkitAudioContext\)\(\)/);
-  assert.match(app,/audioCtx=window\._repAudioCtx/);
-  assert.match(coach,/window\._repAudioCtx \|\| \(window\._repAudioCtx = new/);
+  assert.match(app,/window\._awjAudioCtx=new \(window\.AudioContext\|\|window\.webkitAudioContext\)\(\)/);
+  assert.match(app,/audioCtx=window\._awjAudioCtx/);
+  assert.match(coach,/window\._awjAudioCtx \|\| \(window\._awjAudioCtx = new/);
 });
 
 test("primary media uses genuine video or still references without image morphing",async()=>{
   const app=await read("dist/client/app.js"),player=await read("dist/client/media-player.js"),css=await read("dist/client/styles.css");
   const visual=app.match(/function exerciseVisual\([^]*?\n\}/)?.[0]||"";
-  assert.match(visual,/REP_MEDIA_PLAYER.markup/);assert.doesNotMatch(visual,/anatomyVisual|cinematicMotion|REP_TECHNIQUE/);
+  assert.match(visual,/AWJ_MEDIA_PLAYER.markup/);assert.doesNotMatch(visual,/anatomyVisual|cinematicMotion|AWJ_TECHNIQUE/);
   assert.match(player,/createElement\('video'\)/);assert.match(player,/requestVideoFrameCallback/);assert.match(player,/Reference positions/);
   assert.doesNotMatch(css,/transition:\s*all/);
 });
 
 test("active workout media stays bounded and exposes decode telemetry",async()=>{
   const app=await read("dist/client/app.js"),telemetry=await read("dist/client/telemetry.js"),player=await read("dist/client/media-player.js");
-  assert.match(app,/function primeUpcomingCinematicMedia/);assert.match(player,/data-rep-media-preload/);assert.match(app,/session\?\.exercises\?\.\[index\+1\]/);
+  assert.match(app,/function primeUpcomingCinematicMedia/);assert.match(player,/data-awj-media-preload/);assert.match(app,/session\?\.exercises\?\.\[index\+1\]/);
   assert.match(player,/nextPoster\.decode/);assert.match(player,/recordMedia/);
   assert.match(telemetry,/mediaLoadMs:1200/);assert.match(telemetry,/mediaDecodeMs:120/);assert.match(telemetry,/recordMedia/);assert.match(telemetry,/maxDecodeMs/);
 });
 
 test("training discovery searches the canonical catalogue and preserves routine actions",async()=>{
- const ui=await read("src/client/screens/training.js");assert.match(ui,/REP_EXERCISES.list\(\)/);assert.match(ui,/equipmentTags.includes/);assert.match(ui,/muscleTags.includes/);assert.match(ui,/data-routine-favourite/);assert.match(ui,/showSessionPreview/);
+ const ui=await read("src/client/screens/training.js");assert.match(ui,/AWJ_EXERCISES.list\(\)/);assert.match(ui,/equipmentTags.includes/);assert.match(ui,/muscleTags.includes/);assert.match(ui,/data-routine-favourite/);assert.match(ui,/showSessionPreview/);
 });
 
 test("browser pairing keeps only a non-secret marker and synchronizes tabs",async()=>{
@@ -294,7 +295,7 @@ test("browser pairing keeps only a non-secret marker and synchronizes tabs",asyn
 });
 
 test("deployment client is deterministically built from source",async()=>{
-  const meta=await read("dist/client/build-meta.js"),version=meta.match(/REP_BUILD_VERSION="([a-f0-9]{12})"/)?.[1];assert.ok(version);
+  const meta=await read("dist/client/build-meta.js"),version=meta.match(/AWJ_BUILD_VERSION="([a-f0-9]{12})"/)?.[1];assert.ok(version);
   for(const file of ["safe-dom.js","build-meta.js","index.html","auth.js","storage.js","ui-state.js","ui-shell.js","store.js","importer.js","report-card.js","command-palette.js","recovery-map.js","plate-calculator.js","heart-rate-monitor.js","audio-coach.js","barcode-scanner.js","muscle-heatmap.js","custom-workouts.js","bootstrap.js","adaptive-coach.js","training-session.js","app.js","sync-outbox.js","telemetry.js","sync.js","sync-center.js","styles.css","sw.js","health-data.js","health-engine.js","health-coverage.js","performance-insights.js","product-suite.js","product-suite-ui.js","offline-nutrition.js","health-ui.js","performance-ui.js","habits.js","features.js","qrcode.js","enhancements.js"]){
     const source=await readFile(join(root,"src/client",file)).catch(()=>null),deployed=await readFile(join(root,"dist/client",file)).catch(()=>null);
     assert.ok(source,`src/client/${file} exists`);assert.ok(deployed,`dist/client/${file} exists`);const expected=Buffer.from(source.toString("utf8").replaceAll("__BUILD_VERSION__",version));assert.deepEqual(expected,deployed,`${file} is built from src/client`);
@@ -312,7 +313,7 @@ test("offline versions, local dates, durable storage, and accessibility stay ali
   const [html,bootstrap,sw,app,engine,storage,features,enhancements,css,worker]=await Promise.all([
     read("dist/client/index.html"),read("dist/client/bootstrap.js"),read("dist/client/sw.js"),read("dist/client/app.js"),read("dist/client/health-engine.js"),read("dist/client/storage.js"),read("dist/client/features.js"),read("dist/client/enhancements.js"),read("dist/client/styles.css"),read("dist/server/index.js")
   ]);
-  assert.match(bootstrap,/REP_BUILD_VERSION/);assert.match(sw,/BUILD_VERSION/);assert.doesNotMatch(enhancements,/\?v=6[0-9]/);
+  assert.match(bootstrap,/AWJ_BUILD_VERSION/);assert.match(sw,/BUILD_VERSION/);assert.doesNotMatch(enhancements,/\?v=6[0-9]/);
   assert.doesNotMatch(html,/id="app" aria-live/);assert.match(enhancements,/role","dialog"/);assert.match(css,/font-size:16px/);
   assert.match(app,/function localDay/);assert.doesNotMatch(app,/function isoDay\(\)\{return new Date\(\)\.toISOString/);assert.match(engine,/\.getFullYear\(\)/);
   assert.match(storage,/state:\$\{key\}/);assert.match(storage,/JSON\.stringify\(legacy\.local\)/);assert.match(features,/minimumInterval=6\*60\*60\*1000/);
@@ -322,7 +323,7 @@ test("offline versions, local dates, durable storage, and accessibility stay ali
 
 test("coverage-aware health features and native companion stay wired",async()=>{
   const [html,bootstrap,coverage,ui,storage,readme,swift]=await Promise.all([
-    read("dist/client/index.html"),read("dist/client/bootstrap.js"),read("dist/client/health-coverage.js"),read("dist/client/health-ui.js"),read("dist/client/storage.js"),read("ios/RepHealthCompanion/README.md"),read("ios/RepHealthCompanion/HealthKitSyncCoordinator.swift")
+    read("dist/client/index.html"),read("dist/client/bootstrap.js"),read("dist/client/health-coverage.js"),read("dist/client/health-ui.js"),read("dist/client/storage.js"),read("ios/AWJHealthCompanion/README.md"),read("ios/AWJHealthCompanion/HealthKitSyncCoordinator.swift")
   ]);
   assert.match(html,/health-coverage\.js\?v=[a-f0-9]{12}/);assert.match(bootstrap,/health-ui\.js/);
   for(const marker of ["coverage","longTerm","chargingAdvice","workoutGuard"])assert.match(coverage,new RegExp(marker));
@@ -332,7 +333,7 @@ test("coverage-aware health features and native companion stay wired",async()=>{
 });
 
 test("post-launch suite ships encrypted reports, photos, reminders, resume state, and native Live Activities",async()=>{
-  const [suite,ui,features,app,sw,info,controller,intents,widget,worker]=await Promise.all([read("dist/client/product-suite.js"),read("dist/client/product-suite-ui.js"),read("dist/client/features.js"),read("dist/client/app.js"),read("dist/client/sw.js"),read("ios/RepHealthCompanion/Info.plist"),read("ios/RepHealthCompanion/WorkoutLiveActivityController.swift"),read("ios/RepHealthCompanion/WorkoutLiveActivityIntents.swift"),read("ios/RepHealthCompanion/RepWorkoutLiveActivityWidget.swift"),read("src/server/durable-objects/device-coordinator.ts")]);
+  const [suite,ui,features,app,sw,info,controller,intents,widget,worker]=await Promise.all([read("dist/client/product-suite.js"),read("dist/client/product-suite-ui.js"),read("dist/client/features.js"),read("dist/client/app.js"),read("dist/client/sw.js"),read("ios/AWJHealthCompanion/Info.plist"),read("ios/AWJHealthCompanion/WorkoutLiveActivityController.swift"),read("ios/AWJHealthCompanion/WorkoutLiveActivityIntents.swift"),read("ios/AWJHealthCompanion/AWJWorkoutLiveActivityWidget.swift"),read("src/server/durable-objects/device-coordinator.ts")]);
   for(const marker of ["reconcileSchedule","analyzeExperiments","weeklySummary","createPrivateWeeklyLink","availableSubstitutions"])assert.match(suite,new RegExp(marker));
   for(const marker of ["PERSONAL OUTCOME LAB","ENCRYPTED PROGRESS VAULT","SMART REMINDERS","Save PDF"])assert.match(ui,new RegExp(marker));
   assert.match(features,/saveProgressPhoto/);assert.match(features,/AES-GCM/);assert.match(app,/resumePersistedRestTimer/);assert.match(sw,/resume-workout/);

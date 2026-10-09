@@ -1,5 +1,5 @@
 (function(){
-  const DB_NAME="health-os-state-v1",STORE="records",LARGE_KEYS=["history","foodEntries","sleepLogs","recoveryCheckins","bodyWeights","bodyMeasurements","syncQueue","outbox","daily","logs","completed","healthMetrics","launchEvents","customExperiments","experimentCheckins","weekOverrides"];
+  const DB_NAME=AWJ_COMPAT.stateDb,STORE="records",LARGE_KEYS=["history","foodEntries","sleepLogs","recoveryCheckins","bodyWeights","bodyMeasurements","syncQueue","outbox","daily","logs","completed","healthMetrics","launchEvents","customExperiments","experimentCheckins","weekOverrides"];
   const serialized=new Map();
   const baseSnapshots=new Map();
   const recordedConflicts=[];
@@ -10,7 +10,7 @@
   let failedWrite=null,localWriteFailed=false;
   function reportSave(status,error){
     saveStatus=status;
-    if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("rep:storage-status",{detail:{status,message:error?String(error.message||error):""}}));
+    if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("awj:storage-status",{detail:{status,message:error?String(error.message||error):""}}));
   }
 
   function isPlainObject(val){
@@ -137,16 +137,16 @@
       ...c
     };
     recordedConflicts.push(conflict);
-    if(typeof window?.REP_STORE?.onConflict==="function"){
-      try{window.REP_STORE.onConflict(conflict);}catch{}
+    if(typeof window?.AWJ_STORE?.onConflict==="function"){
+      try{window.AWJ_STORE.onConflict(conflict);}catch{}
     }
     if(typeof window!=="undefined"&&typeof window.dispatchEvent==="function"){
       try{
         let evt=null;
         if(typeof CustomEvent==="function"){
-          evt=new CustomEvent("rep:storage-conflict",{detail:conflict});
+          evt=new CustomEvent("awj:storage-conflict",{detail:conflict});
         }else if(typeof Event==="function"){
-          evt=new Event("rep:storage-conflict");
+          evt=new Event("awj:storage-conflict");
           evt.detail=conflict;
         }
         if(evt)window.dispatchEvent(evt);
@@ -739,7 +739,7 @@
     await writeChain.catch(()=>{});
   }
 
-  window.REP_STORE={
+  window.AWJ_STORE={
     hydrate,
     persist,
     flush,

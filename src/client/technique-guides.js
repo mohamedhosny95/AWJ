@@ -117,7 +117,7 @@
     const shapes=[...markup.matchAll(/<(path|circle|rect)\b([^>]*?)\/>/g)];
     if(element.children.length!==shapes.length){
       const template=document.createElement("div");
-      template.innerHTML=REP_SAFE_DOM.sanitize(`<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`);
+      template.innerHTML=AWJ_SAFE_DOM.sanitize(`<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`);
       element.replaceChildren(...template.querySelector("svg").children);return;
     }
     shapes.forEach((shape,i)=>{for(const attribute of shape[2].matchAll(/([\w-]+)="([^"]*)"/g))if(shapeAttributes.has(attribute[1])&&element.children[i].getAttribute(attribute[1])!==attribute[2])element.children[i].setAttribute(attribute[1],attribute[2]);});
@@ -139,7 +139,7 @@
     }
     draw(started);
   }
-  window.REP_TECHNIQUE=Object.freeze({guideFor,render,attach,guides});
+  window.AWJ_TECHNIQUE=Object.freeze({guideFor,render,attach,guides});
   if(typeof document!=="undefined"){
     const observer=new MutationObserver(records=>{if(records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.matches?.("[data-technique-pose]")||node.querySelector?.("[data-technique-pose]")))))attach();});
     const mount=()=>{observer.observe(document.body,{childList:true,subtree:true});attach();};

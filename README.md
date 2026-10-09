@@ -55,11 +55,11 @@ Version 66 added a coverage-aware Apple Watch health system:
 - Personalized 7-, 28-, and 90-day sleep, HRV, resting-heart-rate, respiratory-rate, VO₂ max, weight, waist, and blood-pressure trends.
 - A repeatable Apple Watch charging window and workout-recording preflight.
 - A privacy-preserving JSON health report export.
-- An iOS HealthKit companion foundation in `ios/RepHealthCompanion` using authorization, observer queries, background delivery, local aggregation, and Keychain-protected configuration.
+- An iOS HealthKit companion foundation in `ios/AWJHealthCompanion` using authorization, observer queries, background delivery, local aggregation, and Keychain-protected configuration.
 
-The native companion and existing Shortcut/Health Auto Export routes share the same bounded `/api/vitals/import` pipeline. Raw heart-rate samples remain in Apple Health; Rep receives only daily aggregates and coverage counts.
+The native companion and existing Shortcut/Health Auto Export routes share the same bounded `/api/vitals/import` pipeline. Raw heart-rate samples remain in Apple Health; AWJ receives only daily aggregates and coverage counts.
 
-A mobile-first, offline-ready Health OS built with plain HTML, CSS, JavaScript, and strict TypeScript server domains. Local data saves immediately while offline. Delivery state remains visible as pending, transmitting, retry scheduled, needs attention, or confirmed.
+A mobile-first, offline-ready AWJ built with plain HTML, CSS, JavaScript, and strict TypeScript server domains. Local data saves immediately while offline. Delivery state remains visible as pending, transmitting, retry scheduled, needs attention, or confirmed.
 
 Food entries are never labelled as synced from a generic network success. The
 Worker returns a receipt only after re-reading the saved Notion page, and each
@@ -122,7 +122,7 @@ real-device certification details are in `docs/`.
 - The Worker accepts sleep, HRV, resting heart rate, respiratory rate, active
   energy, steps, exercise/stand minutes, VO₂ max, oxygen saturation, wrist
   temperature, and deep/REM sleep from the existing import endpoints.
-- `ios/RepHealthCompanion/` contains the SwiftUI HealthKit companion starter. It
+- `ios/AWJHealthCompanion/` contains the SwiftUI HealthKit companion starter. It
   requires Xcode signing because browsers cannot access HealthKit directly.
 
 ## Performance Intelligence calculations
@@ -149,7 +149,7 @@ Open `dist/client/index.html` in a browser. For reliable service-worker and offl
 - `src/server/` — the editable Cloudflare Worker source
 - `dist/client/` — generated deployment files served by Cloudflare
 - `dist/server/` — generated Worker deployment artifact
-- `ios/RepHealthCompanion/` — the optional native HealthKit companion starter
+- `ios/AWJHealthCompanion/` — the optional native HealthKit companion starter
 
 `data/health-plan.json` is the canonical source of truth for the health plan, and `src/` is the application source of truth. Maintainers must edit `data/health-plan.json` directly and run `npm run sync`. Never hand-edit the generated `src/client/health-data.js` or files under `dist/`. Downloadable client builds are produced as CI artifacts instead of being committed as a second application copy and ZIP. **After editing anything under `data/` or `src/`, run:**
 
@@ -213,7 +213,7 @@ The deployed server expects these environment variables (see `.env.example`):
 
 - `NOTION_TOKEN` — secret Notion integration token
 - `NOTION_DATA_SOURCE_ID` — workout database data-source ID
-- `REP_SYNC_KEY` — random 32-byte-or-longer master pairing key entered once
+- `AWJ_SYNC_KEY` — random 32-byte-or-longer master pairing key entered once
 - `VITALS_IMPORT_KEY` — separate random key for Health Auto Export/Shortcuts
 - `CANONICAL_ORIGIN` — the one production origin all browser tabs must use
 - `GEMINI_API_KEY` — Google Gemini API key, required for AI food analysis and the Vitals tab's Apple Health screenshot import (same key powers both)
@@ -352,7 +352,7 @@ plausible ranges before the client uses them.
 4. Set the destination:
    - URL: `https://<your-worker-domain>/api/vitals/import-hae`
    - Method: `POST`
-   - Header: `x-rep-sync-key` → your `VITALS_IMPORT_KEY` value
+   - Header: `x-awj-sync-key` → your `VITALS_IMPORT_KEY` value
 5. Set it to run automatically (the app has its own daily/periodic
    scheduling — no separate Shortcuts automation needed for this path).
 
@@ -397,7 +397,7 @@ bolded name if it's not an exact match.
 11. **Get Contents of URL**:
     - URL: `https://<your-worker-domain>/api/vitals/import`
     - Method: `POST`
-    - Headers: `x-rep-sync-key` → your `VITALS_IMPORT_KEY` value,
+    - Headers: `x-awj-sync-key` → your `VITALS_IMPORT_KEY` value,
       `Content-Type` → `application/json`
     - Request Body: `JSON`, set to the Dictionary from step 10
 
@@ -441,7 +441,7 @@ updates the same calendar-day record, so the schedule does not create duplicates
 - **Rate limiting** — Cloudflare Rate Limit bindings protect AI analysis and
   pairing at the edge using network identity, so rotating guessed secrets does
   not bypass a limit. The per-colo Cache API limiter remains a fallback.
-- **Timing-safe key comparison** — `REP_SYNC_KEY` is compared via a hashed,
+- **Timing-safe key comparison** — The AWJ pairing key is compared via a hashed,
   constant-time check rather than `===`.
 - **Revocable client sessions** — phones receive signed, HttpOnly device
   sessions backed by a KV device registry. A lost device can be revoked without
@@ -474,7 +474,7 @@ Run the deployed mobile audit after a release. It checks portrait and landscape 
 npm run test:devices
 ```
 
-To audit staging or a preview instead, set `REP_DEVICE_AUDIT_URL` to that deployment URL.
+To audit staging or a preview instead, set `AWJ_DEVICE_AUDIT_URL` to that deployment URL.
 
 GitHub `main` is the source of truth, and the `rep-gym-companion` Cloudflare Worker is the sole production runtime. The application has no runtime dependency on ChatGPT Sites or OpenAI Apps hosting.
 

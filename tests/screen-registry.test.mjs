@@ -1,3 +1,4 @@
+import './compat-context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createScreenRegistry} from '../src/client/screens/registry.ts';

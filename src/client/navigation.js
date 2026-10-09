@@ -52,9 +52,9 @@
         if(!scroll&&scrollPositions.has(id))window.scrollTo({top:scrollPositions.get(id),left:0,behavior:"auto"});
         if(focus)window.focusViewHeading?.({scroll:false});
       });
-      window.dispatchEvent(new CustomEvent("rep:navigation",{detail:{id,path:route.path}}));
+      window.dispatchEvent(new CustomEvent("awj:navigation",{detail:{id,path:route.path}}));
     };
-    if(window.REP_MOTION&&started&&animateRoute)window.REP_MOTION.transition(commit,{kind:"page"});else{window.REP_MOTION?.cancel?.();commit();}
+    if(window.AWJ_MOTION&&started&&animateRoute)window.AWJ_MOTION.transition(commit,{kind:"page"});else{window.AWJ_MOTION?.cancel?.();commit();}
     return true;
   }
 
@@ -64,13 +64,13 @@
     const shouldScroll=scroll===undefined?!scrollPositions.has(id):scroll;
     if(currentId===id&&routeFromLocation()===id)return activate(id,{focus,scroll:shouldScroll});
     const prior=history.state&&typeof history.state==="object"?history.state:{};
-    const depth=replace?Number(prior.repRouteDepth)||0:(Number(prior.repRouteDepth)||0)+1;
-    history[replace?"replaceState":"pushState"]({...prior,repRoute:id,repRouteDepth:depth},"",routeUrl(route));
+    const depth=replace?Number(prior.awjRouteDepth??prior.repRouteDepth)||0:(Number(prior.awjRouteDepth??prior.repRouteDepth)||0)+1;
+    history[replace?"replaceState":"pushState"]({...prior,awjRoute:id,awjRouteDepth:depth},"",routeUrl(route));
     return activate(id,{focus,scroll:shouldScroll});
   }
 
   function dispatch(){
-    const id=routeFromLocation()||history.state?.repRoute;
+    const id=routeFromLocation()||(history.state?.awjRoute||history.state?.repRoute);
     if(!routes.has(id)||id===currentId)return false;
     return activate(id,{focus:true,scroll:false});
   }
@@ -83,14 +83,14 @@
     const requested=routeFromLocation();
     if(requested){
       const prior=history.state&&typeof history.state==="object"?history.state:{};
-      history.replaceState({...prior,repRoute:requested,repRouteDepth:Number(prior.repRouteDepth)||0},"",routeUrl(routes.get(requested)));
+      history.replaceState({...prior,awjRoute:requested,awjRouteDepth:Number(prior.awjRouteDepth??prior.repRouteDepth)||0},"",routeUrl(routes.get(requested)));
       return activate(requested,{focus:false,scroll:false});
     }
     return navigate(routes.has(fallback)?fallback:[...routes.keys()][0],{replace:true,focus:false,scroll:false});
   }
 
   function back(fallback="today"){
-    if(Number(history.state?.repRouteDepth)>0)history.back();
+    if(Number(history.state?.awjRouteDepth??history.state?.repRouteDepth)>0)history.back();
     else navigate(fallback,{replace:true});
   }
 
@@ -99,5 +99,5 @@
     return navigate(tabResolver(tab));
   }
 
-  window.REP_NAVIGATION={register,navigate,navigateTab,back,start,dispatch,setTabResolver:resolver=>{tabResolver=resolver;},has:id=>routes.has(id),current:()=>currentId,pathFor:id=>routes.get(id)?.path||""};
+  window.AWJ_NAVIGATION={register,navigate,navigateTab,back,start,dispatch,setTabResolver:resolver=>{tabResolver=resolver;},has:id=>routes.has(id),current:()=>currentId,pathFor:id=>routes.get(id)?.path||""};
 })();

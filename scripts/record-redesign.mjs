@@ -1,13 +1,14 @@
+import '../src/client/compatibility.js';
 // Capture a controlled local walkthrough. It never reads a user's browser profile.
-// REP_RECORD_CLIENT_ROOT can point at an extracted Git baseline's dist/client.
+// AWJ_RECORD_CLIENT_ROOT can point at an extracted Git baseline's dist/client.
 import {chromium} from 'playwright';
 import http from 'node:http';
 import {createReadStream,existsSync,statSync,mkdirSync,copyFileSync,writeFileSync} from 'node:fs';
 import {join,normalize,extname,resolve} from 'node:path';
 
-const variant=process.env.REP_RECORD_VARIANT||'after';
-const root=resolve(process.env.REP_RECORD_CLIENT_ROOT||'dist/client');
-const output=resolve(process.env.REP_RECORD_OUTPUT||`work/certification/redesign-${variant}`);
+const variant=process.env.AWJ_RECORD_VARIANT||'after';
+const root=resolve(process.env.AWJ_RECORD_CLIENT_ROOT||'dist/client');
+const output=resolve(process.env.AWJ_RECORD_OUTPUT||`work/certification/redesign-${variant}`);
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.mp4':'video/mp4'};
 mkdirSync(output,{recursive:true});
 const server=http.createServer((request,response)=>{
@@ -49,7 +50,7 @@ try{
   await page.click('[data-media-replay]');await page.waitForFunction(()=>document.querySelector('.exercise-hero-stage video')?.currentTime>0.1);
   await capture('demonstration');await page.waitForTimeout(6000);
   const framePacing=await page.evaluate(()=>{window.__recordFrameActive=false;const intervals=window.__recordFrames.slice(1).sort((a,b)=>a-b),at=p=>Math.round((intervals[Math.floor((intervals.length-1)*p)]||0)*100)/100;return {samples:intervals.length,medianMs:at(.5),p95Ms:at(.95),maxMs:at(1),over33_4Ms:intervals.filter(x=>x>33.4).length,scope:'Desktop requestAnimationFrame intervals across this local walkthrough'};});
-  const metadata={variant,framePacing,build:await page.evaluate(()=>REP_BUILD_VERSION),viewport:'390 × 844',fixture:'Fresh local profile, gym schedule, 40kg × 10 reps at RPE7; exercise index selected for comparison',scope:'Desktop Chrome recording; no physical-device certification',errors};
+  const metadata={variant,framePacing,build:await page.evaluate(()=>AWJ_BUILD_VERSION),viewport:'390 × 844',fixture:'Fresh local profile, gym schedule, 40kg × 10 reps at RPE7; exercise index selected for comparison',scope:'Desktop Chrome recording; no physical-device certification',errors};
   await context.close();copyFileSync(await page.video().path(),join(output,'walkthrough.webm'));
   writeFileSync(join(output,'capture.json'),JSON.stringify(metadata,null,2)+'\n');
   if(errors.length)throw Error(errors.join('; '));

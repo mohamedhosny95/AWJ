@@ -1,11 +1,11 @@
-/* Rep Training Session Lifecycle Module v1.
+/* AWJ Training Session Lifecycle Module v1.
    Pure, testable helpers and state transitions for workout execution. */
 (function(root, factory){
   const exported = factory();
   if (typeof module === "object" && module.exports) {
     module.exports = exported;
   }
-  root.REP_TRAINING_SESSION = exported;
+  root.AWJ_TRAINING_SESSION = exported;
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : this, function(){
   const SESSION_MET = {
     morning: 2.8,
@@ -259,10 +259,10 @@
 
     (session.exercises || []).forEach((base, index) => {
       const completed = state.completed?.[`${state.session}-${index}`] || [];
-      const selected=globalThis.REP_TRAINING_PREFERENCES?.selectedExercise(state,base)??(state.exerciseSubstitutions?.[base.name]||(base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name));
+      const selected=globalThis.AWJ_TRAINING_PREFERENCES?.selectedExercise(state,base)??(state.exerciseSubstitutions?.[base.name]||(base.name === "Back Extension" && state.swaps?.backExtension ? "Hip Thrust Machine" : base.name));
       completed.forEach(setIndex => {
         const actual=state.sessionSubstitutions?.session===state.session&&state.sessionSubstitutions?.startedAt===state.sessionStartedAt?state.sessionSubstitutions.performed?.[base.name]?.[setIndex]||selected:selected;
-        const id=globalThis.REP_EXERCISES?.get(actual)?.name||actual;
+        const id=globalThis.AWJ_EXERCISES?.get(actual)?.name||actual;
         const logged = setsFromLog(state.logs?.[id]);
         const set = logged[setIndex] || {};
         const weight = Number(set.weight) || 0;

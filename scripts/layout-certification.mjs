@@ -1,3 +1,4 @@
+import '../src/client/compatibility.js';
 // Cold-load all phone orientations before a release can reach production.
 import http from 'node:http';
 import {createReadStream,existsSync,statSync} from 'node:fs';
@@ -11,5 +12,5 @@ const server=http.createServer((request,response)=>{
   response.setHeader('content-type',types[extname(file)]||'application/octet-stream');createReadStream(file).pipe(response);
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-process.env.REP_DEVICE_AUDIT_URL=`http://127.0.0.1:${server.address().port}`;
+process.env.AWJ_DEVICE_AUDIT_URL=`http://127.0.0.1:${server.address().port}`;
 try{await import('./deployed-device-audit.mjs');}finally{server.close();}

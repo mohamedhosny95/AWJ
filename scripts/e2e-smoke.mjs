@@ -1,3 +1,4 @@
+import '../src/client/compatibility.js';
 // Headless end-to-end smoke test for the deployed static app. Serves dist/client
 // on a local port, drives it with Playwright, and fails the run (non-zero exit)
 // on any assertion failure or any console/page error encountered along the way.
@@ -50,9 +51,11 @@ async function assertAccessibleView(page,label){
 async function assertAxe(page,label){
   // Check the usable settled state, independently of optional screenshot delays.
   await page.evaluate(async()=>{const running=document.getAnimations().filter(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime));await Promise.race([Promise.all(running.map(animation=>animation.finished.catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,360))]);});
-  await page.evaluate(p => { if(window.__repVitals) window.__repVitals.phase = "axe:" + p; }, label);
+  // Finish the UI's next paint before axe begins its own expensive DOM scan.
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.evaluate(p => { if(window.__awjVitals) window.__awjVitals.phase = "axe:" + p; }, label);
   const result=await page.evaluate(async()=>window.axe.run(document,{runOnly:{type:"tag",values:["wcag2a","wcag2aa"]}}));
-  await page.evaluate(() => { if(window.__repVitals) window.__repVitals.phase = "post-axe"; });
+  await page.evaluate(() => { if(window.__awjVitals) window.__awjVitals.phase = "post-axe"; });
   const serious=result.violations.filter(violation=>["serious","critical"].includes(violation.impact));
   if(serious.length)console.log(JSON.stringify(serious.map(violation=>({id:violation.id,nodes:violation.nodes.slice(0,12).map(node=>({target:node.target,summary:node.failureSummary}))})),null,2));
   assertTrue(serious.length===0,`${label} has no serious or critical axe violations${serious.length?`: ${serious.map(item=>item.id).join(", ")}`:""}`);
@@ -61,29 +64,29 @@ async function assertAxe(page,label){
 await new Promise(resolve => server.listen(port, resolve));
 const baseUrl = `http://localhost:${port}`;
 
-const webkitMode=process.env.REP_E2E_BROWSER==="webkit";
-const browser = process.env.REP_E2E_CDP_URL?await chromium.connectOverCDP(process.env.REP_E2E_CDP_URL):webkitMode?await webkit.launch():await chromium.launch({
-  channel: process.env.REP_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
+const webkitMode=process.env.AWJ_E2E_BROWSER==="webkit";
+const browser = process.env.AWJ_E2E_CDP_URL?await chromium.connectOverCDP(process.env.AWJ_E2E_CDP_URL):webkitMode?await webkit.launch():await chromium.launch({
+  channel: process.env.AWJ_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
   args: ["--no-sandbox"]
 });
 const consoleErrors = [],expectedNetworkDiagnostics=[];let testingNetworkFailure=false,reportMetrics=null;
 try {
-  const capture=process.env.REP_E2E_CAPTURE_DIR;if(capture)mkdirSync(capture,{recursive:true});
+  const capture=process.env.AWJ_E2E_CAPTURE_DIR;if(capture)mkdirSync(capture,{recursive:true});
   const context = await browser.newContext({ viewport: { width: 390, height: 844 },hasTouch:true,isMobile:true,...(capture?{recordVideo:{dir:capture,size:{width:390,height:844}}}:{}) });
   const page = await context.newPage();
   const captureScreen=async name=>{if(capture){await page.waitForTimeout(320);await page.screenshot({path:join(capture,name+".png")});}};
   await page.addInitScript(()=>{
-    window.__repVitals={lcp:0,cls:0,interactionMs:0,longTask:0,appLongTask:0,longTasks:[],phase:"init"};
-    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(entry.interactionId)window.__repVitals.interactionMs=Math.max(window.__repVitals.interactionMs,entry.duration);})).observe({type:"event",durationThreshold:16,buffered:true});}catch{}
-    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>window.__repVitals.lcp=Math.max(window.__repVitals.lcp,entry.startTime))).observe({type:"largest-contentful-paint",buffered:true});}catch{}
-    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(!entry.hadRecentInput)window.__repVitals.cls+=entry.value;})).observe({type:"layout-shift",buffered:true});}catch{}
+    window.__awjVitals={lcp:0,cls:0,interactionMs:0,interactions:[],longTask:0,appLongTask:0,longTasks:[],phase:"init"};
+    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(!entry.interactionId)return;window.__awjVitals.interactionMs=Math.max(window.__awjVitals.interactionMs,entry.duration);if(entry.duration>100)window.__awjVitals.interactions.push({name:entry.name,duration:entry.duration,phase:window.__awjVitals.phase,target:entry.target?`${entry.target.tagName.toLowerCase()}#${entry.target.id}.${String(entry.target.className||'')}`:'unknown',inputDelay:entry.processingStart-entry.startTime,processing:entry.processingEnd-entry.processingStart});})).observe({type:"event",durationThreshold:16,buffered:true});}catch{}
+    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>window.__awjVitals.lcp=Math.max(window.__awjVitals.lcp,entry.startTime))).observe({type:"largest-contentful-paint",buffered:true});}catch{}
+    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(!entry.hadRecentInput)window.__awjVitals.cls+=entry.value;})).observe({type:"layout-shift",buffered:true});}catch{}
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{
-      window.__repVitals.longTask=Math.max(window.__repVitals.longTask,entry.duration);
-      if(!window.__repVitals.phase?.startsWith("axe:")&&window.__repVitals.phase!=="post-axe"){
-        window.__repVitals.appLongTask=Math.max(window.__repVitals.appLongTask,entry.duration);
+      window.__awjVitals.longTask=Math.max(window.__awjVitals.longTask,entry.duration);
+      if(!window.__awjVitals.phase?.startsWith("axe:")&&window.__awjVitals.phase!=="post-axe"){
+        window.__awjVitals.appLongTask=Math.max(window.__awjVitals.appLongTask,entry.duration);
       }
-      window.__repVitals.longTasks.push({
-        phase: window.__repVitals.phase,
+      window.__awjVitals.longTasks.push({
+        phase: window.__awjVitals.phase,
         startTime: Math.round(entry.startTime),
         duration: Math.round(entry.duration),
         name: entry.name,
@@ -108,18 +111,18 @@ try {
   assertTrue(await page.locator('.readiness-note').count()===1,'Today has one readiness recommendation');
   assertTrue(await page.locator('.habit-tracker').evaluate(x=>x.open),'Daily practices are directly accessible on Today');
   await page.click('[data-habit-id="sleep"]');
-  await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  await page.evaluate(()=>AWJ_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
   assertTrue(await page.locator('[data-habit-id="sleep"][aria-pressed="true"]').count()===1,'Habit records survive reload');
   await page.click('[data-today-checkin]');await page.waitForSelector('[data-morning-checkin]');
   await page.selectOption('[data-morning-checkin] [name="energy"]','4');await page.selectOption('[data-morning-checkin] [name="soreness"]','2');
-  await page.locator('.rep-modal-sheet .sheet-close').focus();await page.keyboard.press('Shift+Tab');assertTrue(await page.locator('[data-morning-checkin] button[type="submit"]').evaluate(el=>el===document.activeElement),'Check-in sheet keeps keyboard focus inside');
-  await page.waitForTimeout(260);await assertAxe(page,'Recovery check-in');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
+  await page.locator('.awj-modal-sheet .sheet-close').focus();await page.keyboard.press('Shift+Tab');assertTrue(await page.locator('[data-morning-checkin] button[type="submit"]').evaluate(el=>el===document.activeElement),'Check-in sheet keeps keyboard focus inside');
+  await page.waitForTimeout(260);await assertAxe(page,'Recovery check-in');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.awj-modal-backdrop',{state:'detached'});
   assertTrue(await page.evaluate(()=>state.recoveryCheckins[0].energy)===4,'Quick check-in saves the existing recovery record');
-  await page.click('[data-today-checkin]');await page.check('[data-morning-checkin] [name="illness"]');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
+  await page.click('[data-today-checkin]');await page.check('[data-morning-checkin] [name="illness"]');await page.locator('[data-morning-checkin] button[type="submit"]').click();await page.waitForSelector('.awj-modal-backdrop',{state:'detached'});
   assertTrue(await page.locator('[data-today-start]').textContent()==='Review recovery','Illness keeps the existing pause recommendation on Today');
   await page.evaluate(()=>showSessionPreview('gym'));await page.click('[data-start-session]');await page.waitForSelector('[data-review-recovery]');
-  assertTrue(await page.locator('[data-acknowledge-workout]').count()===1,'A workout started from the library retains the symptom warning');await page.click('[data-review-recovery]');await page.waitForSelector('.rep-modal-backdrop',{state:'detached'});
-  await page.evaluate(()=>{state.recoveryCheckins=[];REP_HEALTH_COVERAGE.invalidateCache(state);REP_HEALTH_ENGINE.invalidateCache(state);REP_NAVIGATION.navigate('today');});
+  assertTrue(await page.locator('[data-acknowledge-workout]').count()===1,'A workout started from the library retains the symptom warning');await page.click('[data-review-recovery]');await page.waitForSelector('.awj-modal-backdrop',{state:'detached'});
+  await page.evaluate(()=>{state.recoveryCheckins=[];AWJ_HEALTH_COVERAGE.invalidateCache(state);AWJ_HEALTH_ENGINE.invalidateCache(state);AWJ_NAVIGATION.navigate('today');});
   const destinations=[['home','Today','/today'],['train','Train','/train'],['food','Nutrition','/nutrition/today'],['wellbeing','Wellbeing','/wellbeing'],['insights','Progress','/progress']];
   for(const [tab,title,path] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);assertTrue(page.url().endsWith('#'+path),title+' has a stable route');await captureScreen(tab);await assertAccessibleView(page,title);await assertAxe(page,title);}
   await page.goBack();await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Browser Back restores Wellbeing');
@@ -143,7 +146,7 @@ try {
   await page.click('[data-nutrition-water]');await page.waitForSelector('.water-card:visible');await page.click('[data-water-delta="250"]');
   assertTrue(await page.evaluate(()=>state.water[isoDay()])===250,'Water tracking stays connected');
     await page.click('#settingsButton');await page.waitForSelector('[data-reminder-time="bedtime"]');
-  const reminder=await page.evaluate(()=>({windDown:document.querySelector('[data-reminder-time="bedtime"]').value,bedtime:REP_HEALTH_ENGINE.bedtime(state,isoDay(),state.healthProfile).time,enabled:[...document.querySelectorAll('[data-reminder-enabled]')].some(x=>x.checked)}));
+  const reminder=await page.evaluate(()=>({windDown:document.querySelector('[data-reminder-time="bedtime"]').value,bedtime:AWJ_HEALTH_ENGINE.bedtime(state,isoDay(),state.healthProfile).time,enabled:[...document.querySelectorAll('[data-reminder-enabled]')].some(x=>x.checked)}));
   const [bedHour,bedMinute]=reminder.bedtime.split(':').map(Number),windDown=(bedHour*60+bedMinute-30+1440)%1440;
   assertTrue(reminder.windDown===`${String(Math.floor(windDown/60)).padStart(2,'0')}:${String(windDown%60).padStart(2,'0')}`&&!reminder.enabled,'Existing calculated reminders remain opt-in');
   await page.click('[data-settings-tab="sync"]');await page.waitForSelector('.sync-center');assertTrue(await page.locator('[data-sync-all]').count()===1&&await page.locator('[data-sync-retry-all]').count()===1,'Connections preserves sync and retry controls');
@@ -152,15 +155,15 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
   await page.fill('[data-library-search]','lateral');assertTrue((await page.locator('[data-library-exercise]').allTextContents()).every(x=>/lateral/i.test(x)),'Exercise search uses canonical exercise names');
   await page.selectOption('[data-library-equipment]','machines');assertTrue(!(await page.locator('[data-library-results]').textContent()).includes('Dumbbell Lateral Raise'),'Equipment filtering removes incompatible exercises');
   await page.fill('[data-library-search]','');await page.selectOption('[data-library-equipment]','all');
-  await page.click('[data-routine-favourite="gym"]');await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  await page.click('[data-routine-favourite="gym"]');await page.evaluate(()=>AWJ_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
   assertTrue(await page.locator('[data-routine-favourite="gym"][aria-pressed="true"]').count()===1,'Routine favourites survive a reload');
   await page.click('[data-create-new-routine]');await page.fill('[data-routine-title]','QA Saved Circuit');
   const option=await page.locator('[data-add-ex-select]').evaluate(x=>[...x.options].find(o=>o.textContent.includes('Dumbbell Lateral Raise')).value);await page.selectOption('[data-add-ex-select]',option);
   assertTrue(await page.locator('[data-routine-title]').inputValue()==='QA Saved Circuit','Adding exercises preserves the routine draft');
-  await page.click('[data-save-routine]');await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
+  await page.click('[data-save-routine]');await page.evaluate(()=>AWJ_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');
   assertTrue(await page.locator('[data-routine-card]').filter({hasText:'QA Saved Circuit'}).count()===1,'Custom routines survive a full reload');
   await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');
-  await page.evaluate(()=>{state.sleepLogs=[];state.recoveryCheckins=[];state.healthMetrics={};REP_HEALTH_COVERAGE.invalidateCache(state);REP_HEALTH_ENGINE.invalidateCache(state);renderOverview();});await page.click('[data-today-start]');await page.waitForSelector('.workout-player');
+  await page.evaluate(()=>{state.sleepLogs=[];state.recoveryCheckins=[];state.healthMetrics={};AWJ_HEALTH_COVERAGE.invalidateCache(state);AWJ_HEALTH_ENGINE.invalidateCache(state);renderOverview();});await page.click('[data-today-start]');await page.waitForSelector('.workout-player');
   assertTrue(await page.locator('.workout-preflight-panel').count()===0,'Missing wearable data does not block manual workout logging');
   assertTrue(await page.locator('.workout-identity h1').textContent()==='Stationary Bike','Scheduled session starts at the correct exercise');
   assertTrue(await page.locator('.exercise-hero-stage [data-media-play]:visible').count()===0,'A static exercise has no fabricated playback controls');
@@ -189,7 +192,7 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
   const inputClarity=await page.locator('[data-live-log][data-log="reps"]').evaluate(el=>{const box=el.getBoundingClientRect(),context=document.createElement('canvas').getContext('2d');context.font=getComputedStyle(el).font;return {width:el.clientWidth,needed:context.measureText(el.value).width,exposed:document.elementFromPoint(box.x+box.width/2,box.y+box.height/2)===el};});assertTrue(inputClarity.width>=inputClarity.needed+8&&inputClarity.exposed,'Current reps are legible and not covered by an overlay');
   await page.evaluate(()=>{document.querySelector('[data-live-log][data-log="reps"]').focus();Object.defineProperty(visualViewport,'height',{configurable:true,value:480});visualViewport.dispatchEvent(new Event('resize'));});await page.waitForFunction(()=>document.body.classList.contains('is-keyboard-open'));
   await page.waitForTimeout(310);await page.locator('[data-next]').dispatchEvent('click');await page.locator('[data-next]').dispatchEvent('click');assertTrue(await page.evaluate(()=>state.completed['gym-1'].length)===1,'Rapid double taps cannot log two sets');assertTrue(await page.locator('#timerDock:not(.is-hidden)').count()===1,'Logging enters the rest state');assertTrue(!(await page.locator('.workout-action-band').isVisible()),'Rest and logging do not overlap');await page.waitForFunction(()=>!document.body.classList.contains('is-keyboard-open'));assertTrue(await page.evaluate(()=>!document.activeElement.matches('[data-log]')),'Logging a set dismisses the editor before rest');await page.evaluate(()=>{delete visualViewport.height;visualViewport.dispatchEvent(new Event('resize'));});
-  await page.waitForTimeout(320);await captureScreen('rest');await assertAxe(page,'Rest state');const restLayout=await page.locator('#timerDock').evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,bottom:box.bottom};});assertTrue(restLayout.left>=0&&restLayout.right<=390&&restLayout.bottom<=844,'The rest dock stays fully within the phone viewport');assertTrue(await page.locator('#timerAdd').isVisible()&&await page.locator('#timerSkip').isVisible(),'Rest shows +15 seconds and Skip together');const restTarget=await page.evaluate(()=>state.timer.targetEndTime);await page.evaluate(()=>REP_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#timerDock').isVisible()===false,'Browsing Today hides workout rest controls');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.targetEndTime)===restTarget,'Returning to the workout preserves the absolute rest target');await page.click('#timerPause');const pausedRemaining=await page.evaluate(()=>state.timer.remaining);await page.evaluate(()=>REP_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.paused),'Paused rest stays paused when returning to the workout');await page.click('#timerPause');await page.waitForFunction(previous=>state.timer.remaining<previous,pausedRemaining,{timeout:2500});assertTrue(await page.evaluate(()=>Boolean(state.timer.interval)),'A restored paused timer resumes a working countdown');await page.locator('.undo-bar button').click();assertTrue(await page.evaluate(()=>state.completed['gym-1'].length)===0,'Undo restores the previous completion state');assertTrue(await page.evaluate(()=>state.timer)===null,'Undo restores the preceding timer state');assertTrue(await page.locator('.current-set-card .workout-undo').count()===0,'Undo clears its local set control');
+  await page.waitForTimeout(320);await captureScreen('rest');await assertAxe(page,'Rest state');const restLayout=await page.locator('#timerDock').evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,bottom:box.bottom};});assertTrue(restLayout.left>=0&&restLayout.right<=390&&restLayout.bottom<=844,'The rest dock stays fully within the phone viewport');assertTrue(await page.locator('#timerAdd').isVisible()&&await page.locator('#timerSkip').isVisible(),'Rest shows +15 seconds and Skip together');const restTarget=await page.evaluate(()=>state.timer.targetEndTime);await page.evaluate(()=>AWJ_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#timerDock').isVisible()===false,'Browsing Today hides workout rest controls');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.targetEndTime)===restTarget,'Returning to the workout preserves the absolute rest target');await page.click('#timerPause');const pausedRemaining=await page.evaluate(()=>state.timer.remaining);await page.evaluate(()=>AWJ_NAVIGATION.navigate('today'));await page.waitForSelector('[data-today-start]');await page.click('[data-today-start]');await page.waitForSelector('.workout-player');assertTrue(await page.evaluate(()=>state.timer.paused),'Paused rest stays paused when returning to the workout');await page.click('#timerPause');await page.waitForFunction(previous=>state.timer.remaining<previous,pausedRemaining,{timeout:2500});assertTrue(await page.evaluate(()=>Boolean(state.timer.interval)),'A restored paused timer resumes a working countdown');await page.locator('.undo-bar button').click();assertTrue(await page.evaluate(()=>state.completed['gym-1'].length)===0,'Undo restores the previous completion state');assertTrue(await page.evaluate(()=>state.timer)===null,'Undo restores the preceding timer state');assertTrue(await page.locator('.current-set-card .workout-undo').count()===0,'Undo clears its local set control');
   for(let attempt=0;attempt<8&&await page.evaluate(()=>state.index===1);attempt++){if(await page.locator('#timerDock:not(.is-hidden)').count())await page.click('#timerSkip');await page.waitForTimeout(310);await page.click('[data-next]');}
   await page.waitForFunction(()=>state.index===2);await page.locator('.workout-advanced>summary').click();await page.click('[data-jump-exercise]');await page.waitForFunction(()=>state.index===3);
   await page.click('[data-swap-modal]');await page.click('[data-select-swap="Push-ups"]');await page.waitForSelector('.workout-identity h1');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
@@ -199,17 +202,17 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
   assertTrue(continuity.same&&continuity.position&&continuity.focus&&continuity.rate===0.5,'Logging preserves player, position, speed and focus');
   const nativeMode=await page.evaluate(async()=>{const video=document.querySelector('.exercise-hero-stage video');video.dispatchEvent(new Event('webkitbeginfullscreen'));const entered=video.getAttribute('src').includes('-1080-');video.dispatchEvent(new Event('webkitendfullscreen'));return {entered,restored:video.getAttribute('src').includes('-720-'),same:video===document.querySelector('.exercise-hero-stage video')};});assertTrue(nativeMode.entered&&nativeMode.restored&&nativeMode.same,'Native fullscreen events select HD then restore phone quality without replacing the player');
   await captureScreen('expanded-demo');await page.selectOption('[data-media-quality]','1080');assertTrue(await page.evaluate(()=>state.mediaQuality)==='1080','Video quality preference saves');await page.locator('[data-media-expand]').click();
-  await page.evaluate(()=>REP_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');
+  await page.evaluate(()=>AWJ_STORE.flush());await page.reload();await page.waitForSelector('html[data-app-ready="true"]');await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');
   assertTrue(await page.locator('[data-today-start]').textContent()==='Resume workout','Today offers the active session after reload');await page.click('[data-today-start]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
   assertTrue(await page.evaluate(()=>state.logs['Push-ups'].sets[0].reps)==='12','Resume preserves the logged fields and session swap');
   await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>{state.index=2;renderExercise();state.index=3;renderExercise();});assertTrue(await page.locator('video').evaluate(x=>x.paused),'Reduced motion keeps the demonstration paused');await page.emulateMedia({reducedMotion:'no-preference'});
-  const asset=await page.evaluate(async()=>{const a=REP_MEDIA_PLAYER.assets({name:'Push-ups'},{allQualities:true});await REP_WORKOUT_MEDIA.download(a);return a.find(x=>x.type==='video').src;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));testingNetworkFailure=true;if(webkitMode)originUnavailable=true;else await context.setOffline(true);const range=await page.evaluate(async src=>{const r=await fetch(src,{headers:{Range:'bytes=0-15'}});return {status:r.status,length:(await r.arrayBuffer()).byteLength};},asset);assertTrue(range.status===206&&range.length===16,webkitMode?'Cached video ranges work with the origin unavailable':'Offline videos provide actual byte ranges');
+  const asset=await page.evaluate(async()=>{const a=AWJ_MEDIA_PLAYER.assets({name:'Push-ups'},{allQualities:true});await AWJ_WORKOUT_MEDIA.download(a);return a.find(x=>x.type==='video').src;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));testingNetworkFailure=true;if(webkitMode)originUnavailable=true;else await context.setOffline(true);const range=await page.evaluate(async src=>{const r=await fetch(src,{headers:{Range:'bytes=0-15'}});return {status:r.status,length:(await r.arrayBuffer()).byteLength};},asset);assertTrue(range.status===206&&range.length===16,webkitMode?'Cached video ranges work with the origin unavailable':'Offline videos provide actual byte ranges');
   await page.reload();await page.waitForSelector('html[data-app-ready="true"]');assertTrue(await page.locator('[data-app-tab]').count()===5,webkitMode?'Cold reload restores the shell with the origin unavailable':'Offline cold reload restores the shell');if(webkitMode)originUnavailable=false;else await context.setOffline(false);
   const interruptedSrc=asset+'?interrupted-demo';
-  const interrupted=await page.evaluate(async src=>{const control=new AbortController();setTimeout(()=>control.abort(),30);const result=await REP_WORKOUT_MEDIA.download([{src,type:'video',bytes:1}],()=>{},{signal:control.signal});return {result,inspection:await REP_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1}])};},interruptedSrc);
+  const interrupted=await page.evaluate(async src=>{const control=new AbortController();setTimeout(()=>control.abort(),30);const result=await AWJ_WORKOUT_MEDIA.download([{src,type:'video',bytes:1}],()=>{},{signal:control.signal});return {result,inspection:await AWJ_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1}])};},interruptedSrc);
   assertTrue(interrupted.result.aborted&&!interrupted.inspection.complete,'Interrupted downloads are not marked complete');
   const partialSrc=asset+'?partial-demo';
-  const partial=await page.evaluate(async src=>{const result=await REP_WORKOUT_MEDIA.download([{src,type:'video',bytes:1000}]);return {result,inspection:await REP_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1000}])};},partialSrc);
+  const partial=await page.evaluate(async src=>{const result=await AWJ_WORKOUT_MEDIA.download([{src,type:'video',bytes:1000}]);return {result,inspection:await AWJ_WORKOUT_MEDIA.inspect([{src,type:'video',bytes:1000}])};},partialSrc);
   assertTrue(!partial.result.complete&&!partial.inspection.complete,'A partial 206 response cannot become a complete offline video');testingNetworkFailure=false;
   await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');await page.click('[data-today-start]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Push-ups');
   await page.waitForTimeout(310);await page.click('[data-next]');await page.click('#timerSkip');await page.click('[data-swap-modal]');await page.click('[data-select-swap=""]');await page.waitForFunction(()=>document.querySelector('.workout-identity h1')?.textContent==='Chest Press');
@@ -227,14 +230,15 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
 
   await page.fill('[data-history-search]','missing exercise');assertTrue((await page.locator('[data-history-results]').textContent()).includes('No')||(await page.locator('[data-history-results]').textContent()).includes('first workout'),'History search has an honest empty state');
   await page.evaluate(()=>{state.sessionStartedAt=null;state.history.push({session:'gym',date:new Date().toISOString(),duration:1200,sets:1,entries:[{exercise:'Chest Press',weight:'40',reps:'10'}]});renderInsights();});await page.fill('[data-history-search]','Chest Press');assertTrue((await page.locator('[data-history-results]').textContent()).includes('Chest Press'),'History searches exercise records');
-  await page.evaluate(()=>{REP_NAVIGATION.navigate('training-program');REP_NAVIGATION.navigate('nutrition-today');REP_NAVIGATION.navigate('wellbeing');});await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Rapid navigation commits only the winning screen');
+  await page.evaluate(()=>{AWJ_NAVIGATION.navigate('training-program');AWJ_NAVIGATION.navigate('nutrition-today');AWJ_NAVIGATION.navigate('wellbeing');});await page.waitForSelector('.more-menu');assertTrue(page.url().endsWith('#/wellbeing'),'Rapid navigation commits only the winning screen');
   for(const width of [320,360,375,390,414,430]){await page.setViewportSize({width,height:844});for(const [tab,title] of destinations){await page.click(`[data-app-tab="${tab}"]`);await page.waitForFunction(t=>document.querySelector('main h1')?.textContent===t,title);await assertAccessibleView(page,`${title} ${width}px`);const navSize=await page.locator('#appTabs').evaluate(el=>Math.min(...[...el.querySelectorAll('button')].map(b=>Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height))));assertTrue(navSize>=44,`${title} navigation targets remain 44px at ${width}px`);}}
   await page.setViewportSize({width:932,height:430});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');assertTrue(await page.locator('#appTabs').evaluate(el=>{const box=el.getBoundingClientRect();return box.width>box.height&&box.bottom<=innerHeight;}),'Wide touch phones keep bottom navigation in landscape');
   await page.setViewportSize({width:852,height:393});await page.click('[data-app-tab="home"]');await page.waitForSelector('[data-today-start]');await assertAccessibleView(page,'Landscape Today');
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const rows=[...document.querySelectorAll('main *,#appTabs *')].map(el=>[el,parseFloat(getComputedStyle(el).fontSize)]);for(const [el,size] of rows)el.style.fontSize=`${size*2}px`;});await assertAccessibleView(page,'Text scaling');await page.evaluate(()=>document.querySelectorAll('main *,#appTabs *').forEach(el=>el.style.fontSize=''));
-  const vitals=await page.evaluate(()=>__repVitals);if(vitals.lcp>0)assertTrue(vitals.lcp<=2500,`LCP within budget (${Math.round(vitals.lcp)} ms)`);assertTrue(vitals.cls<=0.1,`CLS within budget (${vitals.cls.toFixed(3)})`);
+  const vitals=await page.evaluate(()=>__awjVitals);if(vitals.lcp>0)assertTrue(vitals.lcp<=2500,`LCP within budget (${Math.round(vitals.lcp)} ms)`);assertTrue(vitals.cls<=0.1,`CLS within budget (${vitals.cls.toFixed(3)})`);
+  if(vitals.interactionMs>200)console.log(JSON.stringify({slowInteractions:vitals.interactions},null,2));
   if(await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('event')))assertTrue(vitals.interactionMs<=200,`Observed interaction duration within 200 ms (${Math.round(vitals.interactionMs)} ms)`);
-  reportMetrics={build:await page.evaluate(()=>REP_BUILD_VERSION),lcpMs:vitals.lcp||null,cls:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('layout-shift'))?vitals.cls:null,maxObservedInteractionMs:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('event'))?vitals.interactionMs:null,longTaskMs:vitals.appLongTask,browser:(webkitMode?'WebKit':'Chrome')+' with touch/mobile emulation; no physical device certification',networkTest:webkitMode?'Local server forcibly disconnects requests; offline-emulation bug microsoft/playwright#42775':'BrowserContext offline mode',expectedNetworkDiagnostics};
+  reportMetrics={build:await page.evaluate(()=>AWJ_BUILD_VERSION),lcpMs:vitals.lcp||null,cls:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('layout-shift'))?vitals.cls:null,maxObservedInteractionMs:await page.evaluate(()=>PerformanceObserver.supportedEntryTypes.includes('event'))?vitals.interactionMs:null,longTaskMs:vitals.appLongTask,browser:(webkitMode?'WebKit':'Chrome')+' with touch/mobile emulation; no physical device certification',networkTest:webkitMode?'Local server forcibly disconnects requests; offline-emulation bug microsoft/playwright#42775':'BrowserContext offline mode',expectedNetworkDiagnostics};
   if(capture)writeFileSync(join(capture,'metrics.json'),JSON.stringify(reportMetrics,null,2));
   await context.close();
   assertTrue(consoleErrors.length===0,`No console/page errors (${consoleErrors.length})`);if(consoleErrors.length)console.log(consoleErrors.join('\n'));
@@ -244,7 +248,7 @@ await page.click('[data-app-tab="train"]');await page.waitForSelector('.exercise
   server.close();
 }
 
-if(process.env.REP_E2E_REPORT){mkdirSync(dirname(process.env.REP_E2E_REPORT),{recursive:true});writeFileSync(process.env.REP_E2E_REPORT,JSON.stringify({...reportMetrics,checks,passed:checks-failures.length,failures},null,2)+'\n');}
+if(process.env.AWJ_E2E_REPORT){mkdirSync(dirname(process.env.AWJ_E2E_REPORT),{recursive:true});writeFileSync(process.env.AWJ_E2E_REPORT,JSON.stringify({...reportMetrics,checks,passed:checks-failures.length,failures},null,2)+'\n');}
 console.log(`\n${checks - failures.length}/${checks} checks passed.`);
 if (failures.length) {
   console.error("\nFAILED:\n" + failures.map(f => `  - ${f}`).join("\n"));

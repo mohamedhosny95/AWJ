@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {AWJ_COMPAT as AWJ_SERVER_COMPAT} from '../src/server/compatibility.ts';
+import '../src/client/compatibility.js';
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -6,7 +8,7 @@ import { execSync } from "node:child_process";
 
 const root = resolve(process.cwd());
 
-console.log("=== Health OS Production Deployment Preflight ===");
+console.log("=== AWJ Production Deployment Preflight ===");
 
 function check(label, fn) {
   process.stdout.write(`• Checking ${label}... `);
@@ -64,7 +66,7 @@ passed = check("Worker secret and environment bindings", () => {
     { name: "GEMINI_API_KEY", optional: true, desc: "Google Gemini Vision API" },
     { name: "VAPID_PUBLIC_KEY", optional: true, desc: "Web Push Public Key" },
     { name: "VAPID_PRIVATE_KEY_JWK", optional: true, desc: "Web Push Private Key" },
-    { name: "REP_SYNC_KEY", optional: true, desc: "Pairing HMAC Secret" }
+    { name: AWJ_SERVER_COMPAT.pairingSecretName, optional: true, desc: "Pairing HMAC Secret" }
   ];
   const present = secrets.filter(s => process.env[s.name]);
   return `${present.length}/${secrets.length} local env secrets configured`;

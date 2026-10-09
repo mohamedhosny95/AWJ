@@ -1,6 +1,6 @@
 /* Shared media cache and byte-range semantics for page and service worker. */
 (function(root){
-  const CACHE_NAME='rep-exercise-media-v1';
+  const CACHE_NAME=AWJ_COMPAT.mediaCache;
   function parseRange(header,length){
     if(!header)return null;const m=/^bytes=(\d*)-(\d*)$/.exec(header.trim());if(!m||(!m[1]&&!m[2]))return {invalid:true};
     let start,end;
@@ -15,5 +15,5 @@
     const body=data.slice(range.start,range.end+1);headers.set('Content-Range',`bytes ${range.start}-${range.end}/${data.byteLength}`);headers.set('Content-Length',String(body.byteLength));return new Response(body,{status:206,headers});
   }
   function complete(response,type,expectedBytes=0){const mime=response?.headers?.get('content-type')||'';return (!expectedBytes||!response?.headers?.get('content-length')||Number(response.headers.get('content-length'))===expectedBytes)&&response?.status===200&&!response.headers.get('content-range')&&(type==='video'?mime.startsWith('video/'):mime.startsWith('image/'));}
-  root.REP_MEDIA_CONTRACT=Object.freeze({CACHE_NAME,parseRange,rangeResponse,complete});
+  root.AWJ_MEDIA_CONTRACT=Object.freeze({CACHE_NAME,parseRange,rangeResponse,complete});
 })(typeof self!=='undefined'?self:globalThis);

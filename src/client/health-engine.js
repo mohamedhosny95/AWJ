@@ -1,6 +1,6 @@
-/* Rep Health Intelligence Engine v58.
+/* AWJ Health Intelligence Engine v58.
    Pure, explainable calculations: no diagnosis and no population grading. */
-globalThis.REP_HEALTH_ENGINE=(()=>{
+globalThis.AWJ_HEALTH_ENGINE=(()=>{
   const DAY=86400000;
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
   const round=(n,d=0)=>{const p=10**d;return Math.round(n*p)/p;};

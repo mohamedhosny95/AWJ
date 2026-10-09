@@ -1,6 +1,6 @@
-/* Rep Offline Nutrition Intelligence v1.
+/* AWJ Offline Nutrition Intelligence v1.
    Deterministic on-device parser and macronutrient database for offline meal logging. */
-globalThis.REP_OFFLINE_NUTRITION = (() => {
+globalThis.AWJ_OFFLINE_NUTRITION = (() => {
   const FOOD_DATABASE = [
     // --- Proteins ---
     {

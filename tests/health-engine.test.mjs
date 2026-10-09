@@ -1,10 +1,11 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 await import("../src/client/health-engine.js");
 await import("../src/client/health-coverage.js");
-const health=globalThis.REP_HEALTH_ENGINE;
-const coverage=globalThis.REP_HEALTH_COVERAGE;
+const health=globalThis.AWJ_HEALTH_ENGINE;
+const coverage=globalThis.AWJ_HEALTH_COVERAGE;
 const profile={wakeTime:"06:30",baseSleepHours:7.5,baselineDays:28};
 const date=(offset=0)=>new Date(Date.UTC(2026,7,11+offset,12)).toISOString().slice(0,10);
 function matureState(){
@@ -128,8 +129,8 @@ test("legacy illness record with only date timestamp under Africa/Cairo maps to 
       import assert from "node:assert/strict";
       await import("./src/client/health-engine.js");
       await import("./src/client/health-coverage.js");
-      const health = globalThis.REP_HEALTH_ENGINE;
-      const coverage = globalThis.REP_HEALTH_COVERAGE;
+      const health = globalThis.AWJ_HEALTH_ENGINE;
+      const coverage = globalThis.AWJ_HEALTH_COVERAGE;
       const profile = { wakeTime: "06:30", baseSleepHours: 7.5, baselineDays: 28 };
       function matureState() {
         const date = (offset = 0) => new Date(Date.UTC(2026, 7, 11 + offset, 12)).toISOString().slice(0, 10);

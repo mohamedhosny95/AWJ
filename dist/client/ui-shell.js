@@ -11,5 +11,5 @@
     const summary=document.createElement("summary");summary.textContent=label;details.append(summary);element.before(details);details.append(element);return details;
   }
   function showOnly(elements,active){for(const [element,view] of elements)if(element)element.hidden=view!==active;}
-  window.REP_UI_SHELL=Object.freeze({tabs,disclose,showOnly});
+  window.AWJ_UI_SHELL=Object.freeze({tabs,disclose,showOnly});
 })();

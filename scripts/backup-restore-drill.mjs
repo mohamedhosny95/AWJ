@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import '../src/client/compatibility.js';
 
 import { chromium } from "playwright";
 import http from "node:http";
@@ -18,7 +19,7 @@ const clientRoot = join(projectRoot, "dist", "client");
 const evidenceDir = join(projectRoot, "work", "certification");
 const backupPath = join(evidenceDir, "recovery-drill-backup.json");
 const tamperedPath = join(evidenceDir, "recovery-drill-tampered.json");
-const reportPath = process.env.REP_RECOVERY_REPORT || join(evidenceDir, "recovery-drill-report.json");
+const reportPath = process.env.AWJ_RECOVERY_REPORT || join(evidenceDir, "recovery-drill-report.json");
 const passphrase = "recovery-drill-passphrase";
 const port = 8935;
 const MIME = {
@@ -73,8 +74,8 @@ function acceptRestoreDialogs(page) {
 }
 
 await new Promise(resolve => server.listen(port, resolve));
-const browser = process.env.REP_E2E_CDP_URL?await chromium.connectOverCDP(process.env.REP_E2E_CDP_URL):await chromium.launch({
-  channel: process.env.REP_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
+const browser = process.env.AWJ_E2E_CDP_URL?await chromium.connectOverCDP(process.env.AWJ_E2E_CDP_URL):await chromium.launch({
+  channel: process.env.AWJ_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
   args: ["--no-sandbox"]
 });
 
@@ -91,10 +92,10 @@ try {
   await sourcePage.click("[data-manual-food]");
   await sourcePage.waitForTimeout(250);
   if (await sourcePage.locator("[data-save-food]").count()) await sourcePage.click("[data-save-food]");
-  await sourcePage.evaluate(() => window.REP_STORE.flush());
+  await sourcePage.evaluate(() => window.AWJ_STORE.flush());
   check(await sourcePage.evaluate(()=>state.foodEntries.some(entry=>entry.food_name==="recovery drill meal")), "Recovery fixture contains a meal");
 
-  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;REP_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');REP_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();REP_STORE.flush();});
+  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;AWJ_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');AWJ_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();AWJ_STORE.flush();});
   await sourcePage.click("#settingsButton");
   await sourcePage.click('[data-settings-tab="security"]');
   await sourcePage.fill("[data-backup-passphrase]", passphrase);
@@ -118,7 +119,7 @@ try {
   await restorePage.setInputFiles("[data-backup-import]", backupPath);
   await restoredLoad;
   await restorePage.waitForSelector('html[data-app-ready="true"]', { timeout: 10000 });
-  const restoredPreferences=await restorePage.evaluate(()=>({favourites:state.routineFavourites,display:state.displayPreferences,selected:REP_TRAINING_PREFERENCES.selectedExercise(state,{name:'Chest Press'}),performed:REP_TRAINING_PREFERENCES.performedExercise(state,{name:'Chest Press'},0)}));
+  const restoredPreferences=await restorePage.evaluate(()=>({favourites:state.routineFavourites,display:state.displayPreferences,selected:AWJ_TRAINING_PREFERENCES.selectedExercise(state,{name:'Chest Press'}),performed:AWJ_TRAINING_PREFERENCES.performedExercise(state,{name:'Chest Press'},0)}));
   check(restoredPreferences.favourites.includes('gym')&&restoredPreferences.display.expandedDemo,'Fresh profile restores favourites and display preferences');
   check(restoredPreferences.selected==='Push-ups'&&restoredPreferences.performed==='Push-ups','Encrypted backup preserves the active-session substitution and performed set');
   await restorePage.click("#homeButton");
@@ -149,7 +150,7 @@ try {
   report = {
     ok: true,
     generatedAt: new Date().toISOString(),
-    build: buildSource.match(/REP_BUILD_VERSION="([^"]+)"/)?.[1] ?? "unknown",
+    build: buildSource.match(/AWJ_BUILD_VERSION="([^"]+)"/)?.[1] ?? "unknown",
     schema: encrypted.schema,
     checks
   };

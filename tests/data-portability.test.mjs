@@ -1,3 +1,4 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
@@ -12,14 +13,14 @@ function createReportCardContext() {
     window: {},
     globalThis: {},
     document: {},
-    REP_PERFORMANCE_INSIGHTS: {},
-    REP_PRODUCT_SUITE: {weeklySummary:()=>({period:{start:"2026-08-27",end:"2026-09-02"},planned:4,completed:3,adherence:75,avgReadiness:82,readinessDays:6,rescheduled:1,nextAction:"Repeat the current plan with clean form.",workouts:[{date:"2026-09-01",session:"Gym"}],prs:[{exercise:"Leg Press",value:220,unit:"kg e1RM"}]})}
+    AWJ_PERFORMANCE_INSIGHTS: {},
+    AWJ_PRODUCT_SUITE: {weeklySummary:()=>({period:{start:"2026-08-27",end:"2026-09-02"},planned:4,completed:3,adherence:75,avgReadiness:82,readinessDays:6,rescheduled:1,nextAction:"Repeat the current plan with clean form.",workouts:[{date:"2026-09-01",session:"Gym"}],prs:[{exercise:"Leg Press",value:220,unit:"kg e1RM"}]})}
   };
-  context.window.REP_PERFORMANCE_INSIGHTS = context.REP_PERFORMANCE_INSIGHTS;
-  context.window.REP_PRODUCT_SUITE = context.REP_PRODUCT_SUITE;
+  context.window.AWJ_PERFORMANCE_INSIGHTS = context.AWJ_PERFORMANCE_INSIGHTS;
+  context.window.AWJ_PRODUCT_SUITE = context.AWJ_PRODUCT_SUITE;
   vm.createContext(context);
-  vm.runInContext(reportCardSource, context);
-  return context.window.REP_REPORT_CARD;
+  vm.runInContext(compatibilitySource+"\n"+(reportCardSource), context);
+  return context.window.AWJ_REPORT_CARD;
 }
 
 test("Report card generator renders valid HTML with comprehensive metrics in English", () => {
@@ -61,7 +62,7 @@ test("Encrypted backup crypto primitives adhere to AES-GCM 256-bit PBKDF2 standa
 
   const sampleState = { version: 6, logs: { "legpress": [100, 100, 100] } };
   const plaintext = encoder.encode(JSON.stringify(sampleState));
-  const header = { app: "Rep Gym Companion", schema: 5, cipher: "AES-256-GCM" };
+  const header = { app: "AWJ", schema: 5, cipher: "AES-256-GCM" };
   const additionalData = encoder.encode(JSON.stringify(header));
 
   const ciphertext = await crypto.subtle.encrypt(

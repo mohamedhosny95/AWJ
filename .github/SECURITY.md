@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability or potential privacy leak in Health OS / `rep-gym-companion`, please report it responsibly.
+If you discover a security vulnerability or potential privacy leak in AWJ / `rep-gym-companion`, please report it responsibly.
 
 **Do not open public GitHub issues for security vulnerabilities.**
 

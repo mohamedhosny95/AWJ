@@ -1,3 +1,4 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -36,7 +37,7 @@ function loadScript(relativePath, context = {}) {
   baseContext.window = baseContext;
   baseContext.globalThis = baseContext;
   vm.createContext(baseContext);
-  vm.runInContext(code, baseContext);
+  vm.runInContext(compatibilitySource+"\n"+(code), baseContext);
   return baseContext;
 }
 
@@ -45,7 +46,7 @@ function loadScript(relativePath, context = {}) {
 // -----------------------------------------------------------------------------
 test("Health engine handles extreme and corrupted inputs without throwing NaN or crashing", () => {
   const ctx = loadScript("src/client/health-engine.js");
-  const engine = ctx.window.REP_HEALTH_ENGINE;
+  const engine = ctx.window.AWJ_HEALTH_ENGINE;
   assert.ok(engine, "Health engine loaded");
 
   // Empty state: score is null when no signals exist
@@ -75,7 +76,7 @@ test("Health engine handles extreme and corrupted inputs without throwing NaN or
 // -----------------------------------------------------------------------------
 test("Performance insights regression safely handles collinear, empty, and single-point data", () => {
   const ctx = loadScript("src/client/performance-insights.js");
-  const insights = ctx.window.REP_PERFORMANCE_INSIGHTS;
+  const insights = ctx.window.AWJ_PERFORMANCE_INSIGHTS;
   assert.ok(insights, "Performance insights loaded");
 
   // Single session
@@ -134,8 +135,8 @@ test("Storage engine resists prototype pollution and handles store operations sa
   const ctx = loadScript("src/client/storage.js", storeContext);
   assert.equal({}.polluted, undefined, "Global prototype was not polluted");
 
-  const store = ctx.window.REP_STORE;
-  assert.ok(store, "Storage engine exported REP_STORE");
+  const store = ctx.window.AWJ_STORE;
+  assert.ok(store, "Storage engine exported AWJ_STORE");
   assert.ok(Array.isArray(store.largeKeys), "largeKeys is array");
 });
 
@@ -144,7 +145,7 @@ test("Storage engine resists prototype pollution and handles store operations sa
 // -----------------------------------------------------------------------------
 test("Offline nutrition parser handles malformed descriptions, unicode, and XSS safely", () => {
   const ctx = loadScript("src/client/offline-nutrition.js");
-  const parser = ctx.window.REP_OFFLINE_NUTRITION;
+  const parser = ctx.window.AWJ_OFFLINE_NUTRITION;
   assert.ok(parser, "Offline nutrition loaded");
 
   // XSS injection payload in note
@@ -169,7 +170,7 @@ test("Offline nutrition parser handles malformed descriptions, unicode, and XSS 
 // -----------------------------------------------------------------------------
 test("Health coverage accurately indexes cross-month and leap-year day spans", () => {
   const ctx = loadScript("src/client/health-coverage.js");
-  const coverage = ctx.window.REP_HEALTH_COVERAGE;
+  const coverage = ctx.window.AWJ_HEALTH_COVERAGE;
   assert.ok(coverage, "Health coverage loaded");
 
   // Leap day coverage

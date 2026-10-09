@@ -1,8 +1,9 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 
 await import("../src/client/product-suite.js");
-const suite=globalThis.REP_PRODUCT_SUITE;
+const suite=globalThis.AWJ_PRODUCT_SUITE;
 
 test("missed workouts move to an available recovery day and preserve Friday rest",()=>{
   const schedule={Sunday:{focus:"gym",morning:true},Monday:{focus:"rest",morning:false},Tuesday:{focus:"gym",morning:true},Wednesday:{focus:"recovery",morning:true},Thursday:{focus:"recovery",morning:true},Friday:{focus:"rest",morning:false},Saturday:{focus:"recovery",morning:true}};

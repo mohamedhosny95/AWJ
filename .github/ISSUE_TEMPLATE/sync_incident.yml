@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         ### Notion & Outbox Sync Issue Report
-        Please verify your connection status and ensure that `REP_SYNC_KEY` or `NOTION_TOKEN` secrets are configured correctly before submitting.
+        Please verify your connection status and ensure that the AWJ pairing key and Notion token are configured correctly before submitting.
         **NEVER share actual tokens, integration keys, or private database payloads in this issue.**
 
   - type: dropdown

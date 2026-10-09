@@ -14,8 +14,8 @@
     return `<article class="sync-activity-row is-${esc(status)}"><div><small>${esc(kindLabel(item.kind))}</small><strong>${esc(item.label||summary(item))}</strong><span>${esc(labels[status]||status)} · ${esc(time(item.updatedAt||item.createdAt))}</span>${item.error?`<p>${esc(item.error)}</p>`:""}</div><div class="sync-row-actions">${item.notionUrl?`<a href="${esc(item.notionUrl)}" target="_blank" rel="noopener">${"Open"}</a>`:""}</div></article>`;
   }
   function render(state){
-    const health=state.systemHealth||{},notion=health.notion||{},monitor=health.monitor||{},infra=health.infrastructure||{},progress=state.syncProgress||{},queue=window.REP_SYNC_OUTBOX?.summary(state.syncQueue)||{total:0,permanently_failed:0,retryable_failed:0};
-    const destination=notion.destination||{name:"View of Food Entries",url:DESTINATION_URL},activity=(state.syncActivity||[]).slice(0,30),total=window.REP_SYNC_RUNTIME?.collectEverything?.().length||0;
+    const health=state.systemHealth||{},notion=health.notion||{},monitor=health.monitor||{},infra=health.infrastructure||{},progress=state.syncProgress||{},queue=window.AWJ_SYNC_OUTBOX?.summary(state.syncQueue)||{total:0,permanently_failed:0,retryable_failed:0};
+    const destination=notion.destination||{name:"View of Food Entries",url:DESTINATION_URL},activity=(state.syncActivity||[]).slice(0,30),total=window.AWJ_SYNC_RUNTIME?.collectEverything?.().length||0;
     const checks=[["Notion",Boolean(notion.healthy)],["Encrypted backups",Boolean(infra.backups?.configured)],["Push",Boolean(infra.push?.configured)],["HealthKit",Boolean(infra.healthkit?.configured)]];
     return `<section class="sync-center">
       <section class="settings-card sync-destination ${notion.healthy?"is-healthy":"needs-attention"}"><small>${"NOTION DESTINATION"}</small><h2>${esc(destination.name||"View of Food Entries")}</h2><p>${notion.healthy?("The original source is available and its schema is valid."):(esc(notion.error)||("Check the connection and source database."))}</p><a class="settings-primary destination-link" href="${esc(destination.url||DESTINATION_URL)}" target="_blank" rel="noopener">${"Open the correct view"}</a><div class="destination-meta"><span>${"Last check"}: ${esc(time(health.checkedAt||monitor.checkedAt))}</span><span>${"Source"}: ${esc(notion.sourceId||"—")}</span></div></section>
@@ -29,5 +29,5 @@
     if(JSON.stringify(sample)!==JSON.stringify(decrypted))throw Error("Encrypted backup round-trip did not match.");
     return true;
   }
-  window.REP_SYNC_CENTER={DESTINATION_URL,record,render,backupSelfTest};
+  window.AWJ_SYNC_CENTER={DESTINATION_URL,record,render,backupSelfTest};
 })();

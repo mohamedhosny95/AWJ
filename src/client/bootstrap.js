@@ -2,7 +2,7 @@
   // Chromium can resize its layout viewport for the keyboard; WebKit uses VisualViewport.
   if('virtualKeyboard' in navigator){const viewport=document.querySelector('meta[name="viewport"]');if(viewport&&!viewport.content.includes('interactive-widget'))viewport.content+=', interactive-widget=resizes-content';}
 
-  const version=window.REP_BUILD_VERSION||"__BUILD_VERSION__";
+  const version=window.AWJ_BUILD_VERSION||"__BUILD_VERSION__";
   const pendingScripts=new Map();
   const load=src=>{
     if(pendingScripts.has(src))return pendingScripts.get(src);
@@ -31,7 +31,7 @@
     }else retry?.remove();
   }
   try{
-    window.REP_HYDRATED_STATE=await window.REP_STORE?.hydrate("rep-gym-companion-v1");
+    window.AWJ_HYDRATED_STATE=await window.AWJ_STORE?.hydrate(AWJ_COMPAT.stateKey);
     await Promise.all([
       load("store.js"),
       load("offline-nutrition.js"),
@@ -61,11 +61,11 @@
     await load("health-ui.js");
     await load("performance-ui.js");
     await load("product-suite-ui.js");
-    await load("training-first-ui.js");
-    document.querySelector("#commandPaletteButton")?.addEventListener("click",()=>load("command-palette.js").then(()=>window.REP_COMMAND_PALETTE?.open()).catch(()=>loadExtras(["command-palette.js"])));
+    await load("app-shell.js");
+    document.querySelector("#commandPaletteButton")?.addEventListener("click",()=>load("command-palette.js").then(()=>window.AWJ_COMMAND_PALETTE?.open()).catch(()=>loadExtras(["command-palette.js"])));
     document.documentElement.dataset.appReady="true";
     document.querySelector('#app')?.setAttribute('aria-busy','false');
-    delete window.REP_HYDRATED_STATE;
+    delete window.AWJ_HYDRATED_STATE;
     loadExtras();
   }catch(error){
     document.documentElement.dataset.appReady="true";

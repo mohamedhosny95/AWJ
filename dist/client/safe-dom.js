@@ -25,5 +25,5 @@
     return element;
   }
 
-  window.REP_SAFE_DOM = Object.freeze({ sanitize, setHTML, insertHTML });
+  window.AWJ_SAFE_DOM = Object.freeze({ sanitize, setHTML, insertHTML });
 })();

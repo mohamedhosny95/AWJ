@@ -20,7 +20,7 @@ Repository administrators must complete these one-time settings:
    secrets. Scope the token only to this Worker.
 5. Disable Cloudflare's direct branch deployment for this repository. The
    GitHub workflow is the only production deployer.
-6. Use the per-commit `health-os-client-*` artifact to review pull requests.
+6. Use the per-commit `awj-client-*` artifact to review pull requests.
 
 With a repository-administration token in `GH_TOKEN`, apply and verify the
 idempotent repository settings from a trusted local shell:

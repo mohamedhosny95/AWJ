@@ -19,7 +19,7 @@
 .supporting-details{padding:14px 18px;margin:16px 0;border:1px solid var(--line);border-radius:14px;background:var(--panel)}.supporting-details button{margin:6px 8px 6px 0}.metric-value{font-size:36px!important;font-weight:800;margin:0}.history-result{padding:14px 0;border-top:1px solid var(--line)}
 .more-menu{display:grid;gap:10px}.more-menu button{display:grid;grid-template-columns:1fr auto;text-align:left;gap:6px;padding:18px;border:1px solid var(--line);background:var(--panel);color:var(--text);min-height:80px}.more-menu strong{font-size:18px}.more-menu span{grid-row:2;font-size:14px;color:var(--muted)}.more-menu b{grid-column:2;grid-row:1/3;align-self:center}
 .nutrition-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.training-first-app .module-head,.training-first-app .food-head{padding:0;margin-bottom:14px;background:none}.training-first-app .module-head h1{font-size:28px}
-.training-first-app .rep-modal-sheet{max-width:560px;width:100%;margin:auto;max-height:calc(100svh - 32px);overflow:auto;padding:20px;background:var(--panel);border-radius:18px}.training-first-app .rep-modal-sheet label{margin-bottom:10px}
+.training-first-app .awj-modal-sheet{max-width:560px;width:100%;margin:auto;max-height:calc(100svh - 32px);overflow:auto;padding:20px;background:var(--panel);border-radius:18px}.training-first-app .awj-modal-sheet label{margin-bottom:10px}
 .training-first-app.workout-mode main{padding:8px 12px calc(100px + var(--safe-bottom) + var(--keyboard-bottom,0px));max-width:720px}
 .training-first-app .workout-player{padding:0}.training-first-app .workout-session-header{padding:6px 0;margin-bottom:8px}.training-first-app .workout-session-header button{min-height:44px}.training-first-app .exercise-hero{box-shadow:none;border-radius:14px}.training-first-app .exercise-hero-stage{height:clamp(180px,27svh,240px);min-height:0}.training-first-app .hero-muscle-label{display:none}
 .training-first-app .workout-identity{padding-top:10px}.training-first-app .workout-identity h1{font-size:24px}.training-first-app .workout-identity p{display:none}.training-first-app .chips{gap:6px;margin:6px 0}.training-first-app .chip{font-size:14px}
@@ -78,8 +78,8 @@
 .training-first-app .timer-dock.has-next-preview .timer-copy{display:none}
 .training-first-app #timerNextNow,.training-first-app #timerPreviewMeta{display:none}
 .training-first-app.rest-mode-active .live-set-entry,.training-first-app.rest-mode-active .current-set-card .exercise-timer-button{display:none}
-.training-first-app .rep-modal-sheet input,.training-first-app .rep-modal-sheet select,.training-first-app .rep-modal-sheet textarea{background:var(--bg);color:var(--text);border:1px solid #67796c;padding:10px}
-.training-first-app .rep-modal-sheet .morning-card button[type=submit]{background:var(--acid);color:var(--acid-ink);min-height:48px;border:1px solid var(--acid)}
+.training-first-app .awj-modal-sheet input,.training-first-app .awj-modal-sheet select,.training-first-app .awj-modal-sheet textarea{background:var(--bg);color:var(--text);border:1px solid #67796c;padding:10px}
+.training-first-app .awj-modal-sheet .morning-card button[type=submit]{background:var(--acid);color:var(--acid-ink);min-height:48px;border:1px solid var(--acid)}
 
 .training-first-app .live-set-field em{font-size:14px}
 @media(max-width:430px),(orientation:landscape) and (max-height:500px){.training-first-app .live-rep-counter>div{display:flex;justify-content:center}.training-first-app .live-rep-counter>div>button,.training-first-app .live-rep-counter>div>span{display:none}.training-first-app .live-rep-counter input{text-align:center}}
@@ -132,16 +132,16 @@
   .training-first-app .set-note-wrap input{width:100%}
   .training-first-app .simple-set-history .set-main-fields{grid-template-columns:44px minmax(0,1fr) 48px}
   .training-first-app .simple-set-history .set-status{grid-row:1;grid-column:2}
-  .training-first-app .rep-modal-backdrop{padding:0 max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left))}
-  .training-first-app .rep-modal-sheet{border-radius:18px 18px 0 0;padding:16px;overscroll-behavior:contain}
+  .training-first-app .awj-modal-backdrop{padding:0 max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left))}
+  .training-first-app .awj-modal-sheet{border-radius:18px 18px 0 0;padding:16px;overscroll-behavior:contain}
 }
 .training-first-app.is-keyboard-open .app-tabs,.training-first-app.is-keyboard-open .quick-log{display:none}
 .training-first-app.is-keyboard-open .workout-player .exercise-hero-stage{height:96px;min-height:0}
 .training-first-app.is-keyboard-open .workout-cue,.training-first-app.is-keyboard-open .previous-performance,.training-first-app.is-keyboard-open .chips{display:none}
 .training-first-app.is-keyboard-open .workout-action-band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 .training-first-app.is-keyboard-open .keyboard-dismiss{display:block;min-height:48px;padding:8px 12px}
-.training-first-app.is-keyboard-open .rep-modal-backdrop,.training-first-app.is-keyboard-open .timed-mode{top:var(--visible-top);bottom:auto;height:var(--visible-height);max-height:var(--visible-height);overflow:auto}
-.training-first-app.is-keyboard-open .rep-modal-sheet,.training-first-app.is-keyboard-open .workout-preflight-panel{max-height:calc(var(--visible-height) - 24px)!important;overflow:auto;overscroll-behavior:contain}
+.training-first-app.is-keyboard-open .awj-modal-backdrop,.training-first-app.is-keyboard-open .timed-mode{top:var(--visible-top);bottom:auto;height:var(--visible-height);max-height:var(--visible-height);overflow:auto}
+.training-first-app.is-keyboard-open .awj-modal-sheet,.training-first-app.is-keyboard-open .workout-preflight-panel{max-height:calc(var(--visible-height) - 24px)!important;overflow:auto;overscroll-behavior:contain}
 @media(orientation:landscape) and (max-height:500px){
   .training-first-app.workout-mode main{padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}
   .training-first-app .exercise-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}

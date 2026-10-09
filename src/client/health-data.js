@@ -4,7 +4,7 @@
 // Canonical SHA-256: 12e154499349a171df48d09bc11cb2b4c973b9655a479b0a9a27c27c87b42fb4
 // Note: Hash covers LF-normalized canonical JSON text across all platforms.
 
-window.REP_HEALTH_GUIDE = Object.freeze({
+window.AWJ_HEALTH_GUIDE = Object.freeze({
   version: "2026.09.15",
   updatedAt: "2026-09-15",
   provenance: {

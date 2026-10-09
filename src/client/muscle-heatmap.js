@@ -1,4 +1,4 @@
-/* Muscle Fatigue & Weekly Hypertrophy Volume Heatmap for Health OS.
+/* Muscle Fatigue & Weekly Hypertrophy Volume Heatmap for AWJ.
    Analyzes 7-day training sets against scientific hypertrophy landmarks (MEV, MAV, MRV). */
 
 (function(){
@@ -130,7 +130,7 @@
     `;
   }
 
-  window.REP_MUSCLE_HEATMAP = {
+  window.AWJ_MUSCLE_HEATMAP = {
     computeWeeklyVolumes,
     getVolumeStatus,
     renderHeatmapCard,

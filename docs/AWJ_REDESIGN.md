@@ -10,16 +10,20 @@ Styling is separated into legacy shared components, feature layout (`screens.css
 
 ## Data compatibility
 
-The production origin and Worker names, IndexedDB names, browser storage keys, cookie credentials, native bundle identifiers, and Keychain service remain stable. New exports are labelled AWJ; authenticated schema-5 Rep Gym Companion backups retain their original authenticated header on restore. Habit and health source identifiers in existing Notion records remain compatible.
+The production origin and Worker names, IndexedDB names, browser storage keys, cookie credentials, native bundle identifiers, and Keychain service remain stable. New exports are labelled AWJ; authenticated schema-5 AWJ backups retain their original authenticated header on restore. Habit and health source identifiers in existing Notion records remain compatible.
 
 Device save feedback follows the durable transaction outcome. Failed migrations retain their localStorage source; failed writes remain retryable; unavailable storage cannot be shown as an empty successful hydration. Worker verified receipts, idempotency, retries, and sync record formats retain their existing behavior. A service-worker update waits for the user's Update action and a successful state flush, and its prompt is deferred during a workout.
 
 ## Validation and promotion
 
-Run `npm run sync`, `npm run verify`, `npm run test:e2e` with Chromium and WebKit, `npm run test:layout`, and `npm run test:recovery`. Cold portrait and landscape audits run before deployment. Production now additionally depends on an audit of the exact commit deployed to isolated staging. Configure `REP_STAGING_URL` and the Cloudflare deploy credentials in the existing GitHub staging environment after completing `docs/STAGING.md`; staging secrets and Notion sources must be independent of production.
+Run `npm run sync`, `npm run verify`, `npm run test:e2e` with Chromium and WebKit, `npm run test:layout`, and `npm run test:recovery`. Cold portrait and landscape audits run before deployment. Production now additionally depends on an audit of the exact commit deployed to isolated staging. Configure `AWJ_STAGING_URL` and the Cloudflare deploy credentials in the existing GitHub staging environment after completing `docs/STAGING.md`; staging secrets and Notion sources must be independent of production.
 
 Physical iPhone Safari and Honor/Android checks, real keyboards, VoiceOver/TalkBack, storage pressure, interruption/relaunch, and device pairing remain release certification requirements under `docs/DEVICE_CERTIFICATION.md`. Automated tests do not constitute that certification. Promotion uses the existing protected production environment; record the prior version for rollback.
 
 ## Repository rename
 
-The requested repository name is `mohamedhosny95/AWJ`. The name must be available when renaming. Update local remotes and checked-in repository links immediately after GitHub confirms the rename, and verify the old link redirects. Preserve the production Worker address. The GitHub connector in this chat exposes code and PR writes but does not expose repository-administration writes; a logged-in administrator must perform the rename if browser administration is unavailable.
+The owner renamed the repository to `mohamedhosny95/AWJ`. The existing repository ID, history, branches, and PR #104 are retained. Local remotes and checked-in repository links use the AWJ URL. The production Worker address stays `rep-gym-companion.mohamedahmedhosny95.workers.dev` so the rebrand preserves installed-app identity and local records.
+
+## Comprehensive identity change
+
+Browser globals, event/DOM hooks, the bundled app shell, social preview, native targets, tests, tools, and documentation use AWJ naming. `src/client/compatibility.js`, `src/server/compatibility.ts`, and `ios/AWJHealthCompanion/AWJCompatibility.swift` centralize historical identities used only to read existing records or authenticate installed clients. Registered native bundle identifiers and the existing Cloudflare Worker names remain migration addresses. The deployed pairing secret keeps its required provider binding; an optional `AWJ_SYNC_KEY` alias must retain the same value during an upgrade so existing signed device sessions stay valid. New cookies, headers, tokens, and backup headers use AWJ; older equivalents are accepted and tested. The existing Notion Source select value is kept through the server compatibility mapping to avoid changing the user’s database schema.

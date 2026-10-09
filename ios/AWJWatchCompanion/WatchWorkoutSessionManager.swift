@@ -1,6 +1,6 @@
 //
 //  WatchWorkoutSessionManager.swift
-//  Rep Gym Companion - watchOS Native Workout Manager
+//  AWJ - watchOS Native Workout Manager
 //
 
 import Foundation

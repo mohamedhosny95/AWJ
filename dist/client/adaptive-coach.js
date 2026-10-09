@@ -1,7 +1,7 @@
 (function(root,factory){
   const api=factory();
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
-  root.REP_ADAPTIVE_COACH=api;
+  root.AWJ_ADAPTIVE_COACH=api;
 })(typeof globalThis!=="undefined"?globalThis:this,function(){
   const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
   const LOAD_EXERCISES=new Set(["Leg Press","Back Extension","Hip Thrust Machine","Chest Press","Seated Cable Row","Lat Pulldown"]);

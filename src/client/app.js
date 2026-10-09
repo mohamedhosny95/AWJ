@@ -1,4 +1,4 @@
-const errorLogKey="rep-error-log-v1";
+const errorLogKey=AWJ_COMPAT.errorLogKey;
 function logClientError(source,message,stack){try{const log=JSON.parse(localStorage.getItem(errorLogKey)||"[]");log.push({time:new Date().toISOString(),source,message:String(message||"").slice(0,500),stack:String(stack||"").slice(0,1000)});localStorage.setItem(errorLogKey,JSON.stringify(log.slice(-25)));}catch{}}
 addEventListener("error",e=>logClientError("error",e.message,e.error?.stack));
 addEventListener("unhandledrejection",e=>logClientError("promise",e.reason?.message||String(e.reason),e.reason?.stack));
@@ -350,7 +350,7 @@ const cinematicMotionFramesFront = {
   "Incline Treadmill Walk":["assets/cinematic/treadmill-incline-front.webp","assets/cinematic/treadmill-incline-mid-front.webp","assets/cinematic/treadmill-incline-opposite-front.webp"]
 };
 
-window.REP_EXERCISES.configure(sessions,{side:cinematicMedia,front:cinematicMediaFront,frames:cinematicMotionFrames,framesFront:cinematicMotionFramesFront});
+window.AWJ_EXERCISES.configure(sessions,{side:cinematicMedia,front:cinematicMediaFront,frames:cinematicMotionFrames,framesFront:cinematicMotionFramesFront});
 
 function categoryLabel(category){return category;}
 
@@ -375,7 +375,7 @@ function motionPhaseRail(){
 }
 
 function cinematicAssetFor(item,view=state.viewMode){
-  const definition=window.REP_EXERCISES.get(item?.name);
+  const definition=window.AWJ_EXERCISES.get(item?.name);
   return definition?(view==="front"?definition.photoFront:definition.photo):null;
 }
 function targetMusclesFor(item){
@@ -388,7 +388,7 @@ function targetMusclesFor(item){
 }
 
 function primeUpcomingCinematicMedia(session,index){
-  const next=session?.exercises?.[index+1];if(next)window.REP_MEDIA_PLAYER.preloadNext(currentItem(next));
+  const next=session?.exercises?.[index+1];if(next)window.AWJ_MEDIA_PLAYER.preloadNext(currentItem(next));
 }
 
 function observeCinematicMedia(root,item){
@@ -402,7 +402,7 @@ function observeCinematicMedia(root,item){
       if(ok&&typeof img.decode==="function")try{await img.decode();}catch{}
       const decodeMs=performance.now()-decodeStarted;
       const resource=[...performance.getEntriesByName(img.currentSrc||img.src)].pop();
-      window.REP_TELEMETRY?.recordMedia?.({exercise:item.name,frame:index+1,stage:"current",loadMs:resource?.duration||performance.now()-started,decodeMs,bytes:resource?.transferSize||0,ok});
+      window.AWJ_TELEMETRY?.recordMedia?.({exercise:item.name,frame:index+1,stage:"current",loadMs:resource?.duration||performance.now()-started,decodeMs,bytes:resource?.transferSize||0,ok});
     };
     if(img.complete)queueMicrotask(()=>finish(img.naturalWidth>0));
     else{img.addEventListener("load",()=>finish(true),{once:true});img.addEventListener("error",()=>finish(false),{once:true});}
@@ -412,20 +412,20 @@ function observeCinematicMedia(root,item){
 function showMediaFallback(root,item){
   const photo=root?.querySelector(".cinematic-motion");if(!photo||root.querySelector("[data-retry-media]"))return;
   const host=document.createElement("div");host.className="media-fallback";
-  host.innerHTML=REP_SAFE_DOM.sanitize(`${techniqueVisual(window.REP_EXERCISES.resolve(item))}<div class="media-fallback-note" role="status">Photo unavailable · technique guide shown <button type="button" data-retry-media>Retry photo</button></div>`);
-  photo.replaceWith(host);const caption=root.querySelector(".motion-tempo");if(caption)caption.textContent="Male technique guide · photo unavailable";window.REP_TECHNIQUE.attach();
-  host.querySelector("[data-retry-media]").onclick=()=>{const replacement=document.createElement("div");replacement.innerHTML=REP_SAFE_DOM.sanitize(exerciseVisual(item));host.replaceWith(replacement.firstElementChild);if(caption)caption.textContent=mediaDescription(item);observeCinematicMedia(root,item);window.REP_TECHNIQUE.attach();};
+  host.innerHTML=AWJ_SAFE_DOM.sanitize(`${techniqueVisual(window.AWJ_EXERCISES.resolve(item))}<div class="media-fallback-note" role="status">Photo unavailable · technique guide shown <button type="button" data-retry-media>Retry photo</button></div>`);
+  photo.replaceWith(host);const caption=root.querySelector(".motion-tempo");if(caption)caption.textContent="Male technique guide · photo unavailable";window.AWJ_TECHNIQUE.attach();
+  host.querySelector("[data-retry-media]").onclick=()=>{const replacement=document.createElement("div");replacement.innerHTML=AWJ_SAFE_DOM.sanitize(exerciseVisual(item));host.replaceWith(replacement.firstElementChild);if(caption)caption.textContent=mediaDescription(item);observeCinematicMedia(root,item);window.AWJ_TECHNIQUE.attach();};
 }
 function exerciseVisual(item,{preview=false,context=preview?"preview":"main"}={}){
-  return window.REP_MEDIA_PLAYER.markup(item,{preview,context});
+  return window.AWJ_MEDIA_PLAYER.markup(item,{preview,context});
 }
 
 function techniqueVisual(item){
   if(item.atlas){const html=anatomyVisual(item.atlas);return item.isHold?html.replace("anatomy-motion ","anatomy-motion is-paused is-hold "):html;}
-  if(window.REP_TECHNIQUE.guideFor(item))return window.REP_TECHNIQUE.render(item,{paused:state.paused,speed:state.speed,muscles:state.muscles});
+  if(window.AWJ_TECHNIQUE.guideFor(item))return window.AWJ_TECHNIQUE.render(item,{paused:state.paused,speed:state.speed,muscles:state.muscles});
   return `<div class="media-text-guide"><strong>${esc(item.isHold?"Hold / activity guide":"Technique guide")}</strong><p>${esc(item.execution)}</p><small>${esc(item.cues)}</small></div>`;
 }
-function mediaDescription(item){const m=window.REP_MEDIA_PLAYER.media(item);return m.views.some(v=>v.videos.length)?"Male movement demonstration":m.views.length?"Exercise position reference":"Technique cues";}
+function mediaDescription(item){const m=window.AWJ_MEDIA_PLAYER.media(item);return m.views.some(v=>v.videos.length)?"Male movement demonstration":m.views.length?"Exercise position reference":"Technique cues";}
 function anatomyVisual(motion) {
   if(!anatomy[motion])return `<div class="media-text-guide"><strong>Technique guide unavailable</strong><p>Review this exercise’s instructions before starting.</p></div>`;
   const [atlas,size,a,b,musclesEn,flip] = anatomy[motion];
@@ -466,12 +466,12 @@ function recordDateKey(record){
   if(!isNaN(d.getTime())) return localDay(d);
   return str.slice(0, 10);
 }
-const storageKey = "rep-gym-companion-v1";
-const saved = window.REP_HYDRATED_STATE || JSON.parse(localStorage.getItem(storageKey) || "{}");
+const storageKey = AWJ_COMPAT.stateKey;
+const saved = window.AWJ_HYDRATED_STATE || JSON.parse(localStorage.getItem(storageKey) || "{}");
 const state = {
   view: "home", activeTab:saved.activeTab||"home", session: saved.session || null, index: saved.index || 0,
   completed: saved.completed || {}, muted: saved.muted || false,
-  programReview:saved.programReview||null, customRoutines:Array.isArray(saved.customRoutines)?window.REP_EXERCISES.normalizeRoutines(saved.customRoutines):null, mediaMode:"photo", mediaQuality:["auto","720","1080"].includes(saved.mediaQuality)?saved.mediaQuality:"auto", speed:saved.speed||1, paused:saved.paused||false, muscles:saved.muscles!==false, viewMode:saved.viewMode||"side",
+  programReview:saved.programReview||null, customRoutines:Array.isArray(saved.customRoutines)?window.AWJ_EXERCISES.normalizeRoutines(saved.customRoutines):null, mediaMode:"photo", mediaQuality:["auto","720","1080"].includes(saved.mediaQuality)?saved.mediaQuality:"auto", speed:saved.speed||1, paused:saved.paused||false, muscles:saved.muscles!==false, viewMode:saved.viewMode||"side",
   logs:saved.logs||{}, swaps:saved.swaps||{}, history:saved.history||[], sessionStartedAt:saved.sessionStartedAt||null,
   reviews:saved.reviews||{}, fieldTest:saved.fieldTest||{}, voice:saved.voice!==false,
   syncQueue:saved.syncQueue||[], syncState:"idle", recoveryCheckins:saved.recoveryCheckins||[],
@@ -488,12 +488,12 @@ const state = {
   timer: saved.restTimer||null, exerciseTimer:null, sessionClock:null, touchX: null, wakeLock:null
 };
 state.routineFavourites=saved.routineFavourites;state.displayPreferences=saved.displayPreferences;state.sessionSubstitutions=saved.sessionSubstitutions;
-window.REP_TRAINING_PREFERENCES?.normalize(state);
+window.AWJ_TRAINING_PREFERENCES?.normalize(state);
 window.state=state;
 window.sessions=sessions;
-window.REP_EXERCISES.registerRoutines(state.customRoutines,sessions);
-const syncKeyStorage="rep-notion-pairing-key-v1";
-const repAuth=window.REP_AUTH;
+window.AWJ_EXERCISES.registerRoutines(state.customRoutines,sessions);
+const syncKeyStorage=AWJ_COMPAT.authKey;
+const awjAuth=window.AWJ_AUTH;
 const app = document.querySelector("#app");
 const timerDock = document.querySelector("#timerDock");
 const timerNextPreview = document.querySelector("#timerNextPreview");
@@ -537,7 +537,7 @@ function togglePreviewMode(){
     if(state.view === "player") renderExercise();
     else if(state.view === "nutrition") renderNutrition();
     else if(state.view === "vitals") renderVitals();
-    else if(state.view === "settings" && window.renderRepSettings) window.renderRepSettings();
+    else if(state.view === "settings" && window.renderAWJSettings) window.renderAWJSettings();
     else renderHome();
   }
 }
@@ -554,7 +554,7 @@ function updatePreviewUI(){
       const banner = document.createElement("div");
       banner.className = "preview-mode-banner";
       banner.id = "previewBanner";
-      banner.innerHTML = REP_SAFE_DOM.sanitize(`
+      banner.innerHTML = AWJ_SAFE_DOM.sanitize(`
         <div class="preview-banner-inner" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
           <span style="font-size:11px;font-weight:900;letter-spacing:.02em;display:flex;align-items:center;gap:6px;">
             <span style="font-size:14px;">🔬</span>
@@ -575,12 +575,12 @@ function updatePreviewUI(){
 
 function persist() {
   if (state.previewMode) return;
-  window.REP_STORE?.persist(storageKey,{ version:6, programReview:state.programReview, customRoutines:window.REP_EXERCISES.normalizeRoutines(state.customRoutines), routineFavourites:state.routineFavourites,displayPreferences:state.displayPreferences,sessionSubstitutions:state.sessionSubstitutions, mediaMode:state.mediaMode,mediaQuality:state.mediaQuality, guideVersion:REP_HEALTH_GUIDE.version, activeTab:state.activeTab, session: state.session, index: state.index, completed: state.completed, muted: state.muted, checkin: saved.checkin || {}, speed:state.speed, paused:state.paused, muscles:state.muscles, viewMode:state.viewMode, logs:state.logs, swaps:state.swaps, history:state.history, sessionStartedAt:state.sessionStartedAt, reviews:state.reviews, fieldTest:state.fieldTest, voice:state.voice, syncQueue:state.syncQueue, recoveryCheckins:state.recoveryCheckins, daily:state.daily, habitOrder:state.habitOrder, cardioDraft:state.cardioDraft, programStart:state.programStart, foodEntries:state.foodEntries, water:state.water, foodNote:state.foodNote, foodMealType:state.foodMealType, foodLogMethod:state.foodLogMethod, lastBackupAt:state.lastBackupAt, backupSnoozedUntil:state.backupSnoozedUntil, bodyWeights:state.bodyWeights, mealTemplates:state.mealTemplates, sleepLogs:state.sleepLogs, healthMetrics:state.healthMetrics, vitalsImportRuns:state.vitalsImportRuns, pushTime:state.pushTime, pushEndpoint:state.pushEndpoint, activeEnergy:state.activeEnergy, lastVitalsImportDate:state.lastVitalsImportDate, lastVitalsImportAt:state.lastVitalsImportAt });
+  window.AWJ_STORE?.persist(storageKey,{ version:6, programReview:state.programReview, customRoutines:window.AWJ_EXERCISES.normalizeRoutines(state.customRoutines), routineFavourites:state.routineFavourites,displayPreferences:state.displayPreferences,sessionSubstitutions:state.sessionSubstitutions, mediaMode:state.mediaMode,mediaQuality:state.mediaQuality, guideVersion:AWJ_HEALTH_GUIDE.version, activeTab:state.activeTab, session: state.session, index: state.index, completed: state.completed, muted: state.muted, checkin: saved.checkin || {}, speed:state.speed, paused:state.paused, muscles:state.muscles, viewMode:state.viewMode, logs:state.logs, swaps:state.swaps, history:state.history, sessionStartedAt:state.sessionStartedAt, reviews:state.reviews, fieldTest:state.fieldTest, voice:state.voice, syncQueue:state.syncQueue, recoveryCheckins:state.recoveryCheckins, daily:state.daily, habitOrder:state.habitOrder, cardioDraft:state.cardioDraft, programStart:state.programStart, foodEntries:state.foodEntries, water:state.water, foodNote:state.foodNote, foodMealType:state.foodMealType, foodLogMethod:state.foodLogMethod, lastBackupAt:state.lastBackupAt, backupSnoozedUntil:state.backupSnoozedUntil, bodyWeights:state.bodyWeights, mealTemplates:state.mealTemplates, sleepLogs:state.sleepLogs, healthMetrics:state.healthMetrics, vitalsImportRuns:state.vitalsImportRuns, pushTime:state.pushTime, pushEndpoint:state.pushEndpoint, activeEnergy:state.activeEnergy, lastVitalsImportDate:state.lastVitalsImportDate, lastVitalsImportAt:state.lastVitalsImportAt });
 }
 let persistTimer=null;
 function persistDebounced(){
   if (state.previewMode) return;
-  window.REP_STORE?.markPending?.();
+  window.AWJ_STORE?.markPending?.();
   if(persistTimer)clearTimeout(persistTimer);
   persistTimer=setTimeout(()=>{persistTimer=null;persist();},400);
 }
@@ -598,7 +598,7 @@ const UI_STRINGS={
   restTitle:"REST", nextSet:"Next set", skip:"Skip", breatheReset:"breathe and reset", sessionComplete:"Session complete", thatCounts:"That counts.",
   completeSub:"is in the books. Recover well and come back consistent.", backSessions:"Back to sessions", reset:"Reset this checklist",
   autoNext:"All sets complete · advancing", noPrevious:"No previous session yet", offlineReady:"App available offline", offlineMode:"Offline · local logging", add15Seconds:"Add 15 seconds",
-  history:"Workout history",historyDesc:"Sessions, personal bests, and next-weight guidance.",openHistory:"View progress →",install:"Install app",installDesc:"Add Rep to your home screen for the best offline experience.",installNow:"Install",elapsed:"Elapsed",exitQuestion:"End this workout?",stay:"Keep training",exit:"Exit workout",addWeight:"Ready to add weight",holdWeight:"Keep this weight",noHistory:"Complete a workout to see your history.",updateReady:"A new offline version is ready.",reload:"Update now"
+  history:"Workout history",historyDesc:"Sessions, personal bests, and next-weight guidance.",openHistory:"View progress →",install:"Install app",installDesc:"Add AWJ to your home screen for the best offline experience.",installNow:"Install",elapsed:"Elapsed",exitQuestion:"End this workout?",stay:"Keep training",exit:"Exit workout",addWeight:"Ready to add weight",holdWeight:"Keep this weight",noHistory:"Complete a workout to see your history.",updateReady:"A new offline version is ready.",reload:"Update now"
 };
 function U(){return UI_STRINGS;}
 function sessionText(id,s){return {name:s.name,meta:s.meta,description:s.description};}
@@ -614,14 +614,14 @@ function todayPlan(day) {
 }
 function isoDay(){return localDay();}
 function latestRecovery(){return state.recoveryCheckins[0]||null;}
-function recoveryFlags(c){return c?(Number(c.soreness)>=4?1:0)+(Number(c.energy)<=2?1:0)+(Number(c.sleep)<REP_HEALTH_GUIDE.rules.minimumSleepHours?1:0)+(c.pain?1:0)+(c.illness?1:0):0;}
-function recoveryGate(){const c=latestRecovery();if(!c)return {flags:0,hold:false,pause:false,illness:false,stale:true};const age=(Date.now()-new Date(c.createdAt||c.date).getTime())/86400000;const flags=recoveryFlags(c);const active=age<=10;const illness=active&&Boolean(c.illness);const pause=illness;const hold=active&&(flags>=REP_HEALTH_GUIDE.rules.redFlagThreshold||illness);return {flags,hold,pause,illness,stale:age>10};}
+function recoveryFlags(c){return c?(Number(c.soreness)>=4?1:0)+(Number(c.energy)<=2?1:0)+(Number(c.sleep)<AWJ_HEALTH_GUIDE.rules.minimumSleepHours?1:0)+(c.pain?1:0)+(c.illness?1:0):0;}
+function recoveryGate(){const c=latestRecovery();if(!c)return {flags:0,hold:false,pause:false,illness:false,stale:true};const age=(Date.now()-new Date(c.createdAt||c.date).getTime())/86400000;const flags=recoveryFlags(c);const active=age<=10;const illness=active&&Boolean(c.illness);const pause=illness;const hold=active&&(flags>=AWJ_HEALTH_GUIDE.rules.redFlagThreshold||illness);return {flags,hold,pause,illness,stale:age>10};}
 function programStatus(){
   const week=Math.max(1,Math.floor((Date.now()-new Date(state.programStart).getTime())/604800000)+1),gym=state.history.filter(h=>h.session==="gym").slice(0,2),stalled=[];
   if(gym.length===2){const names=["Leg Press","Back Extension","Hip Thrust Machine","Chest Press","Seated Cable Row","Lat Pulldown"];for(const name of names){const score=h=>Math.max(0,...setsFromLog(h.loads?.[name]).map(s=>(Number(s.weight)||0)*(Number(s.reps)||0)));if(score(gym[0])&&score(gym[0])<=score(gym[1]))stalled.push(name);}}
-  return {week,stalled,review:(week>=REP_HEALTH_GUIDE.rules.reviewWeek||stalled.length>=2)&&Number(state.programReview?.week||0)<week};
+  return {week,stalled,review:(week>=AWJ_HEALTH_GUIDE.rules.reviewWeek||stalled.length>=2)&&Number(state.programReview?.week||0)<week};
 }
-function healthStatusStrip(){const gate=recoveryGate(),program=programStatus();let label="Progress available",tone="good";if(gate.pause||gate.illness){label="Illness reported · pause training";tone="hold";}else if(gate.hold){label=`${gate.flags} red flags · hold load`;tone="hold";}else if(program.review){label="Program review due";tone="review";}return `<section class="health-status ${tone}"><div><small>${"TODAY'S GATE"}</small><strong>${label}</strong></div><span>${`Week ${program.week}`} · v${REP_HEALTH_GUIDE.version}</span>${program.review?`<button type="button" data-program-review>Review program →</button>`:""}</section>`;}
+function healthStatusStrip(){const gate=recoveryGate(),program=programStatus();let label="Progress available",tone="good";if(gate.pause||gate.illness){label="Illness reported · pause training";tone="hold";}else if(gate.hold){label=`${gate.flags} red flags · hold load`;tone="hold";}else if(program.review){label="Program review due";tone="review";}return `<section class="health-status ${tone}"><div><small>${"TODAY'S GATE"}</small><strong>${label}</strong></div><span>${`Week ${program.week}`} · v${AWJ_HEALTH_GUIDE.version}</span>${program.review?`<button type="button" data-program-review>Review program →</button>`:""}</section>`;}
 
 function hasMeaningfulData(){return state.history.length>0||state.foodEntries.length>0||state.recoveryCheckins.length>0||state.bodyWeights.length>0||state.mealTemplates.length>0||state.sleepLogs.length>0||Object.keys(state.logs||{}).length>0||Object.keys(state.daily?.hygiene||{}).length>0||Object.keys(state.daily?.habits||{}).length>0;}
 function notionProtected(){return Boolean(localStorage.getItem(syncKeyStorage))&&!["failed","auth"].includes(state.syncState);}
@@ -689,7 +689,7 @@ function buildInsights(){
     const change=Math.round((weights[0].kg-weights[2].kg)*10)/10;
     if(Math.abs(change)<.3&&days<4)out.push({tone:"warn",text:"Weight is flat while training is consistent, but food logging is patchy — there isn't enough nutrition data to explain why."});
   }
-  const sleepAvg=recentSleepAvg(7),minSleep=REP_HEALTH_GUIDE.rules.minimumSleepHours;
+  const sleepAvg=recentSleepAvg(7),minSleep=AWJ_HEALTH_GUIDE.rules.minimumSleepHours;
   if(sleepAvg!==null)out.push({tone:sleepAvg<minSleep?"warn":"good",text:sleepAvg<minSleep?(`Sleep has averaged ${sleepAvg}h over 7 days — below your ${minSleep}h minimum.`):(`Sleep has averaged ${sleepAvg}h over 7 days — at or above target.`)});
   const todayRecovery=computeRecoveryScore(),yesterdayStrain=computeStrainScore(shiftLocalDay(-1));
   if(todayRecovery?.band==="red"&&yesterdayStrain>=14)out.push({tone:"warn",text:`Low recovery (${todayRecovery.score}%) after a high-strain day yesterday (${yesterdayStrain}). Take it lighter today.`});
@@ -745,7 +745,7 @@ function journalInsightsCard(){
     }).join("")}</div>`
     :`<p class="journal-empty">${"Log the Journal from the Vitals tab for a few days, and any patterns tied to Recovery will show up here."}</p>`}</section>`;
 }
-function renderInsights(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.progress();return renderInsightsLegacy();}
+function renderInsights(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.progress();return renderInsightsLegacy();}
 function renderInsightsLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="insights";state.activeTab="insights";persistDebounced();updatePrimaryTabs();
   const weekAgo=Date.now()-7*86400000;
@@ -758,7 +758,7 @@ function renderInsightsLegacy(){
   const weightText=weightDelta===null?("—"):`${weightDelta>0?"+":""}${weightDelta} kg`;
   const horizon=state.trendHorizon||"7d";
   const horizonDays=horizon==="90d"?90:horizon==="28d"?28:7;
-  const gate=recoveryGate(),items=buildInsights(),sleepAvg=recentSleepAvg(7),minSleep=REP_HEALTH_GUIDE.rules.minimumSleepHours;
+  const gate=recoveryGate(),items=buildInsights(),sleepAvg=recentSleepAvg(7),minSleep=AWJ_HEALTH_GUIDE.rules.minimumSleepHours;
   const weightPoints=[...state.bodyWeights].sort((a,b)=>a.week.localeCompare(b.week)).slice(horizon==="90d"?-24:horizon==="28d"?-12:-6).map(w=>w.kg);
   const sleepCutoff=Date.now()-horizonDays*86400000,sleepPoints=[...state.sleepLogs].filter(s=>new Date(s.date).getTime()>=sleepCutoff).sort((a,b)=>a.date.localeCompare(b.date)).map(s=>s.hours);
   const volumeBuckets=weeklyTrainingVolume(horizon==="90d"?12:horizon==="28d"?8:6);
@@ -766,7 +766,7 @@ function renderInsightsLegacy(){
   const strainCount=horizonDays>14?14:horizonDays;
   const strainBuckets=Array.from({length:strainCount},(_,i)=>computeStrainScore(shiftLocalDay(-(strainCount-1-i))));
   const recoveryPoints=[];for(let i=horizonDays-1;i>=0;i--){const r=computeRecoveryScore(shiftLocalDay(-i));if(r)recoveryPoints.push(r.score);}
-  app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("INSIGHTS","What your data says.","One view that reads training, nutrition, recovery, and weight together.")}
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`${moduleHeader("INSIGHTS","What your data says.","One view that reads training, nutrition, recovery, and weight together.")}
   <section class="progress-overview" aria-label="${"Progress summary"}">
     <article class="progress-feature"><span class="progress-feature-icon">${ICONS.flame}</span><div><small>${"LAST 7 DAYS"}</small><strong>${sessions7} <em>${"sessions"}</em></strong><p>${`${streak} day streak`}</p></div></article>
     <div class="insight-stats">
@@ -792,7 +792,7 @@ function renderInsightsLegacy(){
     <article class="trend-card"><span class="card-kicker">${`0–21 SCALE · LAST ${strainCount} DAYS`}</span><h2>${"Daily strain"}</h2>${strainBuckets.some(v=>v>0)?barChartSvg(strainBuckets,{color:"var(--blue)"}):`<p class="trend-empty">${"Log a session to see daily strain."}</p>`}</article>
     <article class="trend-card"><span class="card-kicker">${"KCAL BURNED PER WEEK · EST."}</span><h2>${"Training volume"}</h2>${volumeBuckets.some(v=>v>0)?barChartSvg(volumeBuckets,{color:"#ffd36a"}):`<p class="trend-empty">${"Complete a few sessions to see the weekly pattern."}</p>`}</article>
   </section>
-  ${window.REP_MUSCLE_HEATMAP ? window.REP_MUSCLE_HEATMAP.renderHeatmapCard(state) : ""}
+  ${window.AWJ_MUSCLE_HEATMAP ? window.AWJ_MUSCLE_HEATMAP.renderHeatmapCard(state) : ""}
   ${metricGuideCard()}
   ${journalInsightsCard()}
   <section class="insights-card"><div class="insights-head"><small>${"WHAT THE DATA SAYS"}</small></div>${items.length?items.map(i=>`<p class="insight insight-${i.tone}">${esc(i.text)}</p>`).join(""):`<p class="insight-empty">${"Log a few more days of training, food, and weight, and automatic observations will show up here."}</p>`}</section>`);
@@ -860,8 +860,8 @@ function triggerConfetti({subtle=false}={}){
 }
 
 function showPlateCalculator(initialWeight=60,onApply=null){
-  if(window.REP_PLATE_CALCULATOR?.openPlateCalculator){
-    window.REP_PLATE_CALCULATOR.openPlateCalculator({
+  if(window.AWJ_PLATE_CALCULATOR?.openPlateCalculator){
+    window.AWJ_PLATE_CALCULATOR.openPlateCalculator({
       initialWeight,
       onApply: onApply || (weight => {
         const input=document.querySelector('input[data-log="weight"]:focus')||document.querySelector('input[data-log="weight"]');
@@ -873,7 +873,7 @@ function showPlateCalculator(initialWeight=60,onApply=null){
   
   const overlay=document.createElement("div");
   overlay.className="timed-mode";
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`
     <div class="workout-preflight-panel" style="max-width:420px;margin:auto;">
       <button class="dialog-close" data-plate-close aria-label="Close">×</button>
       <small style="color:var(--acid);font-weight:900;">${"BARBELL PLATE CALCULATOR"}</small>
@@ -886,7 +886,7 @@ function showPlateCalculator(initialWeight=60,onApply=null){
     </div>
   `);
   document.body.appendChild(overlay);
-  overlay.querySelector("[data-plate-close]").onclick=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+  overlay.querySelector("[data-plate-close]").onclick=()=>(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
 
   function updateMath(){
     const total=Number(overlay.querySelector("[data-plate-total]").value)||0;
@@ -901,7 +901,7 @@ function showPlateCalculator(initialWeight=60,onApply=null){
     }
     const colorMap={25:"#ef4444",20:"#3b82f6",15:"#eab308",10:"#22c55e",5:"#f8fafc",2.5:"#64748b",1.25:"#94a3b8"};
     const plateItems=Object.entries(plateCounts);
-    overlay.querySelector("[data-plate-result]").innerHTML=REP_SAFE_DOM.sanitize(`
+    overlay.querySelector("[data-plate-result]").innerHTML=AWJ_SAFE_DOM.sanitize(`
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
         <small style="color:var(--muted);">${"Per side"}: <b>${sideWeight} kg</b></small>
         ${rem>0?`<span style="color:#ff8b3d;font-size:10px;">(${rem} kg unallocated)</span>`:""}
@@ -923,14 +923,14 @@ function showPlateCalculator(initialWeight=60,onApply=null){
 }
 
 function setPrimaryTab(tab){
-  if(window.REP_NAVIGATION?.navigateTab(tab))return;
+  if(window.AWJ_NAVIGATION?.navigateTab(tab))return;
   state.activeTab=tab;
   persistDebounced();
   updatePrimaryTabs();
   if(tab==="home")renderOverview();
   else if(tab==="food")renderNutrition();
   else if(tab==="care")renderHygiene();
-  else if(tab==="wellbeing")window.REP_TRAINING_UI?.wellbeing();
+  else if(tab==="wellbeing")window.AWJ_TRAINING_UI?.wellbeing();
   else if(tab==="insights")renderInsights();
   else if(tab==="vitals")renderVitals();
   else renderHome();
@@ -980,18 +980,18 @@ function todayFuelSnippet(){
     </div>
   </section>`;
 }
-function renderOverview(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.today();return renderOverviewLegacy();}
+function renderOverview(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.today();return renderOverviewLegacy();}
 function renderOverviewLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="home-overview";state.activeTab="home";persistDebounced();updatePrimaryTabs();
   const day=currentDay(),streak=computeStreak(),recovery=computeRecoveryScore(),bedtime=computeBedtimeSuggestion();
   const items=buildInsights(),note=items[0];
-  const resume=REP_TRAINING_SESSION.isResumableWorkout(state,sessions);
+  const resume=AWJ_TRAINING_SESSION.isResumableWorkout(state,sessions);
   const importAge=daysSinceVitalsImport();
   const vitalsImportText=state.vitalsImportError?`Apple Health check needs attention: ${state.vitalsImportStatus}`:
     importAge===null?"No Apple Health data imported yet":
     importAge>2?`Apple Health import needs attention · last ${state.lastVitalsImportDate}`:
     `Apple Health last imported ${state.lastVitalsImportDate}`;
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="hero home-hero"><p class="eyebrow">${"TODAY"}${day==="Friday"?(" · Surat Al-Kahf Day"):""}</p><h1>${greetingLine()}</h1><p>${recovery?(recovery.calibrating?("Recovery is still calibrating — keep logging daily."):recovery.band==="green"?("Recovery looks good. Today's a day to push."):recovery.band==="yellow"?("Recovery is moderate — adjust load accordingly."):("Recovery is low — prioritize rest today.")):("Log sleep to see today's readiness.")}</p></section>
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="hero home-hero"><p class="eyebrow">${"TODAY"}${day==="Friday"?(" · Surat Al-Kahf Day"):""}</p><h1>${greetingLine()}</h1><p>${recovery?(recovery.calibrating?("Recovery is still calibrating — keep logging daily."):recovery.band==="green"?("Recovery looks good. Today's a day to push."):recovery.band==="yellow"?("Recovery is moderate — adjust load accordingly."):("Recovery is low — prioritize rest today.")):("Log sleep to see today's readiness.")}</p></section>
     ${streak>=1?`<div class="streak-badge"><i>${ICONS.flame}</i><strong>${streak}</strong><span>${"day streak"}</span></div>`:""}
     <section class="today-strip home-today-card"><div><span>${day}</span><strong>${todayPlan(day)}</strong></div><button data-goto-train type="button">${resume?("Resume session →"):("Review today's plan →")}</button></section>
     <div class="today-secondary-actions" style="display:flex;gap:8px;margin:-4px 0 14px;">
@@ -1009,20 +1009,20 @@ function renderOverviewLegacy(){
   document.querySelector("[data-check-watch-vitals]")?.addEventListener("click",()=>fetchPendingVitals(true));
   document.querySelector("[data-goto-train]")?.addEventListener("click",()=>{
     if(resume)showSessionPreview(state.session);
-    else if(!window.REP_APPLY_ADAPTIVE_TODAY)setPrimaryTab("train");
-    else window.REP_APPLY_ADAPTIVE_TODAY();
+    else if(!window.AWJ_APPLY_ADAPTIVE_TODAY)setPrimaryTab("train");
+    else window.AWJ_APPLY_ADAPTIVE_TODAY();
   });
   document.querySelector("[data-goto-fuel]")?.addEventListener("click",()=>setPrimaryTab("food"));
   document.querySelector("[data-today-bad-day]")?.addEventListener("click",()=>renderBadDay());
   document.querySelector("[data-today-log-act]")?.addEventListener("click",()=>showLogActivity());
 }
 
-function renderHome(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.train();return renderHomeLegacy();}
+function renderHome(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.train();return renderHomeLegacy();}
 function renderHomeLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view = "home";state.activeTab="train";persistDebounced();updatePrimaryTabs();
   const day = currentDay(),u=U();
   const streak=computeStreak();
-  app.innerHTML = REP_SAFE_DOM.sanitize(`
+  app.innerHTML = AWJ_SAFE_DOM.sanitize(`
     <section class="hero">
       <p class="eyebrow">${u.companion}</p>
       <h1>${u.hero1}<br><em>${u.hero2}</em></h1>
@@ -1034,10 +1034,10 @@ function renderHomeLegacy(){
     ${healthStatusStrip()}
     ${reminderStrip("train")}
     <section class="session-grid" aria-label="Choose a session">
-      ${Object.entries(sessions).filter(([id])=>!["bad","gymLite"].includes(id)&&!id.startsWith("custom-")).map(([id,s]) => sessionCard(id,s,REP_TRAINING_SESSION.isResumableWorkout(state,sessions,id))).join("")}
+      ${Object.entries(sessions).filter(([id])=>!["bad","gymLite"].includes(id)&&!id.startsWith("custom-")).map(([id,s]) => sessionCard(id,s,AWJ_TRAINING_SESSION.isResumableWorkout(state,sessions,id))).join("")}
       <button class="session-card" data-log-activity style="--card-accent:#ffd36a"><span><small>${"PADEL · FOOTBALL · MORE"}</small><h2>${"Log an activity"}</h2></span><span class="session-icon">${ICONS.plus}</span><p>${"Unstructured sports — duration and calories burned from your Apple Watch."}</p><small>${"Log now →"}</small></button>
     </section>
-    ${window.REP_CUSTOM_WORKOUTS ? window.REP_CUSTOM_WORKOUTS.renderRoutinesSection() : ""}
+    ${window.AWJ_CUSTOM_WORKOUTS ? window.AWJ_CUSTOM_WORKOUTS.renderRoutinesSection() : ""}
     <div class="section-title training-tools-title"><h2>${"Training tools"}</h2><span>${"Readiness · history · safety"}</span></div>
     <section class="session-grid training-tools" aria-label="${"Training tools"}">
       <button class="session-card" data-recovery style="--card-accent:#d9b3ff"><span><small>${"READINESS & PROGRESSION"}</small><h2>${"Recovery"}</h2></span><span class="session-icon">${ICONS.waves}</span><p>${"Weekly check-in, progression gate, recovery timers, and red-flag guidance."}</p><small>${"Open recovery system →"}</small></button>
@@ -1051,17 +1051,17 @@ function renderHomeLegacy(){
       <div class="week-row">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="day ${day.startsWith(d)?"is-today":""}"><strong>${d}</strong><span>${["Sun","Tue","Thu"].includes(d)?"G":d==="Mon"?"PDL":d==="Wed"?"FB":d==="Fri"?"R":"S"}</span></div>`).join("")}</div>
     </section>`);
   document.querySelectorAll("[data-session]").forEach(button => button.addEventListener("click", () => showSessionPreview(button.dataset.session)));
-  document.querySelector("[data-create-new-routine]")?.addEventListener("click", () => window.REP_CUSTOM_WORKOUTS?.openRoutineBuilderModal());
+  document.querySelector("[data-create-new-routine]")?.addEventListener("click", () => window.AWJ_CUSTOM_WORKOUTS?.openRoutineBuilderModal());
   document.querySelectorAll("[data-edit-custom]").forEach(btn => {
-    btn.onclick = () => window.REP_CUSTOM_WORKOUTS?.openRoutineBuilderModal(btn.dataset.editCustom);
+    btn.onclick = () => window.AWJ_CUSTOM_WORKOUTS?.openRoutineBuilderModal(btn.dataset.editCustom);
   });
   document.querySelectorAll("[data-launch-custom]").forEach(btn => {
-    btn.onclick = () => window.REP_CUSTOM_WORKOUTS?.launchRoutine(btn.dataset.launchCustom);
+    btn.onclick = () => window.AWJ_CUSTOM_WORKOUTS?.launchRoutine(btn.dataset.launchCustom);
   });
   document.querySelector("[data-goto-vitals]")?.addEventListener("click", ()=>setPrimaryTab("vitals"));
   document.querySelector("[data-recovery]").addEventListener("click", renderRecovery);
   document.querySelector("[data-log-activity]").addEventListener("click", ()=>showLogActivity());
-  document.querySelector("[data-history]").addEventListener("click", ()=>window.REP_NAVIGATION?.navigate("training-history")||renderHistory());
+  document.querySelector("[data-history]").addEventListener("click", ()=>window.AWJ_NAVIGATION?.navigate("training-history")||renderHistory());
   document.querySelector("[data-bad-day]").addEventListener("click", renderBadDay);
   document.querySelector("[data-review]").addEventListener("click", renderReview);
   document.querySelector("[data-program-review]")?.addEventListener("click",renderProgramReview);
@@ -1085,8 +1085,8 @@ function sessionCard(id, s, resume) {
 // or expanding rows here has zero effect on what counts as an active session.
 function showSessionPreview(id,openIndices=new Set()){
   const s=sessions[id],ls=sessionText(id,s),u=U();
-  const continuing=REP_TRAINING_SESSION.isResumableWorkout(state,sessions,id);
-  REP_TRAINING_SESSION.previewWorkout(state,id);document.body.classList.remove("workout-mode");persist();updatePrimaryTabs();
+  const continuing=AWJ_TRAINING_SESSION.isResumableWorkout(state,sessions,id);
+  AWJ_TRAINING_SESSION.previewWorkout(state,id);document.body.classList.remove("workout-mode");persist();updatePrimaryTabs();
   const rows=s.exercises.map((base,i)=>{
     const item=currentItem(base);
     return `<details class="preview-row" ${openIndices.has(i)?"open":""}><summary><span>${i+1}</span><div><strong>${esc(item.name)}</strong><small>${esc(item.prescription)}${item.intensity?` · ${esc(item.intensity)}`:""}</small></div></summary>
@@ -1097,23 +1097,23 @@ function showSessionPreview(id,openIndices=new Set()){
       </div>
     </details>`;
   }).join("");
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="preview-container">${moduleHeader(ls.name,"Preview the plan and each move's technique before you start.",ls.description)}
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="preview-container">${moduleHeader(ls.name,"Preview the plan and each move's technique before you start.",ls.description)}
     <section class="preview-meta"><span>${ls.meta}</span><span>${s.exercises.length} ${u.steps}</span></section>
-    ${window.REP_WORKOUT_MEDIA.card()}
+    ${window.AWJ_WORKOUT_MEDIA.card()}
     <section class="preview-list">${rows}</section>
     <nav class="bottom-nav preview-actions"><button class="nav-button" data-cancel-preview type="button">${"← Back"}</button><button class="nav-button primary" data-start-session type="button">${continuing?("Resume workout →"):("Start workout →")}</button></nav></section>`);
-  window.REP_WORKOUT_MEDIA.bind(app,s,currentItem);
-  window.REP_MEDIA_PLAYER.mount();
-  document.querySelectorAll(".preview-row").forEach((row,i)=>{row.addEventListener("toggle",()=>{if(row.open){observeCinematicMedia(row,currentItem(s.exercises[i]));window.REP_TECHNIQUE.attach();}});if(row.open)observeCinematicMedia(row,currentItem(s.exercises[i]));});
-  window.REP_TECHNIQUE.attach();
+  window.AWJ_WORKOUT_MEDIA.bind(app,s,currentItem);
+  window.AWJ_MEDIA_PLAYER.mount();
+  document.querySelectorAll(".preview-row").forEach((row,i)=>{row.addEventListener("toggle",()=>{if(row.open){observeCinematicMedia(row,currentItem(s.exercises[i]));window.AWJ_TECHNIQUE.attach();}});if(row.open)observeCinematicMedia(row,currentItem(s.exercises[i]));});
+  window.AWJ_TECHNIQUE.attach();
   document.querySelector("[data-start-session]").onclick=()=>startSession(id);
   document.querySelector("[data-cancel-preview]").onclick=renderHome;
   document.querySelectorAll("[data-motion-action]").forEach(b=>b.onclick=()=>motionAction(b.dataset.motionAction));
 }
 function startSession(id,{acknowledgeWarnings=false}={}) {
-  if(!acknowledgeWarnings&&window.REP_TRAINING_UI?.guardStart(id,()=>startSession(id,{acknowledgeWarnings:true})))return;
-  REP_TRAINING_SESSION.startWorkout(state,id,sessions);
-  window.REP_PRODUCT_SUITE?.trackEvent(state,"workout_started",{session:id,resumed:Boolean(state.sessionStartedAt)});
+  if(!acknowledgeWarnings&&window.AWJ_TRAINING_UI?.guardStart(id,()=>startSession(id,{acknowledgeWarnings:true})))return;
+  AWJ_TRAINING_SESSION.startWorkout(state,id,sessions);
+  window.AWJ_PRODUCT_SUITE?.trackEvent(state,"workout_started",{session:id,resumed:Boolean(state.sessionStartedAt)});
   updatePrimaryTabs();document.body.classList.add("workout-mode");persist();resetWorkoutScroll();renderExercise();startSessionClock();if(state.timer&&!state.timer.interval)resumePersistedRestTimer();
 }
 
@@ -1124,21 +1124,21 @@ function resetWorkoutScroll(){
 
 function currentItem(base){
   const sid=state.view==="preview"?state.previewSession:state.session;
-  const selected=window.REP_TRAINING_PREFERENCES?.selectedExercise(state,base,sid)??(state.exerciseSubstitutions?.[base.name]||(base.name==="Back Extension"&&state.swaps.backExtension?"Hip Thrust Machine":base.name));
-  return localizedItem(window.REP_EXERCISES.resolve(base,selected));
+  const selected=window.AWJ_TRAINING_PREFERENCES?.selectedExercise(state,base,sid)??(state.exerciseSubstitutions?.[base.name]||(base.name==="Back Extension"&&state.swaps.backExtension?"Hip Thrust Machine":base.name));
+  return localizedItem(window.AWJ_EXERCISES.resolve(base,selected));
 }
-function isLoadExercise(item){return ["weighted","bodyweight"].includes(window.REP_EXERCISES.get(item.name)?.logMode);}
+function isLoadExercise(item){return ["weighted","bodyweight"].includes(window.AWJ_EXERCISES.get(item.name)?.logMode);}
 function exerciseId(base){return currentItem(base).name;}
-function normalizedLog(id,sets=3){return REP_TRAINING_SESSION.normalizedLog(state.logs,id,sets);}
-function setsFromLog(log){return REP_TRAINING_SESSION.setsFromLog(log);}
-function progressionAdvice(id){return REP_TRAINING_SESSION.progressionAdvice({logs:state.logs,history:state.history,id,recoveryGate:recoveryGate()});}
+function normalizedLog(id,sets=3){return AWJ_TRAINING_SESSION.normalizedLog(state.logs,id,sets);}
+function setsFromLog(log){return AWJ_TRAINING_SESSION.setsFromLog(log);}
+function progressionAdvice(id){return AWJ_TRAINING_SESSION.progressionAdvice({logs:state.logs,history:state.history,id,recoveryGate:recoveryGate()});}
 function loadPanel(base,item){
   if(!isLoadExercise(item))return "";
   const u=U(), id=exerciseId(base), log=normalizedLog(id,item.sets);
   const isLb = state.preferences?.weightUnit === "lb";
   const unitLabel = isLb ? "lb" : "kg";
   const prev=log.previousSets?.map((s,i)=>`${i+1}: ${isLb?(window.weightLabel?weightLabel(s.weight):`${s.weight||"—"} lb`):`${s.weight||"—"} kg`} × ${s.reps||"—"}`).join(" · ")||u.noPrevious;
-  const advice=window.REP_PERFORMANCE_INSIGHTS?.progressionAdvice(id,state);
+  const advice=window.AWJ_PERFORMANCE_INSIGHTS?.progressionAdvice(id,state);
   const curWeight=Number(log.sets[0]?.weight)||0;
   const key = `${state.session}-${state.index}`;
   const done = state.completed[key] || [];
@@ -1167,7 +1167,7 @@ function loadPanel(base,item){
 
     <div class="set-log-grid">
       ${Array.from({length:item.sets},(_,i)=>{
-        const rowName=window.REP_TRAINING_PREFERENCES.performedExercise(state,base,i),rowLog=normalizedLog(rowName,item.sets);
+        const rowName=window.AWJ_TRAINING_PREFERENCES.performedExercise(state,base,i),rowLog=normalizedLog(rowName,item.sets);
         const s=rowLog.sets[i]||{};
         const prevSet=rowLog.previousSets?.[i];
         const prevText=prevSet?(prevSet.weight?`${isLb?(window.weightLabel?weightLabel(prevSet.weight):prevSet.weight):prevSet.weight}×${prevSet.reps}`:`${prevSet.reps}r`):"—";
@@ -1217,7 +1217,7 @@ function cardioPanel(item){
 function simpleSetHistory(item,done){
   return `<div class="set-log-grid simple-set-history">${Array.from({length:item.sets},(_,index)=>`<div class="set-card-row ${done.includes(index)?"is-completed":""}"><div class="set-main-fields"><span class="set-badge ${done.includes(index)?"is-done":""}">${index+1}</span><span class="set-status">${done.includes(index)?"Logged":"Not logged"}</span><button class="set-check-btn ${done.includes(index)?"is-done":""}" data-set="${index}" type="button" aria-label="${done.includes(index)?"Unmark":"Complete"} set ${index+1}">${done.includes(index)?"✓":"○"}</button></div></div>`).join("")}</div>`;
 }
-function cardioAdvice(){return REP_TRAINING_SESSION.cardioAdvice(state.history);}
+function cardioAdvice(){return AWJ_TRAINING_SESSION.cardioAdvice(state.history);}
 function motionControls(item){return `<div class="motion-controls reference-note"><small>${esc(mediaDescription(item))} · follow the technique cues below</small></div>`;}
 
 function previousSetReference(base,item,setIndex){
@@ -1228,7 +1228,7 @@ function previousSetReference(base,item,setIndex){
 function quickSetEntry(base,item,setIndex){
   if(!isLoadExercise(item)||setIndex===undefined)return "";
   const log=normalizedLog(exerciseId(base),item.sets),set=log.sets[setIndex]||{};
-  const suggestion=window.REP_TRAINING_PREFERENCES?.suggestions(state,item.name,setIndex);
+  const suggestion=window.AWJ_TRAINING_PREFERENCES?.suggestions(state,item.name,setIndex);
   if(suggestion){if(set.weight===""&&suggestion.weight!==undefined&&suggestion.weight!=="")set.weight=String(suggestion.weight);if(set.reps===""&&suggestion.reps!==undefined&&suggestion.reps!=="")set.reps=String(suggestion.reps);}
   const isLb=state.preferences?.weightUnit==="lb",unit=isLb?"lb":"kg";
   const weight=isLb?(window.weightInput?window.weightInput(set.weight):set.weight):set.weight;
@@ -1247,11 +1247,11 @@ function openWorkoutChoiceSheet(kind){
     ? [.5,.75,1,1.25,1.5].map(value=>({value:String(value),label:`${value}×`,active:Number(state.speed)===value}))
     : [{value:"side",label:"Side",active:state.viewMode==="side"},{value:"front",label:"Front",active:state.viewMode==="front"}];
   const overlay=document.createElement("div");
-  overlay.className="rep-modal-backdrop workout-choice-backdrop";
+  overlay.className="awj-modal-backdrop workout-choice-backdrop";
   overlay.setAttribute("aria-labelledby","workoutChoiceTitle");
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="rep-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"MOTION DISPLAY"}</small><h2 id="workoutChoiceTitle">${isSpeed?("Playback speed"):("View angle")}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-choice-grid">${options.map(option=>`<button type="button" data-choice="${option.value}" class="${option.active?"is-active":""}" aria-pressed="${option.active}"><span>${option.label}</span>${option.active?"<b>✓</b>":""}</button>`).join("")}</div></section>`);
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="awj-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"MOTION DISPLAY"}</small><h2 id="workoutChoiceTitle">${isSpeed?("Playback speed"):("View angle")}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-choice-grid">${options.map(option=>`<button type="button" data-choice="${option.value}" class="${option.active?"is-active":""}" aria-pressed="${option.active}"><span>${option.label}</span>${option.active?"<b>✓</b>":""}</button>`).join("")}</div></section>`);
   document.body.appendChild(overlay);
-  const close=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+  const close=()=>(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
   overlay.querySelector("[data-choice-close]").onclick=close;
   overlay.addEventListener("click",event=>{if(event.target===overlay)close();});
   overlay.querySelectorAll("[data-choice]").forEach(button=>button.onclick=()=>{
@@ -1269,32 +1269,32 @@ function openWorkoutUtilitySheet(){
   document.querySelector(".workout-choice-backdrop")?.remove();
   const wakeSupported="wakeLock" in navigator;
   const overlay=document.createElement("div");
-  overlay.className="rep-modal-backdrop workout-choice-backdrop";
+  overlay.className="awj-modal-backdrop workout-choice-backdrop";
   overlay.setAttribute("aria-labelledby","workoutUtilityTitle");
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="rep-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"ACTIVE SESSION"}</small><h2 id="workoutUtilityTitle">${"Workout options"}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-utility-list"><button type="button" data-workout-utility="wake" ${wakeSupported?"":"disabled"}><span>☼</span><div><strong>${"Keep screen awake"}</strong><small>${state.wakeLock?("On"):("Off")}</small></div></button><button type="button" data-workout-utility="sound"><span>${state.muted?"×":"◖"}</span><div><strong>${"Timer sound"}</strong><small>${state.muted?("Muted"):("On")}</small></div></button>${window.REP_HEART_RATE?`<button type="button" data-workout-utility="heart"><span>♥</span><div><strong>${"Heart rate"}</strong><small>${"Connect or view sensor"}</small></div></button>`:""}<button type="button" class="is-danger" data-workout-utility="exit"><span>×</span><div><strong>${"Exit workout"}</strong><small>${"Confirmation required"}</small></div></button></div></section>`);
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="awj-modal-sheet workout-choice-sheet"><div class="sheet-grabber" aria-hidden="true"></div><div class="sheet-header"><div><small>${"ACTIVE SESSION"}</small><h2 id="workoutUtilityTitle">${"Workout options"}</h2></div><button class="sheet-close" data-choice-close aria-label="${"Close"}">×</button></div><div class="workout-utility-list"><button type="button" data-workout-utility="wake" ${wakeSupported?"":"disabled"}><span>☼</span><div><strong>${"Keep screen awake"}</strong><small>${state.wakeLock?("On"):("Off")}</small></div></button><button type="button" data-workout-utility="sound"><span>${state.muted?"×":"◖"}</span><div><strong>${"Timer sound"}</strong><small>${state.muted?("Muted"):("On")}</small></div></button>${window.AWJ_HEART_RATE?`<button type="button" data-workout-utility="heart"><span>♥</span><div><strong>${"Heart rate"}</strong><small>${"Connect or view sensor"}</small></div></button>`:""}<button type="button" class="is-danger" data-workout-utility="exit"><span>×</span><div><strong>${"Exit workout"}</strong><small>${"Confirmation required"}</small></div></button></div></section>`);
   document.body.appendChild(overlay);
-  const close=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+  const close=()=>(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
   overlay.querySelector("[data-choice-close]").onclick=close;
   overlay.addEventListener("click",event=>{if(event.target===overlay)close();});
   overlay.querySelectorAll("[data-workout-utility]").forEach(button=>button.onclick=()=>{
     const action=button.dataset.workoutUtility;close();
     if(action==="wake")document.querySelector("#wakeButton")?.click();
     if(action==="sound")document.querySelector("#soundButton")?.click();
-    if(action==="heart")window.REP_HEART_RATE?.openHrModal();
+    if(action==="heart")window.AWJ_HEART_RATE?.openHrModal();
     if(action==="exit")showExitConfirm();
   });
   overlay.querySelector("[data-choice-close]").focus();
 }
 
 function showSwapModal(exerciseName){
-  const equipment=state.onboarding?.equipment||[],curated=window.REP_PRODUCT_SUITE?.availableSubstitutions(exerciseName,equipment)||[],fallback=(window.REP_PERFORMANCE_INSIGHTS?.EXERCISE_SUBSTITUTIONS?.[exerciseName]||[]).map(name=>({name,equipment:[]})),subs=curated.length?curated:fallback;
+  const equipment=state.onboarding?.equipment||[],curated=window.AWJ_PRODUCT_SUITE?.availableSubstitutions(exerciseName,equipment)||[],fallback=(window.AWJ_PERFORMANCE_INSIGHTS?.EXERCISE_SUBSTITUTIONS?.[exerciseName]||[]).map(name=>({name,equipment:[]})),subs=curated.length?curated:fallback;
   if(!subs.length)return;
   const overlay=document.createElement("div");
   overlay.className="timed-mode";
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<div class="workout-preflight-panel" style="max-width:400px;margin:auto;"><button class="dialog-close" data-swap-close aria-label="Close">×</button><small style="color:var(--acid);font-weight:900;">${"EQUIPMENT-AWARE SUBSTITUTIONS"}</small><h2 style="margin:6px 0 14px;">${esc(exerciseName)}</h2><p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${curated.length?("Only options matching your setup are shown."):("Review equipment availability before selecting an alternative.")}</p><div style="display:grid;gap:8px;"><button class="quiet-setting" data-select-swap="">${"Use original movement"}</button>${subs.map(sub=>`<button class="settings-primary" data-select-swap="${esc(sub.name)}" style="text-align:left;padding:12px 14px;border-radius:12px;font-size:14px;">${esc(sub.name)}${sub.equipment.length?` · ${esc(sub.equipment.join(", "))}`:""}</button>`).join("")}</div></div>`);
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<div class="workout-preflight-panel" style="max-width:400px;margin:auto;"><button class="dialog-close" data-swap-close aria-label="Close">×</button><small style="color:var(--acid);font-weight:900;">${"EQUIPMENT-AWARE SUBSTITUTIONS"}</small><h2 style="margin:6px 0 14px;">${esc(exerciseName)}</h2><p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${curated.length?("Only options matching your setup are shown."):("Review equipment availability before selecting an alternative.")}</p><div style="display:grid;gap:8px;"><button class="quiet-setting" data-select-swap="">${"Use original movement"}</button>${subs.map(sub=>`<button class="settings-primary" data-select-swap="${esc(sub.name)}" style="text-align:left;padding:12px 14px;border-radius:12px;font-size:14px;">${esc(sub.name)}${sub.equipment.length?` · ${esc(sub.equipment.join(", "))}`:""}</button>`).join("")}</div></div>`);
   document.body.appendChild(overlay);
-  overlay.querySelector("[data-swap-close]").onclick=()=>(window.REP_MOTION?.dismiss(overlay)||overlay.remove());
-  overlay.querySelectorAll("[data-select-swap]").forEach(btn=>{btn.onclick=()=>{const chosen=btn.dataset.selectSwap;window.REP_TRAINING_PREFERENCES.choose(state,exerciseName,chosen);persist();(window.REP_MOTION?.dismiss(overlay)||overlay.remove());renderExercise();showToast(chosen?`Swapped to ${chosen}`:"Original movement restored");};});
+  overlay.querySelector("[data-swap-close]").onclick=()=>(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
+  overlay.querySelectorAll("[data-select-swap]").forEach(btn=>{btn.onclick=()=>{const chosen=btn.dataset.selectSwap;window.AWJ_TRAINING_PREFERENCES.choose(state,exerciseName,chosen);persist();(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());renderExercise();showToast(chosen?`Swapped to ${chosen}`:"Original movement restored");};});
 }
 
 function startTempoCoach(base, item){
@@ -1310,7 +1310,7 @@ function startTempoCoach(base, item){
   
   const overlay=document.createElement("div");
   overlay.className="timed-mode";
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<div class="timed-mode-card">
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<div class="timed-mode-card">
     <div style="width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
       <div style="text-align:start;"><span style="color:var(--acid);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;">⏱️ ${"TEMPO COACH"}</span><h2 style="margin:2px 0 0;font-size:18px;">${esc(item.name)}</h2></div>
       <button class="round-button" data-tempo-close aria-label="${"Close"}" style="width:40px;height:40px;font-size:20px;">×</button>
@@ -1333,11 +1333,11 @@ function startTempoCoach(base, item){
     </div>
   </div>`);
   document.body.appendChild(overlay);
-  window.REP_MEDIA_PLAYER.mount();
+  window.AWJ_MEDIA_PLAYER.mount();
   observeCinematicMedia(overlay.querySelector(".visual-wrap"),item);
-  window.REP_TECHNIQUE.attach();
+  window.AWJ_TECHNIQUE.attach();
   
-  const close=()=>{clearInterval(tick);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());window.speechSynthesis?.cancel();};
+  const close=()=>{clearInterval(tick);(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());window.speechSynthesis?.cancel();};
   overlay.querySelector("[data-tempo-close]").onclick=close;
   overlay.querySelector("[data-tempo-finish]").onclick=()=>{vibrateGym("pr");triggerConfetti();close();};
   overlay.querySelector("[data-tempo-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?u.resume:u.pause;};
@@ -1410,7 +1410,7 @@ function renderExercise() {
   primeUpcomingCinematicMedia(session,state.index);
   const key = `${state.session}-${state.index}`;
   const done = state.completed[key] || [];
-  const subs = window.REP_PERFORMANCE_INSIGHTS?.EXERCISE_SUBSTITUTIONS?.[base.name] || [];
+  const subs = window.AWJ_PERFORMANCE_INSIGHTS?.EXERCISE_SUBSTITUTIONS?.[base.name] || [];
   const swapBtn = subs.length ? `<button class="exercise-swap-btn" data-swap-modal="${esc(base.name)}">${"🔄 Swap"}</button>` : (base.name==="Back Extension"?`<button class="swap-button" data-swap>${state.swaps.backExtension?u.swapBack:u.swapHip}</button>`:"");
   const nextSetIndex = Array.from({length:item.sets},(_,i)=>i).find(i=>!done.includes(i));
   const isAllDone = nextSetIndex === undefined;
@@ -1425,7 +1425,7 @@ function renderExercise() {
   const primaryButtonLabel = isAllDone ? (state.index===session.exercises.length-1?u.finish:u.next) : (item.sets===1?"Complete exercise":`Log set ${nextSetIndex+1}`);
   const renderedPlayer=document.querySelector(".workout-player");
   const sameExercise=renderedPlayer?.dataset.exerciseIdentity===`${state.session}:${state.index}:${item.name}`;
-  const playerMarkup=REP_SAFE_DOM.sanitize(`<section class="player workout-player${exerciseTransitionClass}${hasCinematicMedia?" has-cinematic-media":""}" data-swipe>
+  const playerMarkup=AWJ_SAFE_DOM.sanitize(`<section class="player workout-player${exerciseTransitionClass}${hasCinematicMedia?" has-cinematic-media":""}" data-swipe>
     <div class="player-header workout-header">
       <button class="round-button workout-back" data-prev aria-label="${"Previous exercise"}" ${state.index===0?"disabled":""}>‹</button>
       <div class="player-progress"><small>${"ACTIVE WORKOUT"}</small><strong>${ls.name}</strong><span>${"Exercise"} ${state.index+1} ${u.of} ${session.exercises.length} · <b id="sessionElapsed">0:00</b></span></div>
@@ -1454,14 +1454,14 @@ function renderExercise() {
       <details class="cue-details"><summary>${u.technique}</summary><div class="cue-body"><p><strong>${u.setup}:</strong> ${esc(item.setup)}</p><p><strong>${u.move}:</strong> ${esc(item.execution)}</p><p><strong>${u.cue}:</strong> ${esc(item.cues)}</p><p><strong>${u.avoid}:</strong> ${esc(item.avoid)}</p></div></details>
     </article></section>`);
   if(sameExercise){
-    const temporary=document.createElement("div");temporary.innerHTML=REP_SAFE_DOM.sanitize(playerMarkup);
+    const temporary=document.createElement("div");temporary.innerHTML=AWJ_SAFE_DOM.sanitize(playerMarkup);
     const fresh=temporary.querySelector(".workout-player");
     for(const selector of [".current-set-card",".workout-action-band",".set-checklist-panel"]){const prior=renderedPlayer.querySelector(selector),next=fresh.querySelector(selector);if(!prior||!next)continue;if(selector===".current-set-card"&&prior.dataset.focusSet===next.dataset.focusSet){prior.querySelector(".set-progress-dots")?.replaceWith(next.querySelector(".set-progress-dots"));prior.querySelector(".current-set-copy")?.replaceWith(next.querySelector(".current-set-copy"));continue;}prior.replaceWith(next);}
     const listSummary=renderedPlayer.querySelector(".set-log-panel>summary");if(listSummary)listSummary.textContent=`Set history · ${done.length}/${item.sets} complete`;
     renderedPlayer.querySelectorAll(".set-card-row").forEach((row,i)=>{const replacement=fresh.querySelectorAll(".set-card-row")[i];if(replacement&&row.querySelector('[data-log-exercise]')?.dataset.logExercise!==replacement.querySelector('[data-log-exercise]')?.dataset.logExercise){row.replaceWith(replacement);return;}const complete=done.includes(i);row.classList.toggle("is-completed",complete);row.querySelector(".set-badge")?.classList.toggle("is-done",complete);const check=row.querySelector(".set-check-btn");if(check){check.classList.toggle("is-done",complete);check.textContent=complete?"✓":"○";check.setAttribute("aria-label",`${complete?"Unmark":"Complete"} set ${i+1}`);}const status=row.querySelector(".set-status");if(status)status.textContent=complete?"Logged":"Not logged";});
-  }else{app.innerHTML=REP_SAFE_DOM.sanitize(playerMarkup);const player=document.querySelector(".workout-player");player.dataset.exerciseIdentity=`${state.session}:${state.index}:${item.name}`;}
-  window.REP_MEDIA_PLAYER.mount();
-  if(!sameExercise)window.REP_MOTION.animate(document.querySelector(".exercise-hero .exercise-media-stage"),"exercise",exerciseDirection);
+  }else{app.innerHTML=AWJ_SAFE_DOM.sanitize(playerMarkup);const player=document.querySelector(".workout-player");player.dataset.exerciseIdentity=`${state.session}:${state.index}:${item.name}`;}
+  window.AWJ_MEDIA_PLAYER.mount();
+  if(!sameExercise)window.AWJ_MOTION.animate(document.querySelector(".exercise-hero .exercise-media-stage"),"exercise",exerciseDirection);
   const progressBar=document.querySelector(".workout-progress i");
   if(progressBar&&prevProgressWidth&&prevProgressWidth!==progressBar.style.width){
     const targetWidth=progressBar.style.width;
@@ -1474,11 +1474,11 @@ function renderExercise() {
   document.querySelector("[data-next]").onclick=()=>{const now=Date.now();if(now-lastWorkoutPrimaryAt<300)return;lastWorkoutPrimaryAt=now;if(state._lastSetAction?.session===state.session&&state._lastSetAction.index===state.index&&Date.now()-state._lastSetAction.at<300)return;if(nextSetIndex!==undefined&&!done.includes(nextSetIndex))toggleSet(nextSetIndex);else next();};
   bindPlayerAction("[data-skip-optional]",next);
   bindPlayerAction("[data-workout-more]",openWorkoutUtilitySheet);
-  bindPlayerAction("[data-open-hr-modal]", ()=>window.REP_HEART_RATE?.openHrModal());
+  bindPlayerAction("[data-open-hr-modal]", ()=>window.AWJ_HEART_RATE?.openHrModal());
   document.querySelectorAll("[data-jump-exercise]").forEach(btn=>{btn.onclick=()=>{cancelRestTimer();exerciseDirection=Number(btn.dataset.jumpExercise)>state.index?1:-1;state.index=Number(btn.dataset.jumpExercise);exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();};});
   document.querySelectorAll("[data-set]").forEach(b => b.onclick=()=>toggleSet(Number(b.dataset.set)));
   document.querySelectorAll("[data-motion-action]").forEach(b=>b.onclick=()=>motionAction(b.dataset.motionAction));
-  bindPlayerAction("[data-swap]",()=>{window.REP_TRAINING_PREFERENCES.choose(state,"Back Extension",item.name==="Back Extension"?"Hip Thrust Machine":"Back Extension");persist();renderExercise();});
+  bindPlayerAction("[data-swap]",()=>{window.AWJ_TRAINING_PREFERENCES.choose(state,"Back Extension",item.name==="Back Extension"?"Hip Thrust Machine":"Back Extension");persist();renderExercise();});
   document.querySelectorAll("[data-swap-modal]").forEach(b=>b.onclick=()=>showSwapModal(b.dataset.swapModal));
   bindPlayerAction("[data-tempo-coach]",()=>startTempoCoach(base,item));
   bindPlayerAction("[data-plate-math]",e=>showPlateCalculator(Number(e.currentTarget.dataset.plateMath)||0));
@@ -1487,8 +1487,8 @@ function renderExercise() {
   bindPlayerAction("[data-open-activity-log]",()=>showLogActivity(state.session==="football"||state.session==="padel"?state.session:undefined));
   document.querySelectorAll("[data-clone-set]").forEach(btn=>{
     btn.onclick=()=>{
-      const i=Number(btn.dataset.cloneSet),id=window.REP_TRAINING_PREFERENCES.performedExercise(state,base,i),log=normalizedLog(id,item.sets);
-      const previous=normalizedLog(window.REP_TRAINING_PREFERENCES.performedExercise(state,base,i-1),item.sets).sets[i-1];
+      const i=Number(btn.dataset.cloneSet),id=window.AWJ_TRAINING_PREFERENCES.performedExercise(state,base,i),log=normalizedLog(id,item.sets);
+      const previous=normalizedLog(window.AWJ_TRAINING_PREFERENCES.performedExercise(state,base,i-1),item.sets).sets[i-1];
       if(i>0&&previous){
         log.sets[i].weight=previous.weight;
         log.sets[i].reps=previous.reps;
@@ -1532,7 +1532,7 @@ function renderExercise() {
   });
   document.querySelectorAll("[data-cardio]").forEach(input=>input.addEventListener("input",()=>{state.cardioDraft[input.dataset.cardio]=input.value;persistDebounced();document.querySelector(".cardio-panel .progression-callout").textContent=cardioAdvice();}));
   bindWorkoutSwipe(document.querySelector("[data-swipe]"));
-  window.REP_ENHANCEMENTS_UI?.mountUndo();
+  window.AWJ_ENHANCEMENTS_UI?.mountUndo();
   updateMediaSession("exercise", {exercise: item.name, set: (done.length || 0)});
 }
 function motionAction(action){
@@ -1557,7 +1557,7 @@ function toggleExerciseTimer(motion){
   const overlay=document.createElement("div");
   overlay.className="timed-mode workout-timed-mode";
   overlay.setAttribute("aria-labelledby","timedExerciseTitle");
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<section class="timed-workout-card">
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="timed-workout-card">
     <header class="timed-workout-head"><div><small>${esc(categoryLabel(item.category))} · ${"TIMED EXERCISE"}</small><h2 id="timedExerciseTitle">${esc(item.name)}</h2></div><button class="round-button" data-timed-close aria-label="${"Close"}">×</button></header>
     <div class="timed-workout-visual visual-wrap anatomy-wrap" role="group" aria-label="Demonstration of ${esc(item.name)}">${exerciseVisual(item,{preview:true,context:"timed"})}<span>${esc(targetMuscles)}</span></div>
     <div class="timed-workout-focus">
@@ -1569,9 +1569,9 @@ function toggleExerciseTimer(motion){
     <div class="timed-cue"><small>${u.cue}</small><p>${esc(item.cues)}</p></div>
   </section>`);
   document.body.appendChild(overlay);
-  window.REP_MEDIA_PLAYER.mount();
+  window.AWJ_MEDIA_PLAYER.mount();
   observeCinematicMedia(overlay.querySelector(".visual-wrap"),item);
-  window.REP_TECHNIQUE.attach();
+  window.AWJ_TECHNIQUE.attach();
   overlay.querySelector("[data-timed-close]").onclick=stopExerciseClock;
   overlay.querySelector("[data-timed-skip]").onclick=finishExerciseTimer;
   overlay.querySelector("[data-timed-add]").onclick=()=>{const t=state.exerciseTimer;if(!t)return;t.remaining+=15;t.total+=15;if(!t.paused)t.targetEndTime=Date.now()+t.remaining*1000;updateExerciseTimer();};
@@ -1608,8 +1608,8 @@ function saveLog(base,item){
 
 let audioCtx=null;
 function ensureAudioContext(){
-  if(!window._repAudioCtx){try{window._repAudioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{return null;}}
-  audioCtx=window._repAudioCtx;
+  if(!window._awjAudioCtx){try{window._awjAudioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{return null;}}
+  audioCtx=window._awjAudioCtx;
   if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
   return audioCtx;
 }
@@ -1700,22 +1700,22 @@ function toggleSet(setIndex) {
   if(document.activeElement?.matches("[data-log]"))document.activeElement.blur();
   const snapshot={session:state.session,index:state.index,startedAt:state.sessionStartedAt,completed:[...list],performed:state.sessionSubstitutions?.performed?JSON.parse(JSON.stringify(state.sessionSubstitutions.performed)):null,timer:state.timer?{remaining:state.timer.remaining,total:state.timer.total,paused:state.timer.paused,set:state.timer.set,targetEndTime:state.timer.targetEndTime}:null};
   state._lastSetAction={session:state.session,index:state.index,at:Date.now()};
-  if(already)window.REP_ENHANCEMENTS_UI?.clearWorkoutUndo();
+  if(already)window.AWJ_ENHANCEMENTS_UI?.clearWorkoutUndo();
   if(!already){
     vibrateGym("set");
     const id = exerciseId(item), log = normalizedLog(id, item.sets);
     const s = log.sets[setIndex] || {};
-    const advice = window.REP_PERFORMANCE_INSIGHTS?.progressionAdvice(id, state);
-    if(window.REP_AUDIO_COACH?.announceSetComplete) {
-      window.REP_AUDIO_COACH.announceSetComplete(setIndex, s.weight, s.reps, s.rpe, advice?.badge);
+    const advice = window.AWJ_PERFORMANCE_INSIGHTS?.progressionAdvice(id, state);
+    if(window.AWJ_AUDIO_COACH?.announceSetComplete) {
+      window.AWJ_AUDIO_COACH.announceSetComplete(setIndex, s.weight, s.reps, s.rpe, advice?.badge);
     }
   }
   state.completed[key] = already ? list.filter(i=>i!==setIndex) : [...list,setIndex];
-  window.REP_TRAINING_PREFERENCES?.recordSet(state,item.name,setIndex,exerciseId(item),!already);
+  window.AWJ_TRAINING_PREFERENCES?.recordSet(state,item.name,setIndex,exerciseId(item),!already);
   persist();
   const allSetsDone=!already && state.completed[key].length===item.sets;
   if(allSetsDone){
-    window.REP_MOTION?.animate(document.querySelector(".set-progress-dots"),"set");
+    window.AWJ_MOTION?.animate(document.querySelector(".set-progress-dots"),"set");
   }
   if (!already && item.rest) startTimer(item.rest, setIndex);
   renderExercise();
@@ -1723,16 +1723,16 @@ function toggleSet(setIndex) {
     const btn=document.querySelector(`[data-set="${setIndex}"]`);
     if(btn){btn.classList.add("is-just-checked");setTimeout(()=>btn.classList.remove("is-just-checked"),160);}
   }
-  if(!already)window.REP_ENHANCEMENTS_UI?.undo(`Set ${setIndex+1} saved.`,()=>{
+  if(!already)window.AWJ_ENHANCEMENTS_UI?.undo(`Set ${setIndex+1} saved.`,()=>{
     if(state.session!==snapshot.session||state.index!==snapshot.index||state.sessionStartedAt!==snapshot.startedAt){showToast("Return to the same active exercise to edit its set history.");return;}
     cancelRestTimer();state.completed[key]=snapshot.completed;if(state.sessionSubstitutions)state.sessionSubstitutions.performed=snapshot.performed||{};state._lastSetAction=null;state.timer=snapshot.timer;if(snapshot.timer)resumePersistedRestTimer();persist();renderExercise();
   });else if(state.timer?.set===setIndex)cancelRestTimer();
 }
-function prev(){ exerciseDirection=-1;stopExerciseClock();cancelRestTimer();if(REP_TRAINING_SESSION.previousExercise(state).moved){exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();} }
+function prev(){ exerciseDirection=-1;stopExerciseClock();cancelRestTimer();if(AWJ_TRAINING_SESSION.previousExercise(state).moved){exerciseTransitioning=true;persist();resetWorkoutScroll();renderExercise();} }
 function next(){
   exerciseDirection=1;stopExerciseClock();cancelRestTimer();
-  const res=REP_TRAINING_SESSION.advanceExercise(state,sessions,{weightKg:latestWeightKg(),motionDurations:Object.fromEntries(Object.entries(motionGuide).map(([k,v])=>[k,v[2]]))});
-  if(res.completed&&res.record){window.REP_PRODUCT_SUITE?.trackEvent(state,"workout_completed",{session:res.record.session||state.session});queueWorkout(res.record);}
+  const res=AWJ_TRAINING_SESSION.advanceExercise(state,sessions,{weightKg:latestWeightKg(),motionDurations:Object.fromEntries(Object.entries(motionGuide).map(([k,v])=>[k,v[2]]))});
+  if(res.completed&&res.record){window.AWJ_PRODUCT_SUITE?.trackEvent(state,"workout_completed",{session:res.record.session||state.session});queueWorkout(res.record);}
   exerciseTransitioning=!res.completed;persist();resetWorkoutScroll();renderExercise();
 }
 // Real-time drag tracking for swipe-to-navigate between exercises: the card
@@ -1792,11 +1792,11 @@ function updateSessionClock(){const el=document.querySelector("#sessionElapsed")
 // forever - otherwise Home keeps offering to resume a session the user
 // explicitly left, even after just opening an exercise to look around.
 function abandonSession(){
-  window.REP_PRODUCT_SUITE?.trackEvent(state,"workout_abandoned",{session:state.session||"unknown",exercise:state.index});
-  REP_TRAINING_SESSION.abandonWorkout(state);
+  window.AWJ_PRODUCT_SUITE?.trackEvent(state,"workout_abandoned",{session:state.session||"unknown",exercise:state.index});
+  AWJ_TRAINING_SESSION.abandonWorkout(state);
 }
 function showExitConfirm(){
-  if(document.querySelector(".exit-confirm"))return;const u=U(),box=document.createElement("div");box.className="exit-confirm";box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${u.exitQuestion}</strong><button data-stay>${u.stay}</button><button class="danger" data-leave>${u.exit}</button>`);document.body.appendChild(box);box.querySelector("[data-stay]").onclick=()=>box.remove();box.querySelector("[data-leave]").onclick=()=>{(window.REP_MOTION?.dismiss(box)||box.remove());cancelRestTimer();abandonSession();persist();renderHome();};
+  if(document.querySelector(".exit-confirm"))return;const u=U(),box=document.createElement("div");box.className="exit-confirm";box.innerHTML=AWJ_SAFE_DOM.sanitize(`<strong>${u.exitQuestion}</strong><button data-stay>${u.stay}</button><button class="danger" data-leave>${u.exit}</button>`);document.body.appendChild(box);box.querySelector("[data-stay]").onclick=()=>box.remove();box.querySelector("[data-leave]").onclick=()=>{(window.AWJ_MOTION?.dismiss(box)||box.remove());cancelRestTimer();abandonSession();persist();renderHome();};
 }
 // MET (metabolic equivalent) per session type, used only for a rough estimate -
 // there's no heart-rate or wearable data source here, so this is duration x
@@ -1815,14 +1815,14 @@ function logActivity(type,customName,minutes,calories,notes){
   queueWorkout(record);persist();return true;
 }
 function queueWorkout(record){
-  if(!record?.entries?.length)return;persist();window.REP_SYNC_RUNTIME?.syncRecord?.({id:`workout-${record.id}`,kind:"workout",workout:{id:String(record.id),date:record.date,type:record.activityLabel||"Recovery",duration:record.duration,entries:record.entries}});
+  if(!record?.entries?.length)return;persist();window.AWJ_SYNC_RUNTIME?.syncRecord?.({id:`workout-${record.id}`,kind:"workout",workout:{id:String(record.id),date:record.date,type:record.activityLabel||"Recovery",duration:record.duration,entries:record.entries}});
 }
-function queueHealth(kind,payload){persist();window.REP_SYNC_RUNTIME?.syncRecord?.({id:`${kind}-${kind==="food"?(payload.id||Date.now()):kind==="habit"?`${payload.date}-${payload.id}`:payload.date}`,kind,payload});}
+function queueHealth(kind,payload){persist();window.AWJ_SYNC_RUNTIME?.syncRecord?.({id:`${kind}-${kind==="food"?(payload.id||Date.now()):kind==="habit"?`${payload.date}-${payload.id}`:payload.date}`,kind,payload});}
 
 async function syncPending(){
-  return window.REP_SYNC_RUNTIME?.syncEverything?.();
+  return window.AWJ_SYNC_RUNTIME?.syncEverything?.();
 }
-function syncStatusText(){const key=localStorage.getItem(syncKeyStorage),queued=window.REP_SYNC_OUTBOX?.summary(state.syncQueue).total||0;if(state.pairBusy)return "Checking pairing key…";if(!key)return state.syncState==="auth"?("Pair this device again"):("One-time connection needed");if(state.syncState==="syncing")return "Verifying in Notion…";if(queued)return `${queued} record${queued===1?"":"s"} pending`;return "Device paired · verified sync";}
+function syncStatusText(){const key=localStorage.getItem(syncKeyStorage),queued=window.AWJ_SYNC_OUTBOX?.summary(state.syncQueue).total||0;if(state.pairBusy)return "Checking pairing key…";if(!key)return state.syncState==="auth"?("Pair this device again"):("One-time connection needed");if(state.syncState==="syncing")return "Verifying in Notion…";if(queued)return `${queued} record${queued===1?"":"s"} pending`;return "Device paired · verified sync";}
 function updateSyncPanel(){document.querySelectorAll("[data-sync-status]").forEach(status=>status.textContent=state.pairMessage||syncStatusText());document.querySelectorAll("[data-sync-all]").forEach(button=>button.disabled=state.syncState==="syncing"||!localStorage.getItem(syncKeyStorage));document.querySelectorAll("[data-save-sync-key],[data-food-pair-submit]").forEach(button=>button.disabled=state.pairBusy);}
 // validatePairingKey and connectPairingKey are defined in enhancements.js,
 // which always loads after this file and is the single source of truth for
@@ -1830,7 +1830,7 @@ function updateSyncPanel(){document.querySelectorAll("[data-sync-status]").forEa
 // just be dead code the enhanced versions immediately overwrite.
 async function savePairingKey(){const input=document.querySelector("[data-sync-key]");if(await connectPairingKey(input,false))syncPending();}
 async function pairFromFood(){const input=document.querySelector("[data-food-pair-key]"),pending=state.foodPendingPayload;if(!await connectPairingKey(input,true))return;syncPending();if(pending){state.foodPendingPayload=null;await analyzeFood(pending);}}
-async function forgetPairingKey(){await repAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});repAuth.clear();state.syncState="idle";state.pairMessage="";if(state.view==="nutrition")renderNutrition();else updateSyncPanel();}
+async function forgetPairingKey(){await awjAuth.fetch("/api/pair/disconnect",{method:"POST"}).catch(()=>{});awjAuth.clear();state.syncState="idle";state.pairMessage="";if(state.view==="nutrition")renderNutrition();else updateSyncPanel();}
 function urlBase64ToUint8Array(base64String){
   const padding="=".repeat((4-base64String.length%4)%4),base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);
   return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
@@ -1853,7 +1853,7 @@ async function togglePushReminders(){
     if(permission!=="granted"){showToast("Notification permission was denied.");return;}
     const reg=await navigator.serviceWorker.ready;
     const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(keyData.key)});
-    const res=await repAuth.fetch("/api/push/subscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({subscription:sub.toJSON(),time,timezoneOffsetMinutes:new Date().getTimezoneOffset(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"})});
+    const res=await awjAuth.fetch("/api/push/subscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({subscription:sub.toJSON(),time,timezoneOffsetMinutes:new Date().getTimezoneOffset(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.ok)throw Error(data.error||"subscribe failed");
     state.pushEndpoint=sub.endpoint;state.pushTime=time;persist();
@@ -1863,13 +1863,13 @@ async function togglePushReminders(){
 async function disablePushReminders(){
   try{
     const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
-    if(sub){await repAuth.fetch("/api/push/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});await sub.unsubscribe();}
+    if(sub){await awjAuth.fetch("/api/push/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});await sub.unsubscribe();}
   }catch{}
   state.pushEndpoint=null;persist();
   if(state.view==="history")renderHistory();
 }
 
-function renderHistory(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.progress();return renderHistoryLegacy();}
+function renderHistory(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.progress();return renderHistoryLegacy();}
 function renderHistoryLegacy(){
   stopSessionClock();document.body.classList.remove("workout-mode");state.view="history";state.activeTab="train";persist();updatePrimaryTabs();const u=U(),rows=state.history;
   const best={};rows.forEach(r=>Object.entries(r.loads||{}).forEach(([name,l])=>setsFromLog(l).forEach(s=>{const w=Number(s.weight)||0,reps=Number(s.reps)||0;if(!best[name]||w>best[name].weight||(w===best[name].weight&&reps>best[name].reps))best[name]={weight:w,reps};})));
@@ -1877,7 +1877,7 @@ function renderHistoryLegacy(){
   const weekAgo=Date.now()-7*86400000,sessions7=rows.filter(r=>new Date(r.date).getTime()>=weekAgo).length;
   const totalMinutes=Math.round(rows.reduce((n,r)=>n+(Number(r.duration)||0),0)/60),totalSets=rows.reduce((n,r)=>n+(Number(r.sets)||0),0),totalCalories=rows.reduce((n,r)=>n+(Number(r.calories)||0),0);
   const bestEntries=Object.entries(best).filter(([,b])=>b.weight);
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="recovery-head activity-history-head"><p class="eyebrow">${u.history}</p><h1>${"Progress, without noise."}</h1><p>${u.historyDesc}</p></section>
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="recovery-head activity-history-head"><p class="eyebrow">${u.history}</p><h1>${"Progress, without noise."}</h1><p>${u.historyDesc}</p></section>
   <section class="activity-overview" aria-label="${"Activity summary"}">
     <div class="activity-consistency"><span class="activity-consistency-icon">${ICONS.flame}</span><div><small>${"CONSISTENCY"}</small><strong>${streak} <em>${"day streak"}</em></strong><p>${`${sessions7} session${sessions7===1?"":"s"} in the last 7 days`}</p></div></div>
     <div class="history-summary"><div><strong>${rows.length}</strong><span>${"sessions"}</span></div><div><strong>${totalMinutes}</strong><span>${"minutes"}</span></div><div><strong>${totalSets}</strong><span>${"sets"}</span></div><div><strong>${totalCalories}</strong><span>${"kcal (est.)"}</span></div></div>
@@ -1900,7 +1900,7 @@ function showDiagnostics(){
   if(document.querySelector(".diagnostics-panel"))return;
   const log=(()=>{try{return JSON.parse(localStorage.getItem(errorLogKey)||"[]");}catch{return [];}})();
   const box=document.createElement("div");box.className="exit-confirm diagnostics-panel";
-  box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${"Recent errors"}</strong>${log.length?`<ul class="diagnostics-list">${log.slice().reverse().map(e=>`<li><small>${esc(e.time)} · ${esc(e.source)}</small><span>${esc(e.message)}</span></li>`).join("")}</ul>`:`<p>${"No errors recorded."}</p>`}<button data-clear-log>${"Clear log"}</button><button data-close-diagnostics>${"Close"}</button>`);
+  box.innerHTML=AWJ_SAFE_DOM.sanitize(`<strong>${"Recent errors"}</strong>${log.length?`<ul class="diagnostics-list">${log.slice().reverse().map(e=>`<li><small>${esc(e.time)} · ${esc(e.source)}</small><span>${esc(e.message)}</span></li>`).join("")}</ul>`:`<p>${"No errors recorded."}</p>`}<button data-clear-log>${"Clear log"}</button><button data-close-diagnostics>${"Close"}</button>`);
   document.body.appendChild(box);
   box.querySelector("[data-close-diagnostics]").onclick=()=>box.remove();
   box.querySelector("[data-clear-log]").onclick=()=>{localStorage.removeItem(errorLogKey);box.remove();if(state.view==="history")renderHistory();};
@@ -1909,12 +1909,12 @@ function showDiagnostics(){
 function exportData(){
   state.lastBackupAt=new Date().toISOString();state.backupSnoozedUntil=null;persist();
   const errorLog=(()=>{try{return JSON.parse(localStorage.getItem(errorLogKey)||"[]");}catch{return [];}})();
-  const payload={app:"AWJ",schema:3,guideVersion:REP_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem(storageKey)||"{}"),diagnostics:errorLog};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`rep-backup-${isoDay()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  const payload={app:"AWJ",schema:3,guideVersion:AWJ_HEALTH_GUIDE.version,exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem(storageKey)||"{}"),diagnostics:errorLog};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`awj-backup-${isoDay()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   if(state.view==="home")renderHome();
 }
 async function importData(event){
-  try{const payload=JSON.parse(await event.target.files[0].text());if(!["AWJ","Rep Gym Companion"].includes(payload.app)||![1,2,3].includes(payload.schema)||typeof payload.data!=="object")throw Error("invalid");
+  try{const payload=JSON.parse(await event.target.files[0].text());if(!["AWJ",AWJ_COMPAT.previousAppName].includes(payload.app)||![1,2,3].includes(payload.schema)||typeof payload.data!=="object")throw Error("invalid");
     if(!confirm("This will replace the current app data. Continue?"))return;
     localStorage.setItem(storageKey,JSON.stringify(payload.data));location.reload();
   }catch{alert("That backup file is invalid or damaged.");event.target.value="";}
@@ -1926,14 +1926,14 @@ const fieldChecks=[
 ];
 function renderProgramReview(){
   state.view="program-review";state.activeTab="train";document.body.classList.remove("workout-mode");updatePrimaryTabs();
-  const program=programStatus(),gate=recoveryGate(),summary=window.REP_PRODUCT_SUITE?.weeklySummary(state),action=gate.hold?"Prioritize recovery and hold progression.":program.stalled.length>=2?"Review loads and technique for the stalled lifts before progressing.":"Keep the current program if progress and recovery are good.";
-  app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("PROGRAM CHECKPOINT",`Review week ${program.week}`,"Week 8 is a review checkpoint, not the program’s expiry date.")}<section class="settings-card"><h2>${esc(action)}</h2><p>${summary?esc(summary.nextAction):"Review your recent logged workouts."}</p><p>${program.stalled.length?`Lifts to review: ${program.stalled.map(esc).join(", ")}.`:"No repeated stalls detected in the available gym records."}</p><p>Check recovery, technique, and whether the schedule still fits your week. If those are good, change nothing.</p><button type="button" class="settings-primary" data-complete-program-review>Mark program reviewed</button><button type="button" class="quiet-setting" data-program-review-back>Back to Training</button></section>`);
+  const program=programStatus(),gate=recoveryGate(),summary=window.AWJ_PRODUCT_SUITE?.weeklySummary(state),action=gate.hold?"Prioritize recovery and hold progression.":program.stalled.length>=2?"Review loads and technique for the stalled lifts before progressing.":"Keep the current program if progress and recovery are good.";
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`${moduleHeader("PROGRAM CHECKPOINT",`Review week ${program.week}`,"Week 8 is a review checkpoint, not the program’s expiry date.")}<section class="settings-card"><h2>${esc(action)}</h2><p>${summary?esc(summary.nextAction):"Review your recent logged workouts."}</p><p>${program.stalled.length?`Lifts to review: ${program.stalled.map(esc).join(", ")}.`:"No repeated stalls detected in the available gym records."}</p><p>Check recovery, technique, and whether the schedule still fits your week. If those are good, change nothing.</p><button type="button" class="settings-primary" data-complete-program-review>Mark program reviewed</button><button type="button" class="quiet-setting" data-program-review-back>Back to Training</button></section>`);
   document.querySelector("[data-complete-program-review]").onclick=()=>{state.programReview={week:program.week,reviewedAt:new Date().toISOString()};persist();renderHome();showToast("Program review saved. Check again next week, or sooner if symptoms change.");};
   document.querySelector("[data-program-review-back]").onclick=renderHome;
 }
 function renderReview(){
   state.view="review";state.activeTab="train";persist();updatePrimaryTabs();document.body.classList.remove("workout-mode");const r=state.reviews,complete=reviewExercises.filter(x=>r[x]?.signed).length;
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="recovery-head"><p class="eyebrow">${"SAFETY & QUALITY"}</p><h1>${"Human review, documented."}</h1><p>${"The visuals and cues are educational, not medical diagnosis. Sign-off below must be completed by a certified trainer or physiotherapist after inspection."}</p></section>
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="recovery-head"><p class="eyebrow">${"SAFETY & QUALITY"}</p><h1>${"Human review, documented."}</h1><p>${"The visuals and cues are educational, not medical diagnosis. Sign-off below must be completed by a certified trainer or physiotherapist after inspection."}</p></section>
   <section class="review-status"><strong>${complete}/7</strong><div><b>${"movements signed off"}</b><span>${complete===7?("Human review complete"):("Professional sign-off pending")}</span></div></section>
   <section class="review-list">${reviewExercises.map(name=>{const x=r[name]||{};return `<details class="review-card" ${x.signed?"":"open"}><summary><span>${esc(name)}</span><b>${x.signed?"✓":"○"}</b></summary><div><label><input type="checkbox" data-review-check="joints" data-review-name="${esc(name)}" ${x.joints?"checked":""}> ${"Joint path and range are accurate"}</label><label><input type="checkbox" data-review-check="muscles" data-review-name="${esc(name)}" ${x.muscles?"checked":""}> ${"Muscle highlighting is accurate"}</label><label><input type="checkbox" data-review-check="cues" data-review-name="${esc(name)}" ${x.cues?"checked":""}> ${"Cues and warnings are safe"}</label><input data-review-field="reviewer" data-review-name="${esc(name)}" value="${esc(x.reviewer||"")}" placeholder="${"Reviewer name"}"><input data-review-field="credential" data-review-name="${esc(name)}" value="${esc(x.credential||"")}" placeholder="${"Credential / licence number"}"><label class="signoff"><input type="checkbox" data-review-check="signed" data-review-name="${esc(name)}" ${x.signed?"checked":""}> ${"I sign off this movement after review"}</label></div></details>`}).join("")}</section>
   <section class="field-test"><h2>${"Real-gym field test"}</h2><p>${"Run this on the actual phone during one workout. Check an item only after testing it."}</p>${fieldChecks.map(([id,en])=>`<label><input type="checkbox" data-field="${id}" ${state.fieldTest[id]?"checked":""}> ${en}</label>`).join("")}<textarea data-field-notes placeholder="${"Issues, phone model, lighting, gloves…"}">${esc(state.fieldTest.notes||"")}</textarea><input data-field-date type="date" value="${esc(state.fieldTest.date||"")}"></section>
@@ -1946,23 +1946,23 @@ function renderReview(){
 }
 
 function renderComplete() {
-  stopSessionClock();cancelRestTimer();window.REP_ENHANCEMENTS_UI?.clearWorkoutUndo();document.body.classList.remove("workout-mode");document.body.classList.add("workout-complete-mode");
+  stopSessionClock();cancelRestTimer();window.AWJ_ENHANCEMENTS_UI?.clearWorkoutUndo();document.body.classList.remove("workout-mode");document.body.classList.add("workout-complete-mode");
   const record=state.history[0],session=sessions[record?.session||state.session];
   const name=session?sessionText(record?.session||state.session,session).name:"Workout";
   const moves=new Set((record?.entries||[]).map(entry=>entry.exercise)).size;
-  const proposals=window.REP_ENHANCEMENTS_UI?.completionProposals(record)||[];
-  const next=window.REP_PRODUCT_SUITE?.weeklySummary(state,undefined,window.REP_PERFORMANCE_INSIGHTS)?.nextAction||"Review your routine before the next session.";
+  const proposals=window.AWJ_ENHANCEMENTS_UI?.completionProposals(record)||[];
+  const next=window.AWJ_PRODUCT_SUITE?.weeklySummary(state,undefined,window.AWJ_PERFORMANCE_INSIGHTS)?.nextAction||"Review your routine before the next session.";
   const prs=(record?.entries||[]).filter(entry=>entry.personalBest);
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="completion-summary"><header><p class="muted">${esc(name)}</p><h1>Workout saved</h1><p>Saved on this device${state.syncQueue?.length?" · waiting to sync":""}.</p></header><div class="complete-stat-grid">${[[formatClock(record?.duration||0),"Duration"],[String(record?.sets||0),"Sets"],[String(moves),"Exercises"]].map(([value,label])=>`<div><strong>${esc(value)}</strong><span>${label}</span></div>`).join("")}</div><section class="completion-next"><h2>Next session</h2><p>${esc(next)}</p>${proposals.length?`<details><summary>Review suggested targets</summary>${window.REP_ENHANCEMENTS_UI.progressionCard(proposals)}</details>`:""}</section>${prs.length?`<details class="completion-records"><summary>Personal bests</summary>${prs.map(entry=>`<p>${esc(entry.exercise)} · ${esc(String(entry.weight))} kg × ${esc(String(entry.reps))}</p>`).join("")}</details>`:""}<div class="complete-actions"><button class="primary-action" data-finish-workout>Finish</button><button data-history-after>Review session in Progress</button></div></section>`);
-  document.querySelector("[data-finish-workout]").onclick=()=>window.REP_NAVIGATION.navigate("today");
-  document.querySelector("[data-history-after]").onclick=()=>window.REP_NAVIGATION.navigate("training-history");
-  document.querySelector("[data-accept-progression]")?.addEventListener("click",()=>{window.REP_ENHANCEMENTS_UI.acceptProgression(proposals);renderComplete();});
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="completion-summary"><header><p class="muted">${esc(name)}</p><h1>Workout saved</h1><p>Saved on this device${state.syncQueue?.length?" · waiting to sync":""}.</p></header><div class="complete-stat-grid">${[[formatClock(record?.duration||0),"Duration"],[String(record?.sets||0),"Sets"],[String(moves),"Exercises"]].map(([value,label])=>`<div><strong>${esc(value)}</strong><span>${label}</span></div>`).join("")}</div><section class="completion-next"><h2>Next session</h2><p>${esc(next)}</p>${proposals.length?`<details><summary>Review suggested targets</summary>${window.AWJ_ENHANCEMENTS_UI.progressionCard(proposals)}</details>`:""}</section>${prs.length?`<details class="completion-records"><summary>Personal bests</summary>${prs.map(entry=>`<p>${esc(entry.exercise)} · ${esc(String(entry.weight))} kg × ${esc(String(entry.reps))}</p>`).join("")}</details>`:""}<div class="complete-actions"><button class="primary-action" data-finish-workout>Finish</button><button data-history-after>Review session in Progress</button></div></section>`);
+  document.querySelector("[data-finish-workout]").onclick=()=>window.AWJ_NAVIGATION.navigate("today");
+  document.querySelector("[data-history-after]").onclick=()=>window.AWJ_NAVIGATION.navigate("training-history");
+  document.querySelector("[data-accept-progression]")?.addEventListener("click",()=>{window.AWJ_ENHANCEMENTS_UI.acceptProgression(proposals);renderComplete();});
 }
 
 function renderRecovery() {
   state.view="recovery";state.activeTab="train";persist();updatePrimaryTabs();
   const check = saved.checkin || {};
-  app.innerHTML = REP_SAFE_DOM.sanitize(`<section class="recovery-head"><p class="eyebrow">Recovery system</p><h1>Adaptation happens here.</h1><p>Use the basics daily. Check in weekly. Pain is information, not a challenge.</p></section>${recoveryDecisionCard()}
+  app.innerHTML = AWJ_SAFE_DOM.sanitize(`<section class="recovery-head"><p class="eyebrow">Recovery system</p><h1>Adaptation happens here.</h1><p>Use the basics daily. Check in weekly. Pain is information, not a challenge.</p></section>${recoveryDecisionCard()}
     <section class="recovery-grid">
       ${sleepSummaryCard(false)}
       <article class="recovery-card"><span class="card-kicker">Every day</span><h2>Daily basics</h2><ul><li><strong>Sleep:</strong> Track actual sleep, not only time in bed. If 10:00 PM–5:00 AM produces under 7 hours, move wind-down and bedtime earlier.</li><li><strong>Hydration:</strong> Follow thirst, urine colour, heat, and sweat loss.</li><li><strong>Nutrition:</strong> Follow the current day-type plan and protect protein and recovery.</li></ul></article>
@@ -1994,7 +1994,7 @@ function nutritionPlanKey(){const d=currentDay();return ["Sunday","Tuesday","Thu
 function dailyBucket(kind){state.daily[kind]=state.daily[kind]||{};state.daily[kind][isoDay()]=state.daily[kind][isoDay()]||{checked:{},notes:""};return state.daily[kind][isoDay()];}
 function checklist(items,prefix,bucket){return `<div class="module-checklist">${items.map((item,i)=>{const parts=Array.isArray(item)?item:["",item,""];return `<label><input type="checkbox" data-daily-key="${prefix}-${i}" ${bucket.checked[`${prefix}-${i}`]?"checked":""}><span>${parts[0]?`<time>${esc(parts[0])}</time>`:""}<strong>${esc(parts[1])}</strong>${parts[2]?`<small>${esc(parts[2])}</small>`:""}</span></label>`}).join("")}</div>`;}
 function bindDaily(kind,render){document.querySelectorAll("[data-daily-key]").forEach(el=>el.onchange=()=>{if(el.checked&&navigator.vibrate)navigator.vibrate(30);const b=dailyBucket(kind);b.checked[el.dataset.dailyKey]=el.checked;persist();render();});const notes=document.querySelector("[data-daily-notes]");if(notes)notes.oninput=e=>{dailyBucket(kind).notes=e.target.value;persistDebounced();};}
-function moduleHeader(kicker,title,copy){return `<section class="recovery-head module-head"><p class="eyebrow">${kicker}</p><h1>${title}</h1><p>${copy}</p><span class="guide-version">${"Guide"} v${REP_HEALTH_GUIDE.version} · ${REP_HEALTH_GUIDE.updatedAt}</span></section>`;}
+function moduleHeader(kicker,title,copy){return `<section class="recovery-head module-head"><p class="eyebrow">${kicker}</p><h1>${title}</h1><p>${copy}</p><span class="guide-version">${"Guide"} v${AWJ_HEALTH_GUIDE.version} · ${AWJ_HEALTH_GUIDE.updatedAt}</span></section>`;}
 const FOOD_PROFILES={gym:{label:"Gym Day",calories:2250,protein:185,carbs:248,fat:68,fiber:33,water:4200},active:{label:"Active Day",calories:2075,protein:175,carbs:0,fat:63,fiber:33,water:3600},flex:{label:"Flex Day",calories:2150,protein:175,carbs:0,fat:65,fiber:33,water:3200,calorieCeiling:2480,proteinFloor:160}};
 function foodProfile(){
   const dayName=currentDay();
@@ -2015,7 +2015,7 @@ function autoMealType(){const h=new Date().getHours();return h>=18?"Dinner":h>=1
 function todayFoodEntries(){const today=isoDay(),res=[];for(const entry of (state.foodEntries||[])){const k=entry.dateKey||(entry.date&&entry.date.includes("T")?localDay(new Date(entry.date)):String(entry.date||"").slice(0,10));if(k===today)res.push(entry);}return res.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));}
 function foodTotals(entries=todayFoodEntries()){return entries.reduce((t,e)=>{for(const key of ["calories","protein_g","carbs_g","fat_g","fiber_g","sugar_g","sodium_mg"])t[key]+=Number(e[key])||0;return t;},{calories:0,protein_g:0,carbs_g:0,fat_g:0,fiber_g:0,sugar_g:0,sodium_mg:0});}
 function meter(label,value,goal,unit,color="var(--acid)"){const pct=goal?Math.round(value/goal*100):0;return `<article class="macro-meter" style="--meter:${Math.min(pct,100)}%;--meter-color:${color}"><span>${label}</span><strong>${Math.round(value)}</strong><small>${goal?`${pct}% · ${Math.max(Math.round(goal-value),0)} ${unit} left`:`${unit} · flexible`}</small><i></i></article>`;}
-function nutritionPlanNote(){const guide=REP_HEALTH_GUIDE.nutrition,key=nutritionPlanKey(),target=guide.targets[key],meals=guide.meals[key],macroSummary=`P${target.protein} · ${target.carbs?`C${target.carbs}`:"carbs flexible"} · F${target.fat}`,calorieSummary=target.calorieCeiling?`${target.calories} kcal typical · ${target.calorieCeiling} occasional ceiling`:`${target.calories} kcal`;return `<details class="nutrition-plan-note"><summary><span class="plan-note-icon">≡</span><span><small>${"REFERENCE NOTE"}</small><strong>${"Today's nutrition plan"}</strong><em>${target.label} · ${calorieSummary} · ${macroSummary}</em></span><b>${"Tap to view"}</b></summary><div class="plan-note-body"><p>${"This plan is a reference only. Nothing is logged until you enter a meal and confirm the AI estimate below."}</p><ol>${meals.map(([time,name,macros])=>`<li><time>${esc(time)}</time><span><strong>${esc(name)}</strong><small>${esc(macros)}</small></span></li>`).join("")}</ol><div class="plan-note-extras"><strong>${"Supplements"}</strong><ul>${guide.supplements.map(item=>`<li>${esc(item)}</li>`).join("")}</ul><small>${esc(guide.milk)}</small><strong>${"Plan rules"}</strong><ul>${guide.rules.map(item=>`<li>${esc(item)}</li>`).join("")}</ul></div></div></details>`;}
+function nutritionPlanNote(){const guide=AWJ_HEALTH_GUIDE.nutrition,key=nutritionPlanKey(),target=guide.targets[key],meals=guide.meals[key],macroSummary=`P${target.protein} · ${target.carbs?`C${target.carbs}`:"carbs flexible"} · F${target.fat}`,calorieSummary=target.calorieCeiling?`${target.calories} kcal typical · ${target.calorieCeiling} occasional ceiling`:`${target.calories} kcal`;return `<details class="nutrition-plan-note"><summary><span class="plan-note-icon">≡</span><span><small>${"REFERENCE NOTE"}</small><strong>${"Today's nutrition plan"}</strong><em>${target.label} · ${calorieSummary} · ${macroSummary}</em></span><b>${"Tap to view"}</b></summary><div class="plan-note-body"><p>${"This plan is a reference only. Nothing is logged until you enter a meal and confirm the AI estimate below."}</p><ol>${meals.map(([time,name,macros])=>`<li><time>${esc(time)}</time><span><strong>${esc(name)}</strong><small>${esc(macros)}</small></span></li>`).join("")}</ol><div class="plan-note-extras"><strong>${"Supplements"}</strong><ul>${guide.supplements.map(item=>`<li>${esc(item)}</li>`).join("")}</ul><small>${esc(guide.milk)}</small><strong>${"Plan rules"}</strong><ul>${guide.rules.map(item=>`<li>${esc(item)}</li>`).join("")}</ul></div></div></details>`;}
 function foodDraftCard(){const d=state.foodDraft;if(!d)return "";return `<section class="analysis-card"><div class="analysis-head"><div><small>${"REVIEW ESTIMATE"}</small><strong>${esc(d.food_name||d.rawNote||"Meal note")}</strong></div><span>${esc(d.confidence||"Low")} · ${Number(d.confidence_pct)||0}%<br>${"Not logged until confirmed"}</span></div><div class="analysis-text"><label>${"Meal name"}<input data-food-text="food_name" value="${esc(d.food_name||d.rawNote||"Meal note")}"></label><label>${"Portion size"}<input data-food-text="portion_size" value="${esc(d.portion_size||"")}"></label></div><div class="macro-editor">${[["calories","Calories"],["protein_g","Protein"],["carbs_g","Carbs"],["fat_g","Fat"],["fiber_g","Fiber"],["sugar_g","Sugar"],["sodium_mg","Sodium"],["estimated_weight_g","Weight g"]].map(([key,label])=>`<label>${label}<input data-food-macro="${key}" type="number" min="0" step="0.1" inputmode="decimal" value="${Number(d[key])||0}"></label>`).join("")}</div><p class="analysis-notes">${esc(d.notes||"AI nutrition values are estimates. Adjust anything that looks wrong before saving.")}</p><div class="analysis-actions"><button data-cancel-food>${"Cancel"}</button><button class="primary" data-save-food>${"Confirm & log meal"}</button></div></section>`;}
 function foodEntryCard(entry){const time=new Date(entry.date).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});return `<article class="food-entry"><div><small>${esc(entry.mealType||"Meal")} · ${time} · ${esc(entry.logMethod||"Note")}</small><strong>${esc(entry.food_name||entry.rawNote||"Meal note")}</strong><span>${esc(entry.rawNote||entry.portion_size||"")}</span></div><div class="food-entry-macros"><b>${Math.round(Number(entry.calories)||0)} kcal</b><em>P ${Math.round(Number(entry.protein_g)||0)} · C ${Math.round(Number(entry.carbs_g)||0)} · F ${Math.round(Number(entry.fat_g)||0)}</em></div><div class="food-entry-actions"><button data-save-template="${esc(entry.id)}">${"☆ Save as template"}</button><button class="danger" data-delete-food="${esc(entry.id)}">${"Delete"}</button></div></article>`;}
 function foodConnectionCard(){const connected=Boolean(localStorage.getItem(syncKeyStorage)),status=state.pairMessage||syncStatusText();return `<section class="food-connect ${connected?"is-connected":"is-needed"}" aria-live="polite"><div class="food-connect-head"><span class="food-connect-icon">${connected?"✓":"N"}</span><div><small>${connected?("DEVICE PAIRED"):("ONE-TIME SETUP")}</small><strong>${connected?("AI + Notion are ready"):("Connect right here in Food")}</strong><span data-sync-status>${esc(status)}</span></div></div>${connected?`<div class="food-connect-actions"><button class="quiet" data-food-disconnect>${"Unpair device"}</button></div>`:`<p>${"Enter the Cloudflare pairing key once. This device stays paired until revoked or its site data is cleared."}</p><form class="food-pair-form" data-food-pair-form autocomplete="off"><input data-food-pair-key type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${"Paste REP_SYNC_KEY"}" aria-label="${"App pairing key"}"><button data-food-pair-submit ${state.pairBusy?"disabled":""}>${state.pairBusy?("Checking…"):("Connect & continue")}</button></form>${state.pairMessage?`<p class="food-pair-error">${esc(state.pairMessage)}</p>`:""}`}</section>`;}
@@ -2051,14 +2051,14 @@ function mealTemplatesSection(){
   const form=state.newTemplateOpen?`<form class="template-form" data-template-form><input data-template-field="food_name" placeholder="${"Meal name"}" maxlength="80" required><div class="template-form-grid"><input data-template-field="calories" type="number" min="0" step="1" inputmode="numeric" placeholder="${"kcal"}"><input data-template-field="protein_g" type="number" min="0" step="0.1" inputmode="decimal" placeholder="${"Protein g"}"><input data-template-field="carbs_g" type="number" min="0" step="0.1" inputmode="decimal" placeholder="${"Carbs g"}"><input data-template-field="fat_g" type="number" min="0" step="0.1" inputmode="decimal" placeholder="${"Fat g"}"></div><div class="template-form-actions"><button type="button" data-cancel-template>${"Cancel"}</button><button type="submit">${"Save template"}</button></div></form>`:"";
   return `<div class="food-section-head"><h2>${"Meal templates"}</h2><button class="quiet" data-new-template>${state.newTemplateOpen?("Close"):("+ New template")}</button></div>${form}${items.length?`<section class="meal-templates">${items.map(t=>`<div class="meal-template"><button data-use-template="${esc(t.id)}"><strong>${esc(t.food_name)}</strong><span>${Math.round(Number(t.calories)||0)} kcal · P ${Math.round(Number(t.protein_g)||0)}g</span></button><button class="template-remove" data-delete-template="${esc(t.id)}" aria-label="${"Delete template"}">×</button></div>`).join("")}</section>`:state.newTemplateOpen?"":`<p class="template-empty">${"No templates yet. Save a logged meal as a template below, or create one manually."}</p>`}`;
 }
-function supplementList(){return REP_HEALTH_GUIDE.nutrition.supplements||[];}
+function supplementList(){return AWJ_HEALTH_GUIDE.nutrition.supplements||[];}
 function supplementsDone(){const b=dailyBucket("nutrition");return supplementList().filter((_,i)=>b.checked[`supp-${i}`]).length;}
 function supplementsAllComplete(){const total=supplementList().length;return total>0&&supplementsDone()===total;}
 function supplementsCard(){
   const items=supplementList(),b=dailyBucket("nutrition"),done=supplementsDone(),percent=items.length?Math.round(done/items.length*100):0;
   return `<section class="supplement-card"><div class="supplement-head"><div><small>${"SUPPLEMENTS TODAY"}</small><strong>${done} / ${items.length} ${"taken"}</strong></div>${miniRing(percent,"var(--blue)")}</div>
     <div class="module-checklist supplement-list">${items.map((item,i)=>`<label><input type="checkbox" data-daily-key="supp-${i}" ${b.checked[`supp-${i}`]?"checked":""}><span><strong>${esc(item)}</strong></span></label>`).join("")}</div>
-    <small class="supplement-note">${esc(REP_HEALTH_GUIDE.nutrition.milk||"")}</small></section>`;
+    <small class="supplement-note">${esc(AWJ_HEALTH_GUIDE.nutrition.milk||"")}</small></section>`;
 }
 function weekKey(d=new Date()){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return localDay(x);}
 function currentWeekWeight(){return state.bodyWeights.find(w=>w.week===weekKey())||null;}
@@ -2123,7 +2123,7 @@ function metricBaseline(field,days=30,beforeDate=null){
   return recent.length>=3?Math.round(recent.reduce((n,s)=>n+s[field],0)/recent.length*10)/10:null;
 }
 function computeSleepNeed(dateStr=isoDay()){
-  const rollingAvg=recentSleepAvg(14,dateStr),baseline=rollingAvg??REP_HEALTH_GUIDE.rules.minimumSleepHours;
+  const rollingAvg=recentSleepAvg(14,dateStr),baseline=rollingAvg??AWJ_HEALTH_GUIDE.rules.minimumSleepHours;
   const prevDate=shiftDateKey(dateStr,-1);
   const strainDebt=Math.round((computeStrainScore(prevDate)/21)*10)/10;
   const endStr=String(dateStr).slice(0,10),startStr=shiftDateKey(endStr,-7);
@@ -2140,7 +2140,7 @@ function computeSleepPerformance(dateStr=isoDay()){
 }
 function computeBedtimeSuggestion(){
   const tomorrow=shiftLocalDay(1);
-  const need=computeSleepNeed(tomorrow),wakeTime=REP_HEALTH_GUIDE.rules.wakeTime;
+  const need=computeSleepNeed(tomorrow),wakeTime=AWJ_HEALTH_GUIDE.rules.wakeTime;
   const [wh,wm]=wakeTime.split(":").map(Number);
   const minutes=(((wh*60+wm)-Math.round(need.need*60))%1440+1440)%1440;
   const time=`${String(Math.floor(minutes/60)).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")}`;
@@ -2238,14 +2238,14 @@ function vitalsTeaserStrip(){
   </button>`;
 }
 function sleepTrackerCard(){
-  const today=state.sleepLogs.find(s=>s.date===isoDay()),sorted=[...state.sleepLogs].sort((a,b)=>b.date.localeCompare(a.date)),avg=recentSleepAvg(7),minHours=REP_HEALTH_GUIDE.rules.minimumSleepHours;
+  const today=state.sleepLogs.find(s=>s.date===isoDay()),sorted=[...state.sleepLogs].sort((a,b)=>b.date.localeCompare(a.date)),avg=recentSleepAvg(7),minHours=AWJ_HEALTH_GUIDE.rules.minimumSleepHours;
   const perf=computeSleepPerformance();
   const sleepRow=s=>`<div class="sleep-row"><span>${new Date(s.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span><strong>${esc(s.bedtime)} → ${esc(s.wake)}</strong><small class="${s.hours<minHours?"low":""}">${s.hours}h</small><button class="quiet" data-delete-sleep="${s.date}" aria-label="${"Delete"}">×</button></div>`;
   const visibleRows=sorted.slice(0,3).map(sleepRow).join(""),restEntries=sorted.slice(3,7),restRows=restEntries.map(sleepRow).join("");
   return `<article class="recovery-card wide sleep-card"><span class="card-kicker">${"FROM APPLE WATCH"}</span><h2>${"Daily sleep log"}</h2>
     <div class="sleep-summary"><div><small>${"LAST NIGHT"}</small><strong>${today?`${today.hours}h`:("Not logged yet")}</strong></div>${avg!==null?`<div><small>${"7-DAY AVERAGE"}</small><strong class="${avg<minHours?"warn":""}">${avg}h</strong></div>`:""}${perf?`<div><small>${"SLEEP PERFORMANCE"}</small><strong class="${perf.performance<85?"warn":""}">${perf.performance}%</strong></div>`:""}</div>
     ${perf?`<p class="sleep-need-breakdown">${`Tonight's need: ${perf.need}h (${perf.baseline}h ${perf.estimatedBaseline?"estimated ":""}baseline${perf.strainDebt?` + ${perf.strainDebt}h from yesterday's strain`:""}${perf.sleepDebt?` + ${perf.sleepDebt}h sleep debt`:""})`}</p>`:""}
-    <form class="sleep-form" data-sleep-form><label>${"Bedtime"}<input type="time" data-sleep-bedtime value="${today?.bedtime||REP_HEALTH_GUIDE.rules.targetBedtime}" required></label><label>${"Wake time"}<input type="time" data-sleep-wake value="${today?.wake||REP_HEALTH_GUIDE.rules.wakeTime}" required></label><button type="submit">${today?("Update"):("Save")}</button></form>
+    <form class="sleep-form" data-sleep-form><label>${"Bedtime"}<input type="time" data-sleep-bedtime value="${today?.bedtime||AWJ_HEALTH_GUIDE.rules.targetBedtime}" required></label><label>${"Wake time"}<input type="time" data-sleep-wake value="${today?.wake||AWJ_HEALTH_GUIDE.rules.wakeTime}" required></label><button type="submit">${today?("Update"):("Save")}</button></form>
     <div class="sleep-form-optional"><label>${"HRV ms (optional)"}<input type="number" min="0" max="300" step="1" inputmode="numeric" data-sleep-hrv value="${today?.hrv||""}" placeholder="${"e.g. 55"}"></label><label>${"Resting HR (optional)"}<input type="number" min="0" max="200" step="1" inputmode="numeric" data-sleep-rhr value="${today?.rhr||""}" placeholder="${"e.g. 58"}"></label><label>${"Respiratory rate (optional)"}<input type="number" min="0" max="60" step="0.1" inputmode="decimal" data-sleep-resp value="${today?.resp||""}" placeholder="${"e.g. 15"}"></label></div>
     <p class="sleep-hint">${"Read both times off the Apple Watch Health app, then log them here manually. The optional fields improve the Recovery score's accuracy."}</p>
     ${visibleRows?`<div class="sleep-history">${visibleRows}</div>`:""}
@@ -2260,7 +2260,7 @@ function journalCard(){
     <p class="sleep-hint">${"Log what applied, and any Recovery patterns tied to them will show up in Insights after a few days."}</p></section>`;
 }
 function sleepSummaryCard(){
-  const today=state.sleepLogs.find(s=>s.date===isoDay()),avg=recentSleepAvg(7),minHours=REP_HEALTH_GUIDE.rules.minimumSleepHours;
+  const today=state.sleepLogs.find(s=>s.date===isoDay()),avg=recentSleepAvg(7),minHours=AWJ_HEALTH_GUIDE.rules.minimumSleepHours;
   return `<article class="recovery-card wide sleep-card sleep-summary-card" data-goto-vitals role="button" tabindex="0"><span class="card-kicker">${"FROM APPLE WATCH"}</span><h2>${"Daily sleep log"}</h2>
     <div class="sleep-summary"><div><small>${"LAST NIGHT"}</small><strong>${today?`${today.hours}h`:("Not logged yet")}</strong></div>${avg!==null?`<div><small>${"7-DAY AVERAGE"}</small><strong class="${avg<minHours?"warn":""}">${avg}h</strong></div>`:""}</div>
     <p class="sleep-hint">${"Log sleep, HRV, and resting heart rate from the Vitals tab, with the option to import from a screenshot."}</p>
@@ -2330,13 +2330,13 @@ async function analyzeVitalsImage(file){
   try{
     const image=await prepareFoodImage(file);
     state.vitalsBusy=true;state.vitalsError=false;state.vitalsStatus="Reading screenshot…";renderVitals();
-    const response=await repAuth.fetch("/api/vitals/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(image)}),data=await response.json().catch(()=>({}));
+    const response=await awjAuth.fetch("/api/vitals/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(image)}),data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok){const error=Error(data.error||`Analysis failed (${response.status})`);error.auth=response.status===401;throw error;}
     if(data.vitals?.recognizable===false)throw Error(data.vitals.notes||("Couldn't read any vitals from this image."));
     state.vitalsDraft=data.vitals;state.vitalsStatus="";
   }catch(error){
     state.vitalsError=true;
-    if(error.auth){repAuth.clear();state.syncState="auth";state.vitalsStatus="Device pairing expired. Reconnect from the Nutrition tab.";}
+    if(error.auth){awjAuth.clear();state.syncState="auth";state.vitalsStatus="Device pairing expired. Reconnect from the Nutrition tab.";}
     else state.vitalsStatus=String(error.message||error);
   }finally{
     state.vitalsBusy=false;persist();renderVitals();
@@ -2415,7 +2415,7 @@ async function fetchPendingVitals(showStatus=false){
   }
   try{
     const since=shiftLocalDay(-7);
-    const response=await repAuth.fetch(`/api/vitals/pending?since=${encodeURIComponent(since)}`);
+    const response=await awjAuth.fetch(`/api/vitals/pending?since=${encodeURIComponent(since)}`);
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.ok)throw Error(data.error||`Check failed (${response.status})`);
     if(data.entries&&data.entries.length){
@@ -2474,11 +2474,11 @@ function bindVitalsTools(){
   document.querySelectorAll("[data-delete-sleep]").forEach(b=>b.onclick=()=>{deleteSleepLog(b.dataset.deleteSleep);renderVitals();});
   document.querySelectorAll(".journal-list [data-daily-key]").forEach(el=>el.onchange=()=>{if(el.checked&&navigator.vibrate)navigator.vibrate(30);const b=dailyBucket("journal");b.checked[el.dataset.dailyKey]=el.checked;persist();renderVitals();});
 }
-function renderVitals(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.recovery();return renderVitalsLegacy();}
+function renderVitals(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.recovery();return renderVitalsLegacy();}
 function renderVitalsLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="vitals";state.activeTab="vitals";persistDebounced();updatePrimaryTabs();
   
-  app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("VITALS","Your readiness today.","Recovery and strain built from your own data, plus the option to import numbers straight from Apple Health screenshots.")}
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`${moduleHeader("VITALS","Your readiness today.","Recovery and strain built from your own data, plus the option to import numbers straight from Apple Health screenshots.")}
   ${strainRecoveryCard()}
   ${vitalsScreenshotCard()}
   ${sleepTrackerCard()}
@@ -2548,18 +2548,18 @@ function frequentMealsTray(){
   </div>`;
 }
 
-function renderNutrition(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.nutrition();return renderNutritionLegacy();}
+function renderNutrition(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.nutrition();return renderNutritionLegacy();}
 function renderNutritionLegacy(){
   stopExerciseClock();stopSessionClock();document.body.classList.remove("workout-mode");state.view="nutrition";state.activeTab="food";state.foodMealType=state.foodMealType||autoMealType();persistDebounced();updatePrimaryTabs();const profile=foodProfile(),entries=todayFoodEntries(),totals=foodTotals(entries),water=Number(state.water[isoDay()])||0,note=state.foodNote||"";
-  app.innerHTML=REP_SAFE_DOM.sanitize(`<section class="recovery-head module-head food-head"><p class="eyebrow">${"FOOD TRACKER"}</p><h1>${"Write what you ate."}</h1><p>${"Just like your Food Tracking bot: add a note, photo, voice description, or barcode; review the estimate; then save."}</p><span class="guide-version">${"Nutrition values are estimates, not medical advice"}</span><p class="integration-disclosure">${"When analysis is used, the description or image is sent to Google Gemini. The meal is not sent to Notion until you save it."}</p></section><section class="food-profile"><div><small>${"TODAY'S PROFILE"}</small><strong>${profile.label}</strong><span style="display:inline-block;margin-top:4px;font-size:10px;font-weight:900;color:var(--orange);background:rgba(255,139,61,.12);padding:2px 7px;border-radius:6px;border:1px solid rgba(255,139,61,.25);">${profile.carbCycleBadge}</span></div><span>${entries.length} ${"entries"}<br>${syncStatusText()}</span></section>${reminderStrip("food")}${foodConnectionCard()}<section class="macro-dashboard">${meter("Calories",totals.calories,profile.calories,"kcal","#ffd36a")}${meter("Protein",totals.protein_g,profile.protein,"g")}${meter("Carbs",totals.carbs_g,profile.carbs,"g","var(--blue)")}${meter("Fat",totals.fat_g,profile.fat,"g","var(--orange)")}${macroDonutRing(totals,profile)}</section><section class="meal-composer"><div class="meal-composer-head"><div><small>${"NEW MEAL NOTE"}</small><h2>${"What did you eat?"}</h2></div><span class="estimate-pill">AI ESTIMATE</span></div>${frequentMealsTray()}<div class="quick-meal-chips" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;">${([["🍳 4 Eggs + 2 Toast","4 eggs and 2 toast slices with butter"],["🥤 Whey + Creatine","1 scoop whey protein and 5g creatine in water"],["🍗 200g Chicken + Rice","200g grilled chicken breast with 1.5 cup white rice"],["🥣 Oatmeal + PB + Banana","1 cup oatmeal, 2 tbsp peanut butter, 1 banana"],["🥩 200g Steak + Potatoes","200g beef steak and roasted potatoes"]]).map(([chip,desc])=>`<button class="quick-chip-btn" type="button" data-quick-meal="${esc(desc)}" style="padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;">${esc(chip)}</button>`).join("")}</div><div class="meal-type-row">${[["Breakfast","Breakfast"],["Lunch","Lunch"],["Dinner","Dinner"],["Snack","Snack"]].map(([type,label])=>`<button data-meal-type="${type}" class="${state.foodMealType===type?"is-active":""}">${label}</button>`).join("")}</div><textarea class="meal-note" data-food-note maxlength="1200" placeholder="${"Example: 180g grilled chicken, one cup of rice, and salad…"}">${esc(note)}</textarea><div class="log-method-row">${[["Ingredients","Ingredients"],["Restaurant","Restaurant"]].map(([method,label])=>`<button data-log-method="${method}" class="${state.foodLogMethod===method?"is-active":""}">${label}</button>`).join("")}</div><div class="meal-tools"><label>▣ ${"Photo"}<input data-food-photo type="file" accept="image/*" capture="environment"></label><label>▤ ${"Gallery"}<input data-food-gallery type="file" accept="image/*"></label><button data-food-voice>◉ ${"Voice"}</button><label>▥ ${"Barcode"}<input data-food-barcode type="file" accept="image/*" capture="environment"></label><button data-live-barcode type="button">🔍 ${"Live Scan"}</button></div><button class="analyze-meal" data-analyze-food ${state.foodBusy?"disabled":""}>${state.foodBusy?("Analyzing…"):("Analyze note")}</button><button class="analyze-meal" data-manual-food style="margin-top:7px;background:transparent;color:var(--muted);border:1px solid var(--line)">${"Save as note without AI"}</button><p class="composer-status ${state.foodError?"is-error":""}" data-food-status>${esc(state.foodStatus||"")}</p>${foodRetryControl()}</section>${foodDraftCard()}${mealTemplatesSection()}<div class="food-section-head"><h2>${"Today's trackers"}</h2></div>${supplementsCard()}${weightTrackerCard()}${waterTrackerCard(water,profile.water)}<div class="food-section-head"><h2>${"Today's notes"}</h2><span>${entries.length} ${"meals"}</span></div><section class="food-log">${entries.length?entries.map(foodEntryCard).join(""):`<div class="food-empty">${"No meals logged today. Write your first food note above."}</div>`}</section>`);
-  document.querySelector(".food-connect")?.insertAdjacentHTML("afterend",REP_SAFE_DOM.sanitize(nutritionPlanNote()));const foodHeadings=[...document.querySelectorAll(".food-section-head h2")];if(foodHeadings.length)foodHeadings.at(-1).textContent="Food entries today";
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`<section class="recovery-head module-head food-head"><p class="eyebrow">${"FOOD TRACKER"}</p><h1>${"Write what you ate."}</h1><p>${"Just like your Food Tracking bot: add a note, photo, voice description, or barcode; review the estimate; then save."}</p><span class="guide-version">${"Nutrition values are estimates, not medical advice"}</span><p class="integration-disclosure">${"When analysis is used, the description or image is sent to Google Gemini. The meal is not sent to Notion until you save it."}</p></section><section class="food-profile"><div><small>${"TODAY'S PROFILE"}</small><strong>${profile.label}</strong><span style="display:inline-block;margin-top:4px;font-size:10px;font-weight:900;color:var(--orange);background:rgba(255,139,61,.12);padding:2px 7px;border-radius:6px;border:1px solid rgba(255,139,61,.25);">${profile.carbCycleBadge}</span></div><span>${entries.length} ${"entries"}<br>${syncStatusText()}</span></section>${reminderStrip("food")}${foodConnectionCard()}<section class="macro-dashboard">${meter("Calories",totals.calories,profile.calories,"kcal","#ffd36a")}${meter("Protein",totals.protein_g,profile.protein,"g")}${meter("Carbs",totals.carbs_g,profile.carbs,"g","var(--blue)")}${meter("Fat",totals.fat_g,profile.fat,"g","var(--orange)")}${macroDonutRing(totals,profile)}</section><section class="meal-composer"><div class="meal-composer-head"><div><small>${"NEW MEAL NOTE"}</small><h2>${"What did you eat?"}</h2></div><span class="estimate-pill">AI ESTIMATE</span></div>${frequentMealsTray()}<div class="quick-meal-chips" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;">${([["🍳 4 Eggs + 2 Toast","4 eggs and 2 toast slices with butter"],["🥤 Whey + Creatine","1 scoop whey protein and 5g creatine in water"],["🍗 200g Chicken + Rice","200g grilled chicken breast with 1.5 cup white rice"],["🥣 Oatmeal + PB + Banana","1 cup oatmeal, 2 tbsp peanut butter, 1 banana"],["🥩 200g Steak + Potatoes","200g beef steak and roasted potatoes"]]).map(([chip,desc])=>`<button class="quick-chip-btn" type="button" data-quick-meal="${esc(desc)}" style="padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;">${esc(chip)}</button>`).join("")}</div><div class="meal-type-row">${[["Breakfast","Breakfast"],["Lunch","Lunch"],["Dinner","Dinner"],["Snack","Snack"]].map(([type,label])=>`<button data-meal-type="${type}" class="${state.foodMealType===type?"is-active":""}">${label}</button>`).join("")}</div><textarea class="meal-note" data-food-note maxlength="1200" placeholder="${"Example: 180g grilled chicken, one cup of rice, and salad…"}">${esc(note)}</textarea><div class="log-method-row">${[["Ingredients","Ingredients"],["Restaurant","Restaurant"]].map(([method,label])=>`<button data-log-method="${method}" class="${state.foodLogMethod===method?"is-active":""}">${label}</button>`).join("")}</div><div class="meal-tools"><label>▣ ${"Photo"}<input data-food-photo type="file" accept="image/*" capture="environment"></label><label>▤ ${"Gallery"}<input data-food-gallery type="file" accept="image/*"></label><button data-food-voice>◉ ${"Voice"}</button><label>▥ ${"Barcode"}<input data-food-barcode type="file" accept="image/*" capture="environment"></label><button data-live-barcode type="button">🔍 ${"Live Scan"}</button></div><button class="analyze-meal" data-analyze-food ${state.foodBusy?"disabled":""}>${state.foodBusy?("Analyzing…"):("Analyze note")}</button><button class="analyze-meal" data-manual-food style="margin-top:7px;background:transparent;color:var(--muted);border:1px solid var(--line)">${"Save as note without AI"}</button><p class="composer-status ${state.foodError?"is-error":""}" data-food-status>${esc(state.foodStatus||"")}</p>${foodRetryControl()}</section>${foodDraftCard()}${mealTemplatesSection()}<div class="food-section-head"><h2>${"Today's trackers"}</h2></div>${supplementsCard()}${weightTrackerCard()}${waterTrackerCard(water,profile.water)}<div class="food-section-head"><h2>${"Today's notes"}</h2><span>${entries.length} ${"meals"}</span></div><section class="food-log">${entries.length?entries.map(foodEntryCard).join(""):`<div class="food-empty">${"No meals logged today. Write your first food note above."}</div>`}</section>`);
+  document.querySelector(".food-connect")?.insertAdjacentHTML("afterend",AWJ_SAFE_DOM.sanitize(nutritionPlanNote()));const foodHeadings=[...document.querySelectorAll(".food-section-head h2")];if(foodHeadings.length)foodHeadings.at(-1).textContent="Food entries today";
   bindFoodTracker();
 }
 function bindFoodTracker(){const note=document.querySelector("[data-food-note]");note.oninput=e=>{state.foodNote=e.target.value;if(state.foodPendingPayload){state.foodPendingPayload=null;document.querySelector("[data-retry-food]")?.remove();}persistDebounced();};document.querySelectorAll("[data-quick-meal]").forEach(button=>button.onclick=()=>{state.foodNote=button.dataset.quickMeal;analyzeFood({mode:"text",description:button.dataset.quickMeal});});document.querySelectorAll("[data-meal-type]").forEach(button=>button.onclick=()=>{state.foodMealType=button.dataset.mealType;persist();renderNutrition();});document.querySelectorAll("[data-log-method]").forEach(button=>button.onclick=()=>{state.foodLogMethod=button.dataset.logMethod;persist();renderNutrition();});document.querySelector("[data-analyze-food]").onclick=()=>analyzeFood({mode:state.foodLogMethod==="Restaurant"?"restaurant":"text",description:String(state.foodNote||"").trim()});document.querySelector("[data-manual-food]").onclick=()=>manualFoodDraft();document.querySelector("[data-food-photo]").onchange=e=>analyzeFoodImage(e.target.files?.[0],"photo");document.querySelector("[data-food-gallery]").onchange=e=>analyzeFoodImage(e.target.files?.[0],"photo");document.querySelector("[data-food-barcode]").onchange=e=>analyzeFoodImage(e.target.files?.[0],"barcode-image");document.querySelector("[data-live-barcode]")?.addEventListener("click",startLiveBarcodeScanner);document.querySelector("[data-food-voice]").onclick=startFoodVoice;document.querySelector("[data-food-pair-form]")?.addEventListener("submit",e=>{e.preventDefault();pairFromFood();});document.querySelector("[data-food-disconnect]")?.addEventListener("click",forgetPairingKey);document.querySelector("[data-retry-food]")?.addEventListener("click",()=>{const pending=state.foodPendingPayload;state.foodPendingPayload=null;if(pending)analyzeFood(pending);});document.querySelectorAll("[data-water-delta]").forEach(button=>button.onclick=()=>changeFoodWater(Number(button.dataset.waterDelta)));document.querySelector("[data-water-form]").onsubmit=e=>{e.preventDefault();applyCustomWater("add");};document.querySelector('[data-water-custom-action="set"]').onclick=()=>applyCustomWater("set");document.querySelector("[data-water-reset]").onclick=()=>setFoodWater(0);document.querySelector("[data-cancel-food]")?.addEventListener("click",()=>{state.foodDraft=null;renderNutrition();});document.querySelector("[data-save-food]")?.addEventListener("click",saveFoodDraft);document.querySelectorAll("[data-delete-food]").forEach(button=>button.onclick=()=>deleteFoodEntry(button.dataset.deleteFood));document.querySelectorAll("[data-save-template]").forEach(button=>button.onclick=()=>saveMealTemplate(button.dataset.saveTemplate));document.querySelectorAll("[data-use-template]").forEach(button=>button.onclick=()=>useMealTemplate(button.dataset.useTemplate));document.querySelectorAll("[data-delete-template]").forEach(button=>button.onclick=()=>deleteMealTemplate(button.dataset.deleteTemplate));document.querySelector("[data-new-template]")?.addEventListener("click",()=>{state.newTemplateOpen=!state.newTemplateOpen;renderNutrition();});document.querySelector("[data-cancel-template]")?.addEventListener("click",()=>{state.newTemplateOpen=false;renderNutrition();});document.querySelector("[data-template-form]")?.addEventListener("submit",e=>{e.preventDefault();createMealTemplateManual();});document.querySelectorAll("[data-daily-key]").forEach(el=>el.onchange=()=>{if(el.checked&&navigator.vibrate)navigator.vibrate(30);const b=dailyBucket("nutrition");b.checked[el.dataset.dailyKey]=el.checked;queueNutritionSummary();persist();renderNutrition();});document.querySelector("[data-weight-form]").onsubmit=e=>{e.preventDefault();const input=document.querySelector("[data-weight-input]"),value=Number(input.value);if(!Number.isFinite(value)||value<30||value>300){input.setCustomValidity("Enter a weight from 30 to 300 kg.");input.reportValidity();return;}input.setCustomValidity("");saveBodyWeight(value);renderNutrition();};document.querySelectorAll("[data-delete-weight]").forEach(button=>button.onclick=()=>{deleteBodyWeight(button.dataset.deleteWeight);renderNutrition();});document.querySelectorAll("[data-reminder-tab]").forEach(button=>button.onclick=()=>setPrimaryTab(button.dataset.reminderTab));document.querySelector("[data-reminder-toggle]")?.addEventListener("click",e=>{const t=e.currentTarget.dataset.reminderToggle;state.reminderExpanded[t]=!state.reminderExpanded[t];renderNutrition();});updateSyncPanel();}
 
 async function startLiveBarcodeScanner(){
-  if(window.REP_BARCODE_SCANNER?.openScannerModal){
-    window.REP_BARCODE_SCANNER.openScannerModal(item => {
+  if(window.AWJ_BARCODE_SCANNER?.openScannerModal){
+    window.AWJ_BARCODE_SCANNER.openScannerModal(item => {
       state.foodDraft = {
         ...item,
         mealType: state.foodMealType || "Snack",
@@ -2575,11 +2575,11 @@ async function startLiveBarcodeScanner(){
   if(!navigator.mediaDevices?.getUserMedia){showToast("Camera is not available.");return;}
   const overlay=document.createElement("div");
   overlay.className="barcode-scanner-overlay";
-  overlay.innerHTML=REP_SAFE_DOM.sanitize(`<div class="barcode-video-box"><video autoplay playsinline muted></video><div class="barcode-reticle"></div></div><p style="color:#fff;margin-top:14px;font-size:13px;">${"Point camera at food barcode"}</p><button class="quiet" data-close-barcode style="margin-top:10px;color:#fff;padding:8px 16px;border:1px solid rgba(255,255,255,.2);border-radius:999px;">${"Cancel"}</button>`);
+  overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<div class="barcode-video-box"><video autoplay playsinline muted></video><div class="barcode-reticle"></div></div><p style="color:#fff;margin-top:14px;font-size:13px;">${"Point camera at food barcode"}</p><button class="quiet" data-close-barcode style="margin-top:10px;color:#fff;padding:8px 16px;border:1px solid rgba(255,255,255,.2);border-radius:999px;">${"Cancel"}</button>`);
   document.body.appendChild(overlay);
   let stream=null,scanInterval=null;
   const video=overlay.querySelector("video");
-  const close=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());if(scanInterval)clearInterval(scanInterval);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());};
+  const close=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());if(scanInterval)clearInterval(scanInterval);(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());};
   overlay.querySelector("[data-close-barcode]").onclick=close;
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
@@ -2602,7 +2602,7 @@ async function startLiveBarcodeScanner(){
   },250);
 }
 function manualFoodDraft(){const rawNote=String(state.foodNote||"").trim();if(!rawNote){state.foodStatus="Write a meal note first.";state.foodError=true;renderNutrition();return;}state.foodPendingPayload=null;state.foodDraft={food_name:rawNote,portion_size:"Not specified",calories:0,protein_g:0,carbs_g:0,fat_g:0,fiber_g:0,sugar_g:0,sodium_mg:0,estimated_weight_g:0,confidence:"Manual",confidence_pct:100,notes:"Saved without AI analysis.",recognizable:true,source:"Manual note",rawNote,mealType:state.foodMealType,logMethod:"Ingredients"};state.foodStatus="";state.foodError=false;renderNutrition();}
-async function analyzeFood(payload){const rawNote=String(payload.description||state.foodNote||"").trim();if(payload.mode!=="photo"&&payload.mode!=="barcode-image"&&!rawNote){state.foodStatus="Describe the meal first.";state.foodError=true;renderNutrition();return;}if((!navigator.onLine||!repAuth?.isPaired?.())&&payload.mode!=="photo"&&payload.mode!=="barcode-image"&&window.REP_OFFLINE_NUTRITION){const offlineEst=window.REP_OFFLINE_NUTRITION.estimate(rawNote);state.foodDraft={...offlineEst,rawNote:rawNote||offlineEst.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(state.foodLogMethod||"Ingredients")};state.foodStatus="Estimated locally offline. Review portions, then confirm.";state.foodError=false;state.foodBusy=false;persist();renderNutrition();return;}const key=localStorage.getItem(syncKeyStorage);if(!key){state.foodPendingPayload=payload;state.foodStatus="Connect once below and this analysis will continue automatically.";state.foodError=false;renderNutrition();setTimeout(()=>document.querySelector("[data-food-pair-key]")?.focus(),0);return;}state.foodPendingPayload=null;state.pairMessage="";state.foodBusy=true;state.foodError=false;state.foodStatus="Estimating nutrition…";renderNutrition();try{const response=await repAuth.fetch("/api/food/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const error=Error(data.error||`Analysis failed (${response.status})`);error.auth=response.status===401;throw error;}if(data.nutrition?.recognizable===false)throw Error(data.nutrition.notes||"Food was not recognizable.");state.foodDraft={...data.nutrition,rawNote:rawNote||data.nutrition.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(data.logMethod||state.foodLogMethod)};state.foodStatus="";}catch(error){if(payload.mode!=="photo"&&payload.mode!=="barcode-image"&&window.REP_OFFLINE_NUTRITION){const offlineEst=window.REP_OFFLINE_NUTRITION.estimate(rawNote);state.foodDraft={...offlineEst,rawNote:rawNote||offlineEst.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(state.foodLogMethod||"Ingredients")};state.foodStatus="Server unreachable. Estimated locally on your device.";state.foodError=false;}else{state.foodPendingPayload=payload;state.foodError=true;if(error.auth){repAuth.clear();state.syncState="auth";state.pairMessage="Device pairing expired. Reconnect.";state.foodStatus="Reconnect below and the analysis will continue.";}else state.foodStatus=!navigator.onLine?("You're offline. Your note is saved; reconnect and tap Retry."):String(error.message||error);}}finally{state.foodBusy=false;persist();renderNutrition();}}
+async function analyzeFood(payload){const rawNote=String(payload.description||state.foodNote||"").trim();if(payload.mode!=="photo"&&payload.mode!=="barcode-image"&&!rawNote){state.foodStatus="Describe the meal first.";state.foodError=true;renderNutrition();return;}if((!navigator.onLine||!awjAuth?.isPaired?.())&&payload.mode!=="photo"&&payload.mode!=="barcode-image"&&window.AWJ_OFFLINE_NUTRITION){const offlineEst=window.AWJ_OFFLINE_NUTRITION.estimate(rawNote);state.foodDraft={...offlineEst,rawNote:rawNote||offlineEst.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(state.foodLogMethod||"Ingredients")};state.foodStatus="Estimated locally offline. Review portions, then confirm.";state.foodError=false;state.foodBusy=false;persist();renderNutrition();return;}const key=localStorage.getItem(syncKeyStorage);if(!key){state.foodPendingPayload=payload;state.foodStatus="Connect once below and this analysis will continue automatically.";state.foodError=false;renderNutrition();setTimeout(()=>document.querySelector("[data-food-pair-key]")?.focus(),0);return;}state.foodPendingPayload=null;state.pairMessage="";state.foodBusy=true;state.foodError=false;state.foodStatus="Estimating nutrition…";renderNutrition();try{const response=await awjAuth.fetch("/api/food/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const error=Error(data.error||`Analysis failed (${response.status})`);error.auth=response.status===401;throw error;}if(data.nutrition?.recognizable===false)throw Error(data.nutrition.notes||"Food was not recognizable.");state.foodDraft={...data.nutrition,rawNote:rawNote||data.nutrition.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(data.logMethod||state.foodLogMethod)};state.foodStatus="";}catch(error){if(payload.mode!=="photo"&&payload.mode!=="barcode-image"&&window.AWJ_OFFLINE_NUTRITION){const offlineEst=window.AWJ_OFFLINE_NUTRITION.estimate(rawNote);state.foodDraft={...offlineEst,rawNote:rawNote||offlineEst.food_name,mealType:state.foodMealType,logMethod:payload.mode==="text"&&state.foodLogMethod==="Voice"?"Voice":(state.foodLogMethod||"Ingredients")};state.foodStatus="Server unreachable. Estimated locally on your device.";state.foodError=false;}else{state.foodPendingPayload=payload;state.foodError=true;if(error.auth){awjAuth.clear();state.syncState="auth";state.pairMessage="Device pairing expired. Reconnect.";state.foodStatus="Reconnect below and the analysis will continue.";}else state.foodStatus=!navigator.onLine?("You're offline. Your note is saved; reconnect and tap Retry."):String(error.message||error);}}finally{state.foodBusy=false;persist();renderNutrition();}}
 async function prepareFoodImage(file){if(!file)throw Error("No image selected.");if(file.size>20*1024*1024)throw Error("Choose an image under 20 MB.");const source=window.createImageBitmap?await createImageBitmap(file):await new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(url);reject(Error("This image could not be opened."));};img.src=url;}),width=source.width||source.naturalWidth,height=source.height||source.naturalHeight,scale=Math.min(1,1600/Math.max(width,height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale));canvas.getContext("2d").drawImage(source,0,0,canvas.width,canvas.height);source.close?.();return {image:canvas.toDataURL("image/jpeg",.82).split(",")[1],mimeType:"image/jpeg"};}
 async function analyzeFoodImage(file,mode){try{const image=await prepareFoodImage(file);state.foodLogMethod=mode==="photo"?"Photo":"Barcode";await analyzeFood({mode,...image,description:String(state.foodNote||"").trim()});}catch(error){state.foodError=true;state.foodStatus=String(error.message||error);renderNutrition();}}
 function startFoodVoice(){const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SpeechRecognition){state.foodStatus="Voice dictation is unavailable here. Use the microphone on your keyboard.";state.foodError=true;renderNutrition();return;}const recognition=new SpeechRecognition();recognition.lang="en-US";recognition.interimResults=false;recognition.maxAlternatives=1;state.foodStatus="Listening…";state.foodError=false;document.querySelector("[data-food-voice]")?.classList.add("is-listening");recognition.onresult=e=>{const text=e.results[0][0].transcript;state.foodNote=text;state.foodLogMethod="Voice";state.foodStatus="Transcribed. Analyzing…";renderNutrition();analyzeFood({mode:"text",description:text});};recognition.onerror=e=>{state.foodStatus=`Voice: ${e.error}`;state.foodError=true;renderNutrition();};recognition.onend=()=>document.querySelector("[data-food-voice]")?.classList.remove("is-listening");recognition.start();}
@@ -2612,11 +2612,11 @@ function setFoodWater(amount){const next=Math.max(0,Math.min(Math.round(Number(a
 function changeFoodWater(delta){setFoodWater((Number(state.water[isoDay()])||0)+(Number(delta)||0));}
 function applyCustomWater(mode){const input=document.querySelector("[data-water-custom]"),amount=Number(input?.value);if(!input||!Number.isFinite(amount)||amount<=0||amount>20000){input?.setCustomValidity("Enter an amount from 1 to 20,000 ml.");input?.reportValidity();return;}input.setCustomValidity("");setFoodWater(mode==="set"?amount:(Number(state.water[isoDay()])||0)+amount);}
 function deleteFoodEntry(id){state.foodEntries=state.foodEntries.filter(entry=>entry.id!==id);queueNutritionSummary();persist();renderNutrition();}
-function renderHygiene(){if(window.REP_TRAINING_UI)return window.REP_TRAINING_UI.routines();return renderHygieneLegacy();}
+function renderHygiene(){if(window.AWJ_TRAINING_UI)return window.AWJ_TRAINING_UI.routines();return renderHygieneLegacy();}
 function renderHygieneLegacy(){
-  stopSessionClock();document.body.classList.remove("workout-mode");state.view="hygiene";state.activeTab="care";persistDebounced();updatePrimaryTabs();const g=REP_HEALTH_GUIDE.hygiene,b=dailyBucket("hygiene"),day=currentDay(),hair=g.hair[day],training=["Sunday","Monday","Tuesday","Wednesday","Thursday"].includes(day),afterWorkDay=["Sunday","Tuesday","Wednesday","Thursday"].includes(day),sections=[...g.morning.map((x,i)=>["morning",i,x]),...g.evening.map((x,i)=>["evening",i,x]),...hair.map((x,i)=>["hair",i,x]),...(training?g.postWorkout.map((x,i)=>["post",i,x]):[]),...(afterWorkDay?g.afterWork.map((x,i)=>["after",i,x]):[])],done=sections.filter(([p,i])=>b.checked[`${p}-${i}`]).length,percent=Math.round(done/sections.length*100),nonNegotiableDone=[Boolean(b.checked["morning-0"]&&b.checked["evening-2"]),Boolean(b.checked["evening-1"]),Boolean(b.checked["morning-1"]),Boolean(!training||b.checked["post-0"])];
+  stopSessionClock();document.body.classList.remove("workout-mode");state.view="hygiene";state.activeTab="care";persistDebounced();updatePrimaryTabs();const g=AWJ_HEALTH_GUIDE.hygiene,b=dailyBucket("hygiene"),day=currentDay(),hair=g.hair[day],training=["Sunday","Monday","Tuesday","Wednesday","Thursday"].includes(day),afterWorkDay=["Sunday","Tuesday","Wednesday","Thursday"].includes(day),sections=[...g.morning.map((x,i)=>["morning",i,x]),...g.evening.map((x,i)=>["evening",i,x]),...hair.map((x,i)=>["hair",i,x]),...(training?g.postWorkout.map((x,i)=>["post",i,x]):[]),...(afterWorkDay?g.afterWork.map((x,i)=>["after",i,x]):[])],done=sections.filter(([p,i])=>b.checked[`${p}-${i}`]).length,percent=Math.round(done/sections.length*100),nonNegotiableDone=[Boolean(b.checked["morning-0"]&&b.checked["evening-2"]),Boolean(b.checked["evening-1"]),Boolean(b.checked["morning-1"]),Boolean(!training||b.checked["post-0"])];
   const complete=p=>{const group=sections.filter(x=>x[0]===p);return group.length>0&&group.every(([,i])=>b.checked[`${p}-${i}`]);};
-  app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("DAILY CARE","Scan. Do. Done.","Morning, evening, post-workout, and the correct hair routine for today.")}
+  app.innerHTML=AWJ_SAFE_DOM.sanitize(`${moduleHeader("DAILY CARE","Scan. Do. Done.","Morning, evening, post-workout, and the correct hair routine for today.")}
   ${reminderStrip("care")}
   <button class="care-plan-button" data-view-care-plan>${"☰ View full care plan"}</button>
   <section class="nonneg-grid">${g.nonNegotiables.map((x,i)=>`<div class="${nonNegotiableDone[i]?"done":""}"><span>${i+1}</span><strong>${esc(x)}</strong></div>`).join("")}</section>
@@ -2635,10 +2635,10 @@ function renderHygieneLegacy(){
 
 function showCarePlan(){
   if(document.querySelector(".care-plan-panel"))return;
-  const g=REP_HEALTH_GUIDE.hygiene,today=currentDay();
+  const g=AWJ_HEALTH_GUIDE.hygiene,today=currentDay();
   const list=items=>`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
   const box=document.createElement("div");box.className="exit-confirm care-plan-panel";
-  box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${"Full care plan"}</strong>
+  box.innerHTML=AWJ_SAFE_DOM.sanitize(`<strong>${"Full care plan"}</strong>
     <div class="care-plan-section"><h3>${"Non-negotiables"}</h3>${list(g.nonNegotiables)}</div>
     <div class="care-plan-section"><h3>${"Morning"}</h3>${list(g.morning)}</div>
     <div class="care-plan-section"><h3>${"Evening"}</h3>${list(g.evening)}</div>
@@ -2656,7 +2656,7 @@ function showLogActivity(presetType){
   if(document.querySelector(".activity-panel"))return;
   const defaultMinutes=60,defaultType=ACTIVITY_TYPES.some(([id])=>id===presetType)?presetType:ACTIVITY_TYPES[0][0];
   const box=document.createElement("div");box.className="exit-confirm activity-panel";
-  box.innerHTML=REP_SAFE_DOM.sanitize(`<strong>${"Log an activity"}</strong>
+  box.innerHTML=AWJ_SAFE_DOM.sanitize(`<strong>${"Log an activity"}</strong>
     <p class="activity-hint">${"For unstructured sports like padel and football — duration and calories burned from your Apple Watch, not a guided exercise list."}</p>
     <div class="activity-types">${ACTIVITY_TYPES.map(([id,label])=>`<button data-activity-type="${id}" class="${id===defaultType?"is-active":""}">${label.en}</button>`).join("")}</div>
     <input class="activity-custom" data-activity-custom type="text" maxlength="40" placeholder="${"Activity name"}" style="display:none">
@@ -2684,8 +2684,8 @@ function showLogActivity(presetType){
     }
   };
 }
-function renderBadDay(){const gate=recoveryGate();state.view="badDay";state.activeTab="train";persist();updatePrimaryTabs();app.innerHTML=REP_SAFE_DOM.sanitize(`${moduleHeader("BAD DAY MODE","Protect the streak.","Choose the smallest version you can do safely. Your normal program stays untouched.")}${gate.hold?`<section class="decision-card hold"><div><small>${"RECOVERY GATE"}</small><h2>${"Light is the correct call today"}</h2><p>${gate.flags} ${"red flags"}</p></div></section>`:""}<section class="fallback-grid"><button data-fallback="bad"><span>01</span><small>5–7 MIN</small><h2>${"The floor"}</h2><p>${"3 minutes marching + Kegels 3 × 10."}</p><strong>${"Start now →"}</strong></button><button data-fallback="gymLite"><span>02</span><small>25–30 MIN</small><h2>${"Reduced gym"}</h2><p>Leg Press · Chest Press · Seated Row</p><strong>${"Start now →"}</strong></button><button data-active-recovery><span>03</span><small>5 MIN</small><h2>${"Recovery only"}</h2><p>${"Legs up the wall with slow breathing."}</p><strong>${"Start timer →"}</strong></button></section>`);document.querySelectorAll("[data-fallback]").forEach(b=>b.onclick=()=>startSession(b.dataset.fallback));document.querySelector("[data-active-recovery]").onclick=()=>startGuideTimer("Legs up the wall",300);}
-function startGuideTimer(label,seconds){let remaining=seconds,paused=false;const overlay=document.createElement("div");overlay.className="timed-mode";overlay.innerHTML=REP_SAFE_DOM.sanitize(`<button class="timed-close" aria-label="${"Close"}">×</button><p>${esc(label)}</p><strong data-guide-value>${formatClock(remaining)}</strong><span>${"BREATHE SLOWLY · STAY COMFORTABLE"}</span><div class="timed-progress"><i data-guide-progress></i></div><div class="timed-actions"><button data-guide-pause>${U().pause}</button><button data-guide-finish>${U().skip}</button></div>`);document.body.appendChild(overlay);const close=()=>{clearInterval(tick);(window.REP_MOTION?.dismiss(overlay)||overlay.remove());};overlay.querySelector(".timed-close").onclick=close;overlay.querySelector("[data-guide-finish]").onclick=()=>{signalEnd();close();};overlay.querySelector("[data-guide-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?U().resume:U().pause;};const tick=setInterval(()=>{if(paused)return;remaining--;overlay.querySelector("[data-guide-value]").textContent=formatClock(Math.max(0,remaining));overlay.querySelector("[data-guide-progress]").style.width=`${Math.max(0,remaining/seconds*100)}%`;if(remaining<=0){signalEnd();close();}},1000);}
+function renderBadDay(){const gate=recoveryGate();state.view="badDay";state.activeTab="train";persist();updatePrimaryTabs();app.innerHTML=AWJ_SAFE_DOM.sanitize(`${moduleHeader("BAD DAY MODE","Protect the streak.","Choose the smallest version you can do safely. Your normal program stays untouched.")}${gate.hold?`<section class="decision-card hold"><div><small>${"RECOVERY GATE"}</small><h2>${"Light is the correct call today"}</h2><p>${gate.flags} ${"red flags"}</p></div></section>`:""}<section class="fallback-grid"><button data-fallback="bad"><span>01</span><small>5–7 MIN</small><h2>${"The floor"}</h2><p>${"3 minutes marching + Kegels 3 × 10."}</p><strong>${"Start now →"}</strong></button><button data-fallback="gymLite"><span>02</span><small>25–30 MIN</small><h2>${"Reduced gym"}</h2><p>Leg Press · Chest Press · Seated Row</p><strong>${"Start now →"}</strong></button><button data-active-recovery><span>03</span><small>5 MIN</small><h2>${"Recovery only"}</h2><p>${"Legs up the wall with slow breathing."}</p><strong>${"Start timer →"}</strong></button></section>`);document.querySelectorAll("[data-fallback]").forEach(b=>b.onclick=()=>startSession(b.dataset.fallback));document.querySelector("[data-active-recovery]").onclick=()=>startGuideTimer("Legs up the wall",300);}
+function startGuideTimer(label,seconds){let remaining=seconds,paused=false;const overlay=document.createElement("div");overlay.className="timed-mode";overlay.innerHTML=AWJ_SAFE_DOM.sanitize(`<button class="timed-close" aria-label="${"Close"}">×</button><p>${esc(label)}</p><strong data-guide-value>${formatClock(remaining)}</strong><span>${"BREATHE SLOWLY · STAY COMFORTABLE"}</span><div class="timed-progress"><i data-guide-progress></i></div><div class="timed-actions"><button data-guide-pause>${U().pause}</button><button data-guide-finish>${U().skip}</button></div>`);document.body.appendChild(overlay);const close=()=>{clearInterval(tick);(window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());};overlay.querySelector(".timed-close").onclick=close;overlay.querySelector("[data-guide-finish]").onclick=()=>{signalEnd();close();};overlay.querySelector("[data-guide-pause]").onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?U().resume:U().pause;};const tick=setInterval(()=>{if(paused)return;remaining--;overlay.querySelector("[data-guide-value]").textContent=formatClock(Math.max(0,remaining));overlay.querySelector("[data-guide-progress]").style.width=`${Math.max(0,remaining/seconds*100)}%`;if(remaining<=0){signalEnd();close();}},1000);}
 
 function clearRestPreview(){
   timerDock.classList.remove("has-next-preview");
@@ -2699,7 +2699,7 @@ function renderRestPreview(){
   const nextBase=item&&t&&t.set>=item.sets-1?session.exercises[state.index+1]:null;
   if(!nextBase){clearRestPreview();return;}
   const nextItem=currentItem(nextBase);
-  document.querySelector("#timerPreviewVisual").innerHTML=REP_SAFE_DOM.sanitize(exerciseVisual(nextItem,{preview:true,context:"rest"}));
+  document.querySelector("#timerPreviewVisual").innerHTML=AWJ_SAFE_DOM.sanitize(exerciseVisual(nextItem,{preview:true,context:"rest"}));
   document.querySelector("#timerPreviewLabel").textContent="UP NEXT";
   document.querySelector("#timerPreviewName").textContent=nextItem.name;
   document.querySelector("#timerPreviewMeta").textContent=`${nextItem.prescription} · ${nextItem.intensity}`;
@@ -2710,8 +2710,8 @@ function renderRestPreview(){
   timerNextPreview.setAttribute("aria-hidden","false");
   timerDock.classList.add("has-next-preview");
   observeCinematicMedia(document.querySelector("#timerPreviewVisual"),nextItem);
-  window.REP_MEDIA_PLAYER.mount();
-  window.REP_TECHNIQUE.attach();
+  window.AWJ_MEDIA_PLAYER.mount();
+  window.AWJ_TECHNIQUE.attach();
 }
 
 function cancelRestTimer({notify=false}={}){
@@ -2770,8 +2770,8 @@ function updateTimer(){
     playCountdownBeep(520, 0.08);
     if(navigator.vibrate)navigator.vibrate(40);
   }
-  if(window.REP_AUDIO_COACH?.announceRestCountdown) {
-    window.REP_AUDIO_COACH.announceRestCountdown(t.remaining);
+  if(window.AWJ_AUDIO_COACH?.announceRestCountdown) {
+    window.AWJ_AUDIO_COACH.announceRestCountdown(t.remaining);
   }
 }
 function finishTimer(){
@@ -2842,7 +2842,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;})
 async function installApp(){
   if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;return;}
   const msg="On iPhone: tap Share, then Add to Home Screen. On Android: open the browser menu, then Install app.";
-  const box=document.createElement("div");box.className="install-help";box.innerHTML=REP_SAFE_DOM.sanitize(`<button aria-label="${"Close"}">×</button><strong>${U().install}</strong><p>${msg}</p>`);document.body.appendChild(box);box.querySelector("button").onclick=()=>box.remove();
+  const box=document.createElement("div");box.className="install-help";box.innerHTML=AWJ_SAFE_DOM.sanitize(`<button aria-label="${"Close"}">×</button><strong>${U().install}</strong><p>${msg}</p>`);document.body.appendChild(box);box.querySelector("button").onclick=()=>box.remove();
 }
 function network(){const el=document.querySelector("#networkStatus");el.classList.toggle("is-offline",!navigator.onLine);el.lastChild.textContent=` ${navigator.onLine?U().offlineReady:U().offlineMode}`;}
 addEventListener("online",()=>{network();fetchPendingVitals();});addEventListener("offline",network);network();
@@ -2853,18 +2853,18 @@ addEventListener("online",()=>{network();fetchPendingVitals();});addEventListene
 // makes that check happen every time, not just on the browser's own schedule.
 async function registerServiceWorker(){
   if(!("serviceWorker" in navigator)||!location.protocol.startsWith("http"))return;
-  const reg=await navigator.serviceWorker.register(`./sw.js?v=${window.REP_BUILD_VERSION||"dev"}`);
+  const reg=await navigator.serviceWorker.register(`./sw.js?v=${window.AWJ_BUILD_VERSION||"dev"}`);
   const showUpdate=()=>{
     if(!reg.waiting||!navigator.serviceWorker.controller||document.querySelector(".update-bar"))return;
     const bar=document.createElement("div");
     bar.className="update-bar";
-    bar.innerHTML=REP_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);
+    bar.innerHTML=AWJ_SAFE_DOM.sanitize(`<span>${U().updateReady}</span><button>${U().reload}</button>`);
     document.body.appendChild(bar);
     bar.querySelector("button").onclick=async()=>{
       try{
         persist();
-        if(window.REP_STORE?.saveStatus==="failed")throw Error("Your changes are not saved on this device.");
-        await window.REP_STORE?.flush();
+        if(window.AWJ_STORE?.saveStatus==="failed")throw Error("Your changes are not saved on this device.");
+        await window.AWJ_STORE?.flush();
         navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload(),{once:true});
         reg.waiting?.postMessage({type:"SKIP_WAITING"});
       }catch(error){showToast(`Update paused: ${String(error.message||error)}`);}
@@ -2881,11 +2881,11 @@ if(document.readyState==="complete")registerServiceWorker().catch(()=>{});else a
 // hidden) for the three things that otherwise require navigating to a
 // specific tab first. Each action reuses the exact same handlers a manual
 // tap would hit - no parallel logging path.
-function continuingSession(){return REP_TRAINING_SESSION.isResumableWorkout(state,sessions);}
+function continuingSession(){return AWJ_TRAINING_SESSION.isResumableWorkout(state,sessions);}
 function renderQuickLog(){
   const container=document.querySelector("#quickLog");if(!container)return;
   
-  container.innerHTML=REP_SAFE_DOM.sanitize(`<div class="quick-log-menu" id="quickLogMenu" hidden>
+  container.innerHTML=AWJ_SAFE_DOM.sanitize(`<div class="quick-log-menu" id="quickLogMenu" hidden>
       <button type="button" data-quick-action="workout">${ICONS.dumbbell}<span>${continuingSession()?("Resume workout"):("Start workout")}</span></button>
       <button type="button" data-quick-action="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg><span>${"Log a meal"}</span></button>
       <button type="button" data-quick-action="activity">${ICONS.pulse}<span>${"Log an activity"}</span></button>
@@ -2958,7 +2958,7 @@ function consumeQuickLaunch(){
 // tab switches (setPrimaryTab) still work normally and aren't affected. A
 // manifest-shortcut launch (?quick=...) still lands here first, then
 // immediately layers its action on top, same as a manual tap would.
-window.REP_CORE_PAGES=Object.freeze({nutrition:renderNutritionLegacy,vitals:renderVitalsLegacy,wellness:renderHygieneLegacy,history:renderHistoryLegacy,insights:renderInsightsLegacy});
+window.AWJ_CORE_PAGES=Object.freeze({nutrition:renderNutritionLegacy,vitals:renderVitalsLegacy,wellness:renderHygieneLegacy,history:renderHistoryLegacy,insights:renderInsightsLegacy});
 renderOverview();
 renderQuickLog();
 consumeQuickLaunch();

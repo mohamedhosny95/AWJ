@@ -1,10 +1,11 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFileSync } from "node:fs";
 
 await import("../src/client/importer.js");
-const importer = globalThis.REP_DATA_IMPORTER;
+const importer = globalThis.AWJ_DATA_IMPORTER;
 
 function createAppContext(initialState = {}) {
   const safeDomCode = readFileSync("src/client/safe-dom.js", "utf8");
@@ -52,7 +53,7 @@ function createAppContext(initialState = {}) {
   const sandbox = {
     window: {
       DOMPurify: { sanitize: s => s },
-      REP_HYDRATED_STATE: initialState
+      AWJ_HYDRATED_STATE: initialState
     },
     document: mockDoc,
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
@@ -102,11 +103,11 @@ function createAppContext(initialState = {}) {
   sandbox.globalThis = sandbox;
 
   const context = vm.createContext(sandbox);
-  vm.runInContext(safeDomCode, context);
-  vm.runInContext(healthDataCode, context);
-  vm.runInContext(trainingSessionCode, context);
-  vm.runInContext(readFileSync("src/client/exercise-catalog.js", "utf8"),context);
-  vm.runInContext(appCode, context);
+  vm.runInContext(compatibilitySource+"\n"+(safeDomCode), context);
+  vm.runInContext(compatibilitySource+"\n"+(healthDataCode), context);
+  vm.runInContext(compatibilitySource+"\n"+(trainingSessionCode), context);
+  vm.runInContext(compatibilitySource+"\n"+(readFileSync("src/client/exercise-catalog.js", "utf8")),context);
+  vm.runInContext(compatibilitySource+"\n"+(appCode), context);
 
   return sandbox;
 }
@@ -431,20 +432,20 @@ test("Recovery check-in persistence: keeps legacy date as local YYYY-MM-DD while
   assert.equal(app.recordDateKey(record), today);
 });
 
-test("Health plan context: REP_HEALTH_GUIDE loads frozen with canonical provenance and operational rules", () => {
+test("Health plan context: AWJ_HEALTH_GUIDE loads frozen with canonical provenance and operational rules", () => {
   const app = createAppContext();
-  assert.ok(app.window.REP_HEALTH_GUIDE, "REP_HEALTH_GUIDE is loaded on window");
-  assert.equal(app.window.REP_HEALTH_GUIDE.version, "2026.09.15");
-  assert.equal(app.window.REP_HEALTH_GUIDE.updatedAt, "2026-09-15");
-  assert.equal(app.window.REP_HEALTH_GUIDE.provenance?.canonicalPath, "data/health-plan.json");
-  assert.match(app.window.REP_HEALTH_GUIDE.provenance?.sha256, /^[0-9a-f]{64}$/);
-  assert.equal(app.window.REP_HEALTH_GUIDE.rules.minimumSleepHours, 7);
-  assert.equal(app.window.REP_HEALTH_GUIDE.rules.redFlagThreshold, 2);
-  assert.equal(app.window.REP_HEALTH_GUIDE.provenance?.sourceDocuments?.length, 5);
-  for (const doc of app.window.REP_HEALTH_GUIDE.provenance.sourceDocuments) {
+  assert.ok(app.window.AWJ_HEALTH_GUIDE, "AWJ_HEALTH_GUIDE is loaded on window");
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.version, "2026.09.15");
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.updatedAt, "2026-09-15");
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.provenance?.canonicalPath, "data/health-plan.json");
+  assert.match(app.window.AWJ_HEALTH_GUIDE.provenance?.sha256, /^[0-9a-f]{64}$/);
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.rules.minimumSleepHours, 7);
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.rules.redFlagThreshold, 2);
+  assert.equal(app.window.AWJ_HEALTH_GUIDE.provenance?.sourceDocuments?.length, 5);
+  for (const doc of app.window.AWJ_HEALTH_GUIDE.provenance.sourceDocuments) {
     assert.equal(doc.contentSha256, null);
     assert.ok(doc.fileName && doc.role && doc.status);
   }
-  assert.ok(Object.isFrozen(app.window.REP_HEALTH_GUIDE), "REP_HEALTH_GUIDE must be frozen");
+  assert.ok(Object.isFrozen(app.window.AWJ_HEALTH_GUIDE), "AWJ_HEALTH_GUIDE must be frozen");
 });
 

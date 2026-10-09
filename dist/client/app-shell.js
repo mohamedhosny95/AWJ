@@ -5,15 +5,15 @@
     const { enter, heading, readinessMarkup, saveStatus, bindSaveStatus, route, checkin, sheet } = ui;
     function today() {
       enter("home-overview", "home");
-      const resume = REP_TRAINING_SESSION.isResumableWorkout(state, sessions), plan = window.REP_ENHANCEMENTS_UI.adaptiveTodayPlan(), id = resume ? state.session : plan.targetSession, s = sessions[id] || { name: "Recovery day", meta: "No scheduled workout", description: plan.detail, exercises: [] }, ls = sessionText(id, s), duration = id ? s.duration || ls.meta.match(/\d+[–-]\d+ min|\d+ min/)?.[0] || "" : "";
+      const resume = AWJ_TRAINING_SESSION.isResumableWorkout(state, sessions), plan = window.AWJ_ENHANCEMENTS_UI.adaptiveTodayPlan(), id = resume ? state.session : plan.targetSession, s = sessions[id] || { name: "Recovery day", meta: "No scheduled workout", description: plan.detail, exercises: [] }, ls = sessionText(id, s), duration = id ? s.duration || ls.meta.match(/\d+[–-]\d+ min|\d+ min/)?.[0] || "" : "";
       const sessionDetail = id ? [duration || null, `${s.exercises.length} exercises`, resume ? `Exercise ${state.index + 1}` : null].filter(Boolean).map(esc).join(" \xB7 ") : "A lighter day for rest, gentle movement, and your daily practices.";
-      app.innerHTML = REP_SAFE_DOM.sanitize(`${heading("Today", (/* @__PURE__ */ new Date()).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}<section class="today-session" data-today-session><div><span class="muted">${resume ? "In progress" : id ? "Today's workout" : "Today\u2019s focus"}</span><h2>${esc(ls.name)}</h2><p>${sessionDetail}</p></div><button class="primary-action" data-today-start>${resume ? "Resume workout" : id ? "Start workout" : "Review recovery"}</button><button class="quiet-action" data-today-preview>${id ? "Review exercises" : "View routines"}</button></section>${readinessMarkup()}<nav class="quick-actions" aria-label="Quick actions"><button data-adjust-today>Adjust today</button><button data-today-activity>Log activity</button><button data-today-food>Meal / water</button><button data-today-checkin>Check-in</button></nav>${saveStatus()}<section data-daily-routines></section>`);
+      app.innerHTML = AWJ_SAFE_DOM.sanitize(`${heading("Today", (/* @__PURE__ */ new Date()).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}<section class="today-session" data-today-session><div><span class="muted">${resume ? "In progress" : id ? "Today's workout" : "Today\u2019s focus"}</span><h2>${esc(ls.name)}</h2><p>${sessionDetail}</p></div><button class="primary-action" data-today-start>${resume ? "Resume workout" : id ? "Start workout" : "Review recovery"}</button><button class="quiet-action" data-today-preview>${id ? "Review exercises" : "View routines"}</button></section>${readinessMarkup()}<nav class="quick-actions" aria-label="Quick actions"><button data-adjust-today>Adjust today</button><button data-today-activity>Log activity</button><button data-today-food>Meal / water</button><button data-today-checkin>Check-in</button></nav>${saveStatus()}<section data-daily-routines></section>`);
       document.querySelector("[data-today-start]").onclick = () => {
         if (!id) {
           route("health-vitals");
           return;
         }
-        if (!resume) REP_ADAPTIVE_COACH.applyPlan(state, plan, sessions);
+        if (!resume) AWJ_ADAPTIVE_COACH.applyPlan(state, plan, sessions);
         startSession(id);
       };
       document.querySelector("[data-today-preview]").onclick = () => id ? showSessionPreview(id) : route("training-program");
@@ -30,12 +30,12 @@
       document.querySelector("[data-today-activity]").onclick = () => showLogActivity();
       document.querySelector("[data-today-food]").onclick = () => route("nutrition-log");
       document.querySelector("[data-today-checkin]").onclick = checkin;
-      window.REP_HABITS.mount();
+      window.AWJ_HABITS.mount();
       bindSaveStatus();
       const totals = foodTotals(), water = Number(state.water?.[isoDay()] || 0), overview = document.createElement("nav");
       overview.className = "daily-overview";
       overview.setAttribute("aria-label", "Daily overview");
-      overview.innerHTML = REP_SAFE_DOM.sanitize(`<a href="#/nutrition/today"><strong>${Math.round(totals.calories || 0)}</strong><span>Calories logged</span></a><a href="#/nutrition/today"><strong>${esc(window.waterDisplay(water))}</strong><span>Water today</span></a><a href="#/wellbeing/recovery"><strong>Check in</strong><span>Recovery & sleep</span></a>`);
+      overview.innerHTML = AWJ_SAFE_DOM.sanitize(`<a href="#/nutrition/today"><strong>${Math.round(totals.calories || 0)}</strong><span>Calories logged</span></a><a href="#/nutrition/today"><strong>${esc(window.waterDisplay(water))}</strong><span>Water today</span></a><a href="#/wellbeing/recovery"><strong>Check in</strong><span>Recovery & sleep</span></a>`);
       app.querySelector(".quick-actions")?.before(overview);
     }
     return { today };
@@ -46,18 +46,18 @@
     const { enter, heading, route, preferences, sheet } = ui;
     let library = { query: "", equipment: "all", muscle: "all" };
     function routineCard(id, s) {
-      const favourite = state.routineFavourites.includes(id), resume = REP_TRAINING_SESSION.isResumableWorkout(state, sessions, id);
+      const favourite = state.routineFavourites.includes(id), resume = AWJ_TRAINING_SESSION.isResumableWorkout(state, sessions, id);
       return `<article class="routine-card" data-routine-card="${esc(id)}"><div><h2>${esc(s.name)}</h2><p>${s.exercises.length} exercises${s.duration ? ` \xB7 ${esc(s.duration)}` : ""}</p></div><button data-routine-favourite="${esc(id)}" aria-pressed="${favourite}" aria-label="${favourite ? "Unfavourite" : "Favourite"} ${esc(s.name)}">${favourite ? "\u2605" : "\u2606"}</button><div class="routine-actions"><button class="primary-action" data-session="${esc(id)}">${resume ? "Resume" : "Preview"}</button>${id.startsWith("custom-") ? `<button data-edit-custom="${esc(id)}">Edit</button>` : ""}</div></article>`;
     }
     function train() {
       enter("home", "train");
       state.trainingView = "program";
-      window.REP_CUSTOM_WORKOUTS.getCustomRoutines();
+      window.AWJ_CUSTOM_WORKOUTS.getCustomRoutines();
       const ids = Object.keys(sessions).filter((id) => !["bad", "gymLite"].includes(id)).sort((a, b) => Number(state.routineFavourites.includes(b)) - Number(state.routineFavourites.includes(a)));
-      app.innerHTML = REP_SAFE_DOM.sanitize(`${heading("Train", "Your routines, this week, and exercise technique.")}<nav class="screen-shortcuts" aria-label="Training shortcuts"><button data-train-jump="routines">Routines</button><button data-train-jump="library">Find exercise</button><button data-train-jump="schedule">Schedule</button></nav><section class="train-week"><h2>This week</h2><div class="week-plan">${window.REP_ENHANCEMENTS_UI.dayNames.map((day) => {
-        const focus = window.REP_ENHANCEMENTS_UI.daySchedule(day)?.focus || state.preferences?.schedule?.[day]?.focus || "rest";
-        return `<div><span>${esc(day.slice(0, 3))}</span><strong>${esc(window.REP_ENHANCEMENTS_UI.focusLabel(focus))}</strong></div>`;
-      }).join("")}</div><button data-train-schedule>Edit schedule</button></section><div class="section-title"><h2>Workout routines</h2><button class="primary-action" data-create-new-routine>New routine</button></div><section class="routine-list">${ids.map((id) => routineCard(id, sessions[id])).join("")}</section><section class="exercise-library"><h2>Exercise library</h2><label>Search exercises<input type="search" data-library-search value="${esc(library.query)}" placeholder="Exercise or muscle"></label><div class="library-filters"><label>Equipment<select data-library-equipment>${["all", "machines", "dumbbells", "barbell", "bands", "bodyweight", "cardio"].map((x) => `<option value="${x}" ${library.equipment === x ? "selected" : ""}>${x === "all" ? "All equipment" : x}</option>`).join("")}</select></label><label>Muscle<select data-library-muscle><option value="all">All muscles</option>${[...new Set(REP_EXERCISES.list().flatMap((x) => x.muscleTags))].sort().map((x) => `<option ${library.muscle === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label></div><p data-library-count role="status"></p><div data-library-results></div></section><details class="supporting-details"><summary>Plan tools and safety</summary><button data-train-review>Technique review</button><button data-train-planreview>Program checkpoint</button><button data-train-export>Export / share plan</button></details>`);
+      app.innerHTML = AWJ_SAFE_DOM.sanitize(`${heading("Train", "Your routines, this week, and exercise technique.")}<nav class="screen-shortcuts" aria-label="Training shortcuts"><button data-train-jump="routines">Routines</button><button data-train-jump="library">Find exercise</button><button data-train-jump="schedule">Schedule</button></nav><section class="train-week"><h2>This week</h2><div class="week-plan">${window.AWJ_ENHANCEMENTS_UI.dayNames.map((day) => {
+        const focus = window.AWJ_ENHANCEMENTS_UI.daySchedule(day)?.focus || state.preferences?.schedule?.[day]?.focus || "rest";
+        return `<div><span>${esc(day.slice(0, 3))}</span><strong>${esc(window.AWJ_ENHANCEMENTS_UI.focusLabel(focus))}</strong></div>`;
+      }).join("")}</div><button data-train-schedule>Edit schedule</button></section><div class="section-title"><h2>Workout routines</h2><button class="primary-action" data-create-new-routine>New routine</button></div><section class="routine-list">${ids.map((id) => routineCard(id, sessions[id])).join("")}</section><section class="exercise-library"><h2>Exercise library</h2><label>Search exercises<input type="search" data-library-search value="${esc(library.query)}" placeholder="Exercise or muscle"></label><div class="library-filters"><label>Equipment<select data-library-equipment>${["all", "machines", "dumbbells", "barbell", "bands", "bodyweight", "cardio"].map((x) => `<option value="${x}" ${library.equipment === x ? "selected" : ""}>${x === "all" ? "All equipment" : x}</option>`).join("")}</select></label><label>Muscle<select data-library-muscle><option value="all">All muscles</option>${[...new Set(AWJ_EXERCISES.list().flatMap((x) => x.muscleTags))].sort().map((x) => `<option ${library.muscle === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label></div><p data-library-count role="status"></p><div data-library-results></div></section><details class="supporting-details"><summary>Plan tools and safety</summary><button data-train-review>Technique review</button><button data-train-planreview>Program checkpoint</button><button data-train-export>Export / share plan</button></details>`);
       app.querySelectorAll("[data-train-jump]").forEach((button) => button.onclick = () => {
         const target = app.querySelector({ routines: ".routine-list", library: ".exercise-library", schedule: ".train-week" }[button.dataset.trainJump]);
         target?.scrollIntoView({ block: "start", behavior: "instant" });
@@ -69,8 +69,8 @@
         persist();
         train();
       });
-      document.querySelectorAll("[data-edit-custom]").forEach((b) => b.onclick = () => window.REP_CUSTOM_WORKOUTS.openRoutineBuilderModal(b.dataset.editCustom));
-      document.querySelector("[data-create-new-routine]").onclick = () => window.REP_CUSTOM_WORKOUTS.openRoutineBuilderModal();
+      document.querySelectorAll("[data-edit-custom]").forEach((b) => b.onclick = () => window.AWJ_CUSTOM_WORKOUTS.openRoutineBuilderModal(b.dataset.editCustom));
+      document.querySelector("[data-create-new-routine]").onclick = () => window.AWJ_CUSTOM_WORKOUTS.openRoutineBuilderModal();
       document.querySelector("[data-train-schedule]").onclick = () => route("settings-schedule");
       document.querySelector("[data-train-review]").onclick = renderReview;
       document.querySelector("[data-train-planreview]").onclick = renderProgramReview;
@@ -84,16 +84,16 @@
       renderLibrary();
     }
     function renderLibrary() {
-      const query = library.query.toLowerCase().trim(), rows = REP_EXERCISES.list().filter((x) => (!query || `${x.name} ${x.targetMuscles || ""}`.toLowerCase().includes(query)) && (library.equipment === "all" || x.equipmentTags.includes(library.equipment)) && (library.muscle === "all" || x.muscleTags.includes(library.muscle)));
+      const query = library.query.toLowerCase().trim(), rows = AWJ_EXERCISES.list().filter((x) => (!query || `${x.name} ${x.targetMuscles || ""}`.toLowerCase().includes(query)) && (library.equipment === "all" || x.equipmentTags.includes(library.equipment)) && (library.muscle === "all" || x.muscleTags.includes(library.muscle)));
       const results = document.querySelector("[data-library-results]");
       if (!results) return;
       document.querySelector("[data-library-count]").textContent = `${rows.length} exercises`;
-      results.innerHTML = REP_SAFE_DOM.sanitize(rows.map((x) => `<button class="library-row" data-library-exercise="${esc(x.name)}"><strong>${esc(x.name)}</strong><span>${esc(x.targetMuscles || x.category || "General movement")}</span></button>`).join("") || "<p>No matching exercise. Change your search or filters.</p>");
+      results.innerHTML = AWJ_SAFE_DOM.sanitize(rows.map((x) => `<button class="library-row" data-library-exercise="${esc(x.name)}"><strong>${esc(x.name)}</strong><span>${esc(x.targetMuscles || x.category || "General movement")}</span></button>`).join("") || "<p>No matching exercise. Change your search or filters.</p>");
       results.querySelectorAll("[data-library-exercise]").forEach((b) => b.onclick = () => exerciseDetails(b.dataset.libraryExercise));
     }
     function exerciseDetails(name) {
-      const item = REP_EXERCISES.get(name);
-      sheet(name, `<div class="library-demo">${REP_MEDIA_PLAYER.markup(item, { preview: true, context: "library" })}</div><p>${esc(item.setup)}</p><p>${esc(item.execution)}</p><p><strong>Key cue:</strong> ${esc(item.cues)}</p><p><strong>Avoid:</strong> ${esc(item.avoid)}</p>`, () => REP_MEDIA_PLAYER.mount());
+      const item = AWJ_EXERCISES.get(name);
+      sheet(name, `<div class="library-demo">${AWJ_MEDIA_PLAYER.markup(item, { preview: true, context: "library" })}</div><p>${esc(item.setup)}</p><p>${esc(item.execution)}</p><p><strong>Key cue:</strong> ${esc(item.cues)}</p><p><strong>Avoid:</strong> ${esc(item.avoid)}</p>`, () => AWJ_MEDIA_PLAYER.mount());
     }
     return { train };
   }
@@ -104,20 +104,20 @@
     function nutrition() {
       enter("nutrition", "food");
       core.nutrition();
-      window.REP_ENHANCEMENTS_UI.nutrition();
+      window.AWJ_ENHANCEMENTS_UI.nutrition();
       const head = app.querySelector(".food-head"), disclosure = app.querySelector(".nutrition-disclosure");
-      if (head) head.innerHTML = REP_SAFE_DOM.sanitize(heading("Nutrition", "Today\u2019s food, water, and quick meal entry."));
+      if (head) head.innerHTML = AWJ_SAFE_DOM.sanitize(heading("Nutrition", "Today\u2019s food, water, and quick meal entry."));
       app.querySelector(".connection-banner")?.remove();
       const composer = app.querySelector(".meal-composer"), dashboard = app.querySelector(".macro-dashboard");
       const summary = document.createElement("section");
       summary.className = "nutrition-summary";
       const totals = foodTotals(todayFoodEntries()), profile = foodProfile(), water = Number(state.water[isoDay()]) || 0;
-      summary.innerHTML = REP_SAFE_DOM.sanitize(`<h2>Today so far</h2><dl><div><dt>Energy</dt><dd>${Math.round(totals.calories)}<span>/ ${profile.calories} kcal</span></dd></div><div><dt>Protein</dt><dd>${Math.round(totals.protein_g)}<span>/ ${profile.protein} g</span></dd></div><div><dt>Water</dt><dd>${esc(window.waterDisplay(water))}<span>/ ${esc(window.waterDisplay(profile.water))}</span></dd></div></dl>`);
+      summary.innerHTML = AWJ_SAFE_DOM.sanitize(`<h2>Today so far</h2><dl><div><dt>Energy</dt><dd>${Math.round(totals.calories)}<span>/ ${profile.calories} kcal</span></dd></div><div><dt>Protein</dt><dd>${Math.round(totals.protein_g)}<span>/ ${profile.protein} g</span></dd></div><div><dt>Water</dt><dd>${esc(window.waterDisplay(water))}<span>/ ${esc(window.waterDisplay(profile.water))}</span></dd></div></dl>`);
       head?.after(summary);
       const shortcut = document.createElement("nav");
       shortcut.className = "nutrition-actions";
       shortcut.setAttribute("aria-label", "Nutrition actions");
-      shortcut.innerHTML = REP_SAFE_DOM.sanitize('<button class="primary-action" data-nutrition-log>Log meal</button><button data-nutrition-water>Water</button>');
+      shortcut.innerHTML = AWJ_SAFE_DOM.sanitize('<button class="primary-action" data-nutrition-log>Log meal</button><button data-nutrition-water>Water</button>');
       summary.after(shortcut);
       shortcut.querySelector("[data-nutrition-log]").onclick = () => route("nutrition-log");
       shortcut.querySelector("[data-nutrition-water]").onclick = () => {
@@ -131,7 +131,7 @@
         if (dashboard) {
           const details = document.createElement("details");
           details.className = "nutrition-details";
-          details.innerHTML = REP_SAFE_DOM.sanitize("<summary>Targets and nutrition breakdown</summary>");
+          details.innerHTML = AWJ_SAFE_DOM.sanitize("<summary>Targets and nutrition breakdown</summary>");
           dashboard.replaceWith(details);
           details.append(dashboard);
         }
@@ -139,7 +139,7 @@
         if (reminder) {
           const details = document.createElement("details");
           details.className = "nutrition-details";
-          details.innerHTML = REP_SAFE_DOM.sanitize("<summary>Nutrition routine and supplements</summary>");
+          details.innerHTML = AWJ_SAFE_DOM.sanitize("<summary>Nutrition routine and supplements</summary>");
           reminder.replaceWith(details);
           details.append(reminder);
         }
@@ -178,8 +178,8 @@
     }
     function progress() {
       enter("insights", "insights");
-      const weekly = REP_PRODUCT_SUITE.weeklySummary(state, void 0, REP_PERFORMANCE_INSIGHTS), model = REP_PERFORMANCE_INSIGHTS.analyze(state), lifts = model.strength?.exercises || [], selected = state.progressExercise || lifts[0]?.exercise, exercise = lifts.find((x) => x.exercise === selected), proposals = state.progressionProposals || [];
-      app.innerHTML = REP_SAFE_DOM.sanitize(`${heading("Progress", "Consistency, performance, and your next step.")}<nav class="screen-shortcuts" aria-label="Progress shortcuts"><button data-open-weekly>Weekly report</button><button data-open-history>Workout history</button></nav><section class="progress-overview"><h2>Am I following my plan?</h2><p class="metric-value">${weekly.completed} / ${weekly.planned}</p><p>Planned sessions completed this week${weekly.totalWorkouts > weekly.completed ? ` \xB7 ${weekly.totalWorkouts - weekly.completed} additional activities` : ""}</p></section><section class="exercise-progress"><h2>Am I improving?</h2>${lifts.length ? `<label>Exercise<select data-progress-exercise>${lifts.map((x) => `<option ${x.exercise === selected ? "selected" : ""}>${esc(x.exercise)}</option>`).join("")}</select></label><p>${esc(exercise?.recommendation || "Establishing a baseline")} \xB7 ${exercise?.sessionCount || 0} logged sessions</p>${exercise?.currentE1rm ? `<p>Best estimated 1RM: ${esc(String(exercise.currentE1rm))} kg</p><p>${exercise.change28d === null ? "More sessions are needed for a 28-day comparison." : `${exercise.change28d > 0 ? "+" : ""}${exercise.change28d}% over 28 days`}</p>` : ""}` : "<p>Log weight and reps across several sessions to see a reliable exercise trend.</p>"}</section><section class="next-step"><h2>What should I do next?</h2><p>${esc(weekly.nextAction)}</p><button class="primary-action" data-progress-train>Open routines</button>${proposals.length ? `<details><summary>Next-session targets</summary>${window.REP_ENHANCEMENTS_UI.progressionCard(proposals)}</details>` : ""}</section><section class="progress-history"><h2>Workout history</h2><label>Search sessions or exercises<input type="search" data-history-search value="${esc(historyFilter.query)}"></label><div class="history-dates"><label>From<input type="date" data-history-from value="${historyFilter.from}"></label><label>To<input type="date" data-history-to value="${historyFilter.to}"></label></div><div data-history-results>${historyMarkup()}</div></section><details class="supporting-details progress-analysis"><summary>Weekly report and detailed analysis</summary><div class="trends-grid"></div>${window.REP_PRODUCT_UI.weeklyCard()}${window.REP_PRODUCT_UI.experimentsCard()}${window.REP_HEALTH_UI.trendMarkup()}</details>`);
+      const weekly = AWJ_PRODUCT_SUITE.weeklySummary(state, void 0, AWJ_PERFORMANCE_INSIGHTS), model = AWJ_PERFORMANCE_INSIGHTS.analyze(state), lifts = model.strength?.exercises || [], selected = state.progressExercise || lifts[0]?.exercise, exercise = lifts.find((x) => x.exercise === selected), proposals = state.progressionProposals || [];
+      app.innerHTML = AWJ_SAFE_DOM.sanitize(`${heading("Progress", "Consistency, performance, and your next step.")}<nav class="screen-shortcuts" aria-label="Progress shortcuts"><button data-open-weekly>Weekly report</button><button data-open-history>Workout history</button></nav><section class="progress-overview"><h2>Am I following my plan?</h2><p class="metric-value">${weekly.completed} / ${weekly.planned}</p><p>Planned sessions completed this week${weekly.totalWorkouts > weekly.completed ? ` \xB7 ${weekly.totalWorkouts - weekly.completed} additional activities` : ""}</p></section><section class="exercise-progress"><h2>Am I improving?</h2>${lifts.length ? `<label>Exercise<select data-progress-exercise>${lifts.map((x) => `<option ${x.exercise === selected ? "selected" : ""}>${esc(x.exercise)}</option>`).join("")}</select></label><p>${esc(exercise?.recommendation || "Establishing a baseline")} \xB7 ${exercise?.sessionCount || 0} logged sessions</p>${exercise?.currentE1rm ? `<p>Best estimated 1RM: ${esc(String(exercise.currentE1rm))} kg</p><p>${exercise.change28d === null ? "More sessions are needed for a 28-day comparison." : `${exercise.change28d > 0 ? "+" : ""}${exercise.change28d}% over 28 days`}</p>` : ""}` : "<p>Log weight and reps across several sessions to see a reliable exercise trend.</p>"}</section><section class="next-step"><h2>What should I do next?</h2><p>${esc(weekly.nextAction)}</p><button class="primary-action" data-progress-train>Open routines</button>${proposals.length ? `<details><summary>Next-session targets</summary>${window.AWJ_ENHANCEMENTS_UI.progressionCard(proposals)}</details>` : ""}</section><section class="progress-history"><h2>Workout history</h2><label>Search sessions or exercises<input type="search" data-history-search value="${esc(historyFilter.query)}"></label><div class="history-dates"><label>From<input type="date" data-history-from value="${historyFilter.from}"></label><label>To<input type="date" data-history-to value="${historyFilter.to}"></label></div><div data-history-results>${historyMarkup()}</div></section><details class="supporting-details progress-analysis"><summary>Weekly report and detailed analysis</summary><div class="trends-grid"></div>${window.AWJ_PRODUCT_UI.weeklyCard()}${window.AWJ_PRODUCT_UI.experimentsCard()}${window.AWJ_HEALTH_UI.trendMarkup()}</details>`);
       app.querySelector("[data-open-weekly]").onclick = () => {
         app.querySelector(".progress-analysis").open = true;
         const report = app.querySelector("[data-product-weekly]");
@@ -194,7 +194,7 @@
       };
       document.querySelector("[data-progress-train]").onclick = () => route("training-program");
       document.querySelector("[data-accept-progression]")?.addEventListener("click", () => {
-        window.REP_ENHANCEMENTS_UI.acceptProgression(proposals);
+        window.AWJ_ENHANCEMENTS_UI.acceptProgression(proposals);
         progress();
       });
       document.querySelector("[data-progress-exercise]")?.addEventListener("change", (e) => {
@@ -203,12 +203,12 @@
       });
       for (const [selector, key] of [["[data-history-search]", "query"], ["[data-history-from]", "from"], ["[data-history-to]", "to"]]) document.querySelector(selector).addEventListener(key === "query" ? "input" : "change", (e) => {
         historyFilter[key] = e.target.value;
-        document.querySelector("[data-history-results]").innerHTML = REP_SAFE_DOM.sanitize(historyMarkup());
+        document.querySelector("[data-history-results]").innerHTML = AWJ_SAFE_DOM.sanitize(historyMarkup());
       });
-      window.REP_PRODUCT_UI.bindWeekly(app.querySelector("[data-product-weekly]"));
-      window.REP_PRODUCT_UI.bindExperiments(app.querySelector("[data-product-experiments]"));
-      window.REP_PERFORMANCE_UI.mount();
-      window.REP_HEALTH_UI.bind();
+      window.AWJ_PRODUCT_UI.bindWeekly(app.querySelector("[data-product-weekly]"));
+      window.AWJ_PRODUCT_UI.bindExperiments(app.querySelector("[data-product-experiments]"));
+      window.AWJ_PERFORMANCE_UI.mount();
+      window.AWJ_HEALTH_UI.bind();
     }
     return { progress };
   }
@@ -218,9 +218,9 @@
     const { enter, heading, readinessMarkup, saveStatus, bindSaveStatus, route, checkin, core } = ui;
     function wellbeing() {
       enter("wellbeing", "wellbeing");
-      app.innerHTML = REP_SAFE_DOM.sanitize(`${heading("Wellbeing", "Daily practices and recovery in one place.")}<section class="more-menu">${[["Daily practices", "Habits, hygiene and journal", "health-wellness"], ["Recovery & health", "Sleep, check-ins and measurements", "health-vitals"]].map(([title, detail, id]) => `<button data-more-route="${id}"><strong>${title}</strong><span>${detail}</span><b aria-hidden="true">\u2192</b></button>`).join("")}</section><section data-daily-routines></section>${readinessMarkup()}${saveStatus()}`);
+      app.innerHTML = AWJ_SAFE_DOM.sanitize(`${heading("Wellbeing", "Daily practices and recovery in one place.")}<section class="more-menu">${[["Daily practices", "Habits, hygiene and journal", "health-wellness"], ["Recovery & health", "Sleep, check-ins and measurements", "health-vitals"]].map(([title, detail, id]) => `<button data-more-route="${id}"><strong>${title}</strong><span>${detail}</span><b aria-hidden="true">\u2192</b></button>`).join("")}</section><section data-daily-routines></section>${readinessMarkup()}${saveStatus()}`);
       app.querySelectorAll("[data-more-route]").forEach((b) => b.onclick = () => route(b.dataset.moreRoute));
-      window.REP_HABITS.mount();
+      window.AWJ_HABITS.mount();
       bindSaveStatus();
     }
     function recovery() {
@@ -229,7 +229,7 @@
       const old = document.createElement("div");
       while (app.firstChild) old.append(app.firstChild);
       const sleep = old.querySelector(".sleep-card");
-      app.innerHTML = REP_SAFE_DOM.sanitize(`${heading("Recovery", "Sleep and recovery inputs support your training.")}<button data-more-back>\u2190 Wellbeing</button>${readinessMarkup()}<nav class="quick-actions"><button data-recovery-checkin>Quick check-in</button><button data-recovery-measurements>Measurements</button></nav><details class="recovery-sleep"><summary>Log sleep</summary></details><details class="supporting-details recovery-data"><summary>Health data, baselines and setup</summary>${window.REP_HEALTH_UI.trendMarkup()}</details>`);
+      app.innerHTML = AWJ_SAFE_DOM.sanitize(`${heading("Recovery", "Sleep and recovery inputs support your training.")}<button data-more-back>\u2190 Wellbeing</button>${readinessMarkup()}<nav class="quick-actions"><button data-recovery-checkin>Quick check-in</button><button data-recovery-measurements>Measurements</button></nav><details class="recovery-sleep"><summary>Log sleep</summary></details><details class="supporting-details recovery-data"><summary>Health data, baselines and setup</summary>${window.AWJ_HEALTH_UI.trendMarkup()}</details>`);
       if (sleep) app.querySelector(".recovery-sleep").append(sleep);
       old.querySelectorAll(".hero,.strain-recovery-card,.recovery-head").forEach((x) => x.remove());
       app.querySelector(".recovery-data").append(old);
@@ -239,26 +239,26 @@
         app.querySelector(".recovery-data").open = true;
         app.querySelector("[data-body-measurement]")?.scrollIntoView({ block: "center" });
       };
-      window.REP_HEALTH_UI.bind({ onMeasurementSaved: () => {
+      window.AWJ_HEALTH_UI.bind({ onMeasurementSaved: () => {
         recovery();
         app.querySelector(".recovery-data").open = true;
         showToast("Measurements saved on device.");
       } });
-      window.REP_PRODUCT_UI.mount();
+      window.AWJ_PRODUCT_UI.mount();
       updatePrimaryTabs();
     }
     function routines() {
       enter("care", "care");
       core.wellness();
       const oldHead = app.querySelector(".module-head,.recovery-head");
-      if (oldHead) oldHead.innerHTML = REP_SAFE_DOM.sanitize(heading("Daily routines", "Your existing hygiene, wellness and journal routines."));
+      if (oldHead) oldHead.innerHTML = AWJ_SAFE_DOM.sanitize(heading("Daily routines", "Your existing hygiene, wellness and journal routines."));
       const back = document.createElement("button");
       back.dataset.moreBack = "true";
       back.textContent = "\u2190 Wellbeing";
       back.onclick = () => route("wellbeing");
       app.prepend(back);
-      window.REP_HABITS.mount();
-      window.REP_PRODUCT_UI.mount();
+      window.AWJ_HABITS.mount();
+      window.AWJ_PRODUCT_UI.mount();
       updatePrimaryTabs();
     }
     return { wellbeing, recovery, routines };
@@ -287,7 +287,7 @@
   // src/client/screens/settings.js
   function createSettingsScreen() {
     const mount = () => {
-      window.REP_ENHANCEMENTS_UI.settings(state.settingsSection);
+      window.AWJ_ENHANCEMENTS_UI.settings(state.settingsSection);
       window.AWJ_LOCALE?.apply();
     };
     return { mount, update: mount, destroy() {
@@ -500,9 +500,9 @@
     });
   }
 
-  // src/client/training-first-ui.js
+  // src/client/app-shell.js
   (function() {
-    const nav = window.REP_NAVIGATION, core = window.REP_CORE_PAGES, preferences = window.REP_TRAINING_PREFERENCES;
+    const nav = window.AWJ_NAVIGATION, core = window.AWJ_CORE_PAGES, preferences = window.AWJ_TRAINING_PREFERENCES;
     const route = (id) => nav.navigate(id), date = () => isoDay();
     preferences.normalize(state);
     const arabicCopy = { Today: "\u0627\u0644\u064A\u0648\u0645", Train: "\u0627\u0644\u062A\u0645\u0631\u064A\u0646", Nutrition: "\u0627\u0644\u062A\u063A\u0630\u064A\u0629", Wellbeing: "\u0627\u0644\u0639\u0627\u0641\u064A\u0629", Progress: "\u0627\u0644\u062A\u0642\u062F\u0645", Recovery: "\u0627\u0644\u062A\u0639\u0627\u0641\u064A", "Daily routines": "\u0627\u0644\u0639\u0627\u062F\u0627\u062A \u0627\u0644\u064A\u0648\u0645\u064A\u0629", "Your planned sessions, favourite routines and exercise library.": "\u062C\u0644\u0633\u0627\u062A\u0643 \u0627\u0644\u0645\u062E\u0637\u0637\u0629 \u0648\u062A\u0645\u0627\u0631\u064A\u0646\u0643 \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u0648\u0645\u0643\u062A\u0628\u0629 \u0627\u0644\u062D\u0631\u0643\u0627\u062A.", "Daily practices and recovery in one place.": "\u0639\u0627\u062F\u0627\u062A\u0643 \u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0648\u062A\u0639\u0627\u0641\u064A\u0643 \u0641\u064A \u0645\u0643\u0627\u0646 \u0648\u0627\u062D\u062F.", "Sleep and recovery inputs support your training.": "\u064A\u0633\u0627\u0639\u062F \u0627\u0644\u0646\u0648\u0645 \u0648\u0627\u0644\u062A\u0639\u0627\u0641\u064A \u0639\u0644\u0649 \u062A\u0648\u062C\u064A\u0647 \u062A\u0645\u0631\u064A\u0646\u0643.", "Your existing hygiene, wellness and journal routines.": "\u0639\u0627\u062F\u0627\u062A\u0643 \u0627\u0644\u0635\u062D\u064A\u0629 \u0648\u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0648\u0645\u0644\u0627\u062D\u0638\u0627\u062A\u0643.", "Consistency, performance, and your next step.": "\u0627\u0644\u0627\u0633\u062A\u0645\u0631\u0627\u0631 \u0648\u0627\u0644\u0623\u062F\u0627\u0621 \u0648\u062E\u0637\u0648\u062A\u0643 \u0627\u0644\u062A\u0627\u0644\u064A\u0629.", "Daily practices": "\u0627\u0644\u0639\u0627\u062F\u0627\u062A \u0627\u0644\u064A\u0648\u0645\u064A\u0629", "Habits, hygiene and journal": "\u0627\u0644\u0639\u0627\u062F\u0627\u062A \u0648\u0627\u0644\u0639\u0646\u0627\u064A\u0629 \u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0648\u0627\u0644\u0645\u0644\u0627\u062D\u0638\u0627\u062A", "Recovery & health": "\u0627\u0644\u062A\u0639\u0627\u0641\u064A \u0648\u0627\u0644\u0635\u062D\u0629", "Sleep, check-ins and measurements": "\u0627\u0644\u0646\u0648\u0645 \u0648\u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0648\u0627\u0644\u0642\u064A\u0627\u0633\u0627\u062A", "Today\u2019s focus": "\u062A\u0631\u0643\u064A\u0632 \u0627\u0644\u064A\u0648\u0645", "Recovery day": "\u064A\u0648\u0645 \u0644\u0644\u062A\u0639\u0627\u0641\u064A", "Review recovery": "\u0631\u0627\u062C\u0639 \u0627\u0644\u062A\u0639\u0627\u0641\u064A", "View routines": "\u0639\u0631\u0636 \u0627\u0644\u062A\u0645\u0627\u0631\u064A\u0646", "Start workout": "\u0627\u0628\u062F\u0623 \u0627\u0644\u062A\u0645\u0631\u064A\u0646", "Resume workout": "\u0627\u0633\u062A\u0623\u0646\u0641 \u0627\u0644\u062A\u0645\u0631\u064A\u0646" };
@@ -528,17 +528,17 @@
     function sheet(title, content, bind = () => {
     }) {
       const overlay = document.createElement("div");
-      overlay.className = "rep-modal-backdrop";
+      overlay.className = "awj-modal-backdrop";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
       overlay.setAttribute("aria-label", title);
-      overlay.innerHTML = REP_SAFE_DOM.sanitize(`<section class="rep-modal-sheet"><header class="sheet-header"><h2>${esc(title)}</h2><button class="sheet-close" aria-label="Close">\xD7</button></header>${content}</section>`);
+      overlay.innerHTML = AWJ_SAFE_DOM.sanitize(`<section class="awj-modal-sheet"><header class="sheet-header"><h2>${esc(title)}</h2><button class="sheet-close" aria-label="Close">\xD7</button></header>${content}</section>`);
       const previous = document.activeElement;
       let closing = false;
       const close = async () => {
         if (closing) return;
         closing = true;
-        await window.REP_MOTION.dismiss(overlay);
+        await window.AWJ_MOTION.dismiss(overlay);
         if (previous?.isConnected) previous.focus();
       };
       overlay.querySelector(".sheet-close").onclick = close;
@@ -568,7 +568,7 @@
       return overlay;
     }
     function readiness() {
-      const engine = window.REP_HEALTH_ENGINE, value = engine.readiness(state, date(), state.healthProfile), advice = engine.trainingRecommendation(state, date(), state.healthProfile, value);
+      const engine = window.AWJ_HEALTH_ENGINE, value = engine.readiness(state, date(), state.healthProfile), advice = engine.trainingRecommendation(state, date(), state.healthProfile, value);
       const imported = state.lastVitalsImportDate, age = daysSinceVitalsImport();
       return { value, advice, age, source: imported ? `Health data ${age === 0 ? "today" : `${age} day${age === 1 ? "" : "s"} ago`}` : "No imported health data", confidence: value.confidence || "low" };
     }
@@ -577,18 +577,18 @@
       return `<section class="readiness-note"><div><h2>${esc(r.advice.title)}</h2><p>${esc(r.advice.detail || r.advice.message || "Use your warm-up as the final check. You can log manually without a watch.")}</p></div><details><summary>Why this recommendation?</summary><p>${esc(r.source)} \xB7 ${esc(r.confidence)} confidence</p><p>${r.value.score === null ? "More recovery observations are needed." : `Wellness estimate: ${r.value.score}%`}</p><p>${esc((r.value.reasons || []).map((x) => typeof x === "string" ? x : x.detail || x.label || "").filter(Boolean).join(" "))}</p></details></section>`;
     }
     function saveStatus() {
-      const queued = window.REP_SYNC_OUTBOX?.summary(state.syncQueue)?.total || 0, storage = window.REP_STORE?.saveStatus;
+      const queued = window.AWJ_SYNC_OUTBOX?.summary(state.syncQueue)?.total || 0, storage = window.AWJ_STORE?.saveStatus;
       const label = storage === "failed" ? "Save needs attention \xB7 open backups" : storage === "saving" ? "Saving on device\u2026" : queued ? `Saved on device \xB7 ${queued} waiting to sync` : state.lastSyncedAt ? "Saved on device \xB7 records synced" : "Saved on device";
       return `<button type="button" class="save-status ${queued ? "has-pending" : ""} ${storage === "failed" ? "save-failed" : ""}" data-save-status>${label}</button>`;
     }
     function bindSaveStatus() {
-      document.querySelector("[data-save-status]")?.addEventListener("click", () => route(window.REP_STORE?.saveStatus === "failed" ? "settings-security" : "settings-sync"));
+      document.querySelector("[data-save-status]")?.addEventListener("click", () => route(window.AWJ_STORE?.saveStatus === "failed" ? "settings-security" : "settings-sync"));
     }
-    window.addEventListener("rep:storage-status", (event) => {
+    window.addEventListener("awj:storage-status", (event) => {
       const button = document.querySelector("[data-save-status]");
       if (button) {
         const holder = document.createElement("div");
-        holder.innerHTML = REP_SAFE_DOM.sanitize(saveStatus());
+        holder.innerHTML = AWJ_SAFE_DOM.sanitize(saveStatus());
         const fresh = holder.firstElementChild;
         if (fresh) {
           button.replaceWith(fresh);
@@ -608,14 +608,14 @@
       document.body.append(warning);
     });
     function checkin() {
-      sheet("Quick recovery check-in", window.REP_HEALTH_UI.checkinMarkup(), (_root, close) => window.REP_HEALTH_UI.bind({ onSaved: () => {
+      sheet("Quick recovery check-in", window.AWJ_HEALTH_UI.checkinMarkup(), (_root, close) => window.AWJ_HEALTH_UI.bind({ onSaved: () => {
         close();
         screenRegistry.update();
         showToast("Check-in saved on device.");
       } }));
     }
     function guardStart(id, proceed) {
-      if (REP_TRAINING_SESSION.isResumableWorkout(state, sessions) && state.session !== id) {
+      if (AWJ_TRAINING_SESSION.isResumableWorkout(state, sessions) && state.session !== id) {
         sheet("Workout in progress", '<p>Resume or explicitly end the current workout before starting another.</p><button class="primary-action" data-resume-active>Resume current workout</button>', (root, close) => root.querySelector("[data-resume-active]").onclick = () => {
           close();
           startSession(state.session, { acknowledgeWarnings: true });
@@ -648,11 +648,11 @@
       mount();
       applyLocale();
     }, destroy() {
-      document.querySelectorAll(".rep-modal-backdrop").forEach((node) => node.remove());
+      document.querySelectorAll(".awj-modal-backdrop").forEach((node) => node.remove());
     } });
     const screenRegistry = createScreenRegistry({ today: lifecycle(today), train: lifecycle(train), nutrition: lifecycle(nutrition), progress: lifecycle(progress), wellbeing: lifecycle(wellbeing), recovery: lifecycle(recovery), routines: lifecycle(routines), settings: createSettingsScreen() });
     const show = (id) => () => screenRegistry.show(id);
-    window.REP_TRAINING_UI = Object.freeze({ today: show("today"), train: show("train"), nutrition: show("nutrition"), progress: show("progress"), wellbeing: show("wellbeing"), more: show("wellbeing"), recovery: show("recovery"), routines: show("routines"), refresh: () => screenRegistry.update(), checkin, sheet, guardStart });
+    window.AWJ_TRAINING_UI = Object.freeze({ today: show("today"), train: show("train"), nutrition: show("nutrition"), progress: show("progress"), wellbeing: show("wellbeing"), more: show("wellbeing"), recovery: show("recovery"), routines: show("routines"), refresh: () => screenRegistry.update(), checkin, sheet, guardStart });
     document.body.classList.add("training-first-app");
     nav.register([{ id: "today", path: "/today", title: "Today", activate: show("today") }, { id: "training-program", path: "/train", aliases: ["/training/program", "/training/today", "/program-active"], title: "Train", activate: show("train") }, { id: "training-today", path: "/training/today", title: "Today", activate: show("today") }, { id: "insights", path: "/progress", aliases: ["/insights"], title: "Progress", activate: show("progress") }, { id: "training-history", path: "/progress/history", aliases: ["/training/history"], title: "History", activate: show("progress") }, { id: "wellbeing", path: "/wellbeing", title: "Wellbeing", activate: show("wellbeing") }, { id: "more", path: "/more", title: "Wellbeing", activate: show("wellbeing") }, { id: "health-vitals", path: "/wellbeing/recovery", aliases: ["/more/recovery", "/health/vitals"], title: "Recovery", activate: show("recovery") }, { id: "health-wellness", path: "/wellbeing/routines", aliases: ["/more/routines", "/health/wellness"], title: "Daily routines", activate: show("routines") }]);
     nav.register([
@@ -666,7 +666,7 @@
       } }))
     ]);
     nav.setTabResolver((tab) => ({ home: "today", train: "training-program", food: "nutrition-today", wellbeing: "wellbeing", insights: "insights", more: "wellbeing", health: "health-vitals", vitals: "health-vitals", care: "health-wellness" })[tab] || tab);
-    window.addEventListener("rep:navigation", () => {
+    window.addEventListener("awj:navigation", () => {
       updatePrimaryTabs();
       if (["vitals", "care"].includes(state.activeTab) && !app.querySelector("[data-more-back]")) {
         const back = document.createElement("button");

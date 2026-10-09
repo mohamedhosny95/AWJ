@@ -1,3 +1,4 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import {webcrypto} from "node:crypto";
@@ -6,7 +7,7 @@ test("AWJ backups restore and pre-rename authenticated backups remain readable",
   globalThis.window=globalThis;
   globalThis.localStorage={getItem:()=>null,setItem:()=>{}};
   await import("../src/client/features.js");
-  const features=globalThis.REP_FEATURES;
+  const features=globalThis.AWJ_FEATURES;
   const passphrase="example-passphrase-123";
   const current=await features.encryptExport({app:"AWJ",data:{session:"upper",sets:3}},passphrase);
   assert.equal(current.app,"AWJ");

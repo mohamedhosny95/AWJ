@@ -1,7 +1,8 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 await import("../src/client/performance-insights.js");
-const engine=globalThis.REP_PERFORMANCE_INSIGHTS;
+const engine=globalThis.AWJ_PERFORMANCE_INSIGHTS;
 const now="2026-08-13",day=offset=>engine.shiftDay(now,offset);
 
 function session(index,{exercise="Chest Press",weight=50,reps=10,rpe=8}={}){
@@ -18,7 +19,7 @@ function populatedState(){
     water[date]=high?3400:2500;sleepLogs.push({date,hours:high?8:6.5});
   }
   const bodyWeights=Array.from({length:8},(_,index)=>({week:`w${index}`,date:day(-index*7),kg:80+index*.25}));
-  return {history,foodEntries,water,sleepLogs,bodyWeights,recoveryCheckins:[],healthMetrics:{[now]:{source:"Rep HealthKit Companion"}},healthProfile:{baseSleepHours:7.5},preferences:{schedule:{},targets:{gym:{calories:2100,protein:175,water:3300},active:{calories:2000,protein:170,water:3200},flex:{calories:2000,protein:150,water:3000}}},analyticsGoal:{type:"strength",exercise:"Chest Press",target:90},insightControls:{dismissed:{},snoozed:{}}};
+  return {history,foodEntries,water,sleepLogs,bodyWeights,recoveryCheckins:[],healthMetrics:{[now]:{source:"AWJ HealthKit Companion"}},healthProfile:{baseSleepHours:7.5},preferences:{schedule:{},targets:{gym:{calories:2100,protein:175,water:3300},active:{calories:2000,protein:170,water:3200},flex:{calories:2000,protein:150,water:3000}}},analyticsGoal:{type:"strength",exercise:"Chest Press",target:90},insightControls:{dismissed:{},snoozed:{}}};
 }
 
 test("estimated 1RM is deterministic and caps high-rep inflation",()=>{
@@ -57,7 +58,7 @@ test("personal experiments enforce five observations per comparison group",()=>{
 test("data quality reports duplicates, provenance, freshness, and domain scores",()=>{
   const state=populatedState(),before=engine.nutrition(state,now).adherence28.averageCalories;state.foodEntries.push({...state.foodEntries[0]});
   const quality=engine.dataQuality(state,now);
-  assert.ok(quality.duplicateCount>=1);assert.equal(engine.nutrition(state,now).adherence28.averageCalories,before);assert.equal(quality.healthSources[0].source,"Rep HealthKit Companion");assert.equal(quality.domains.length,4);assert.ok(quality.overall>0);
+  assert.ok(quality.duplicateCount>=1);assert.equal(engine.nutrition(state,now).adherence28.averageCalories,before);assert.equal(quality.healthSources[0].source,"AWJ HealthKit Companion");assert.equal(quality.domains.length,4);assert.ok(quality.overall>0);
 });
 
 test("insight inbox honors dismiss and snooze controls",()=>{

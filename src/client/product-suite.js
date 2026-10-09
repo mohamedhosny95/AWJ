@@ -2,7 +2,7 @@
 (function(root,factory){
   const api=factory();
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
-  root.REP_PRODUCT_SUITE=api;
+  root.AWJ_PRODUCT_SUITE=api;
 })(typeof globalThis!=="undefined"?globalThis:this,function(){
   const DAY=86400000,TRAINING_FOCUS=new Set(["gym","football","padel","cardio"]),RECOVERY_FOCUS=new Set(["rest","recovery","spa","activespa"]);
   const DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];

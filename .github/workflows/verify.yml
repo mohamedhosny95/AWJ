@@ -59,14 +59,14 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: health-os-client-${{ github.sha }}
+          name: awj-client-${{ github.sha }}
           path: dist/client
           if-no-files-found: error
           retention-days: 14
 
       - name: Reject committed secret values
         run: |
-          if git grep -nE '(NOTION_TOKEN|GEMINI_API_KEY|REP_SYNC_KEY)=[^[:space:]]+' -- ':!README.md' ':!.env.example'; then
+          if git grep -nE '(NOTION_TOKEN|GEMINI_API_KEY|AWJ_SYNC_KEY|REP_SYNC_KEY)=[^[:space:]]+' -- ':!README.md' ':!.env.example'; then
             echo "A secret-like value is committed."
             exit 1
           fi
@@ -95,7 +95,7 @@ jobs:
       - name: Run Chrome mobile end-to-end test
         run: npm run test:e2e
         env:
-          REP_E2E_REPORT: work/certification/chrome-${{ github.sha }}.json
+          AWJ_E2E_REPORT: work/certification/chrome-${{ github.sha }}.json
 
       - name: Certify cold portrait and landscape layouts before deployment
         run: npm run test:layout
@@ -103,19 +103,19 @@ jobs:
       - name: Run WebKit mobile end-to-end test
         run: npm run test:e2e
         env:
-          REP_E2E_BROWSER: webkit
-          REP_E2E_REPORT: work/certification/webkit-${{ github.sha }}.json
+          AWJ_E2E_BROWSER: webkit
+          AWJ_E2E_REPORT: work/certification/webkit-${{ github.sha }}.json
 
       - name: Run encrypted backup recovery drill
         run: npm run test:recovery
         env:
-          REP_RECOVERY_REPORT: work/certification/recovery-${{ github.sha }}.json
+          AWJ_RECOVERY_REPORT: work/certification/recovery-${{ github.sha }}.json
 
       - name: Upload automated certification evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: health-os-certification-${{ github.sha }}
+          name: awj-certification-${{ github.sha }}
           path: work/certification/*.json
           if-no-files-found: warn
           retention-days: 90
@@ -158,7 +158,7 @@ jobs:
       - run: npm run sync
       - name: Require the isolated staging origin
         env:
-          REP_STAGING_URL: ${{ vars.REP_STAGING_URL }}
+          AWJ_STAGING_URL: ${{ vars.AWJ_STAGING_URL }}
         run: node scripts/validate-staging-origin.mjs
       - name: Deploy the verified commit to isolated staging
         run: npm run deploy:staging
@@ -169,8 +169,8 @@ jobs:
       - name: Audit the exact staging build in both orientations
         run: npm run test:devices
         env:
-          REP_DEVICE_AUDIT_URL: ${{ vars.REP_STAGING_URL }}
-          REP_DEVICE_AUDIT_MATCH_BUILD: "1"
+          AWJ_DEVICE_AUDIT_URL: ${{ vars.AWJ_STAGING_URL }}
+          AWJ_DEVICE_AUDIT_MATCH_BUILD: "1"
 
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     concurrency:
-      group: health-os-production
+      group: awj-production
       cancel-in-progress: false
     permissions:
       contents: read

@@ -8,7 +8,7 @@ This document preserves the product direction, implementation rules, completed w
 
 ## Product direction
 
-Rep Gym Companion is an existing, functional application. The objective is to retain its working architecture and real data flows while transforming its mobile UI, workout presentation, and motion quality into a premium fitness experience.
+AWJ is an existing, functional application. The objective is to retain its working architecture and real data flows while transforming its mobile UI, workout presentation, and motion quality into a premium fitness experience.
 
 The visual direction is a practical blend of Apple Fitness+, Nike Training Club, WHOOP, and high-end biomechanics software:
 
@@ -218,7 +218,7 @@ The multi-frame renderer uses three stacked optimized WebP frames and CSS opacit
 ## Recommended next work
 
 1. Certify the staging build on one recent iPhone and one recent Android flagship, including safe areas, memory pressure, thermal behavior, haptics, timers, offline recovery, and a complete workout. **Not done in the latest session** — no physical devices were available in that sandbox.
-2. Run the authenticated staging Notion contract when `REP_STAGING_SYNC_KEY` and `NOTION_TEST_TOKEN` are available locally. **Not done in the latest session** — those secrets, and a `CLOUDFLARE_API_TOKEN` to inspect/deploy the Worker, were not present in that environment. `npm run deploy:preflight`, `npm run deploy:dry-run`, and `npm run deploy:staging:dry-run` all passed locally, which only confirms the build and Wrangler config are structurally valid, not that the live contract passes.
+2. Run the authenticated staging Notion contract when `AWJ_STAGING_SYNC_KEY` and `NOTION_TEST_TOKEN` are available locally. **Not done in the latest session** — those secrets, and a `CLOUDFLARE_API_TOKEN` to inspect/deploy the Worker, were not present in that environment. `npm run deploy:preflight`, `npm run deploy:dry-run`, and `npm run deploy:staging:dry-run` all passed locally, which only confirms the build and Wrangler config are structurally valid, not that the live contract passes.
 3. Do not promote to production until both gates above actually pass with recorded evidence — that has not changed since the merge.
 4. Phase 4 activity/progress first pass is complete (see above); a fuller visual pass on Insights/trends is still open.
 5. Continue expanding three-frame cinematic coverage using the priority list above once an image-generation/photography capability is available.

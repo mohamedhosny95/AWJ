@@ -1,6 +1,6 @@
-/* Rep Health Coverage Engine v67.
+/* AWJ Health Coverage Engine v67.
    Scores measurement completeness separately from wellness readiness. */
-globalThis.REP_HEALTH_COVERAGE=(()=>{
+globalThis.AWJ_HEALTH_COVERAGE=(()=>{
   const dateKey=(value,timeZone)=>{
     if(value&&typeof value==="object"&&!(value instanceof Date)){
       const raw=value.dateKey||value.date||value.createdAt;
