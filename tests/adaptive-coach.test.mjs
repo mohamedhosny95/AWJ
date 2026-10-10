@@ -1,8 +1,9 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 
 await import("../src/client/adaptive-coach.js");
-const coach=globalThis.REP_ADAPTIVE_COACH;
+const coach=globalThis.AWJ_ADAPTIVE_COACH;
 
 test("adaptive Today Plan turns readiness into a concrete safe session",()=>{
   const state={};

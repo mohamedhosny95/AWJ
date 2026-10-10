@@ -103,7 +103,7 @@
   }
   function hasEntries(date){const value=bucket(date);return Object.keys(value.checked||{}).length>0;}
   function scheduleSync(date,id){
-    if(!repAuth?.isPaired?.()||!navigator.onLine)return;
+    if(!awjAuth?.isPaired?.()||!navigator.onLine)return;
     const key=`${date}:${id}`;clearTimeout(syncTimers.get(key));
     syncTimers.set(key,setTimeout(()=>{const habitPayload=payloadForHabit(date,id);if(habitPayload)queueHealth("habit",habitPayload);syncTimers.delete(key);},650));
     clearTimeout(hygieneSyncTimer);hygieneSyncTimer=setTimeout(()=>queueHealth("hygiene",payloadForDate(date)),800);
@@ -129,8 +129,8 @@
       if(card){card.classList.add("is-just-checked");setTimeout(()=>card.classList.remove("is-just-checked"),550);}
     }
   }
-  function label(habit){return habit.en;}
-  function detail(habit){return habit.detailEn;}
+  function label(habit){return window.AWJ_LOCALE?.text(habit.en)||habit.en;}
+  function detail(habit){return habit.detailEn?(window.AWJ_LOCALE?.text(habit.detailEn)||habit.detailEn):'';}
   function render(){
     const date=isoDay(),ordered=habitsForDate(date),done=completed(date),percent=ordered.length?Math.round(done.length/ordered.length*100):0,days=Array.from({length:7},(_,index)=>dateKey(index-6));
     const filter=state.habitFilter||"all";
@@ -140,8 +140,8 @@
       if(filter==="done") return isDone;
       return true;
     });
-    const section=document.createElement("details");section.open=Boolean(state.habitsExpanded||reorderMode);section.addEventListener("toggle",()=>{state.habitsExpanded=section.open;});section.className="habit-tracker";section.setAttribute("aria-labelledby","habitTrackerTitle");
-    section.innerHTML=REP_SAFE_DOM.sanitize(`<summary class="habits-summary"><span><small>DAILY HABITS</small><strong>${done.length}/${ordered.length} complete</strong></span><span>View habits</span></summary><div class="habit-head"><div><small>${"DAILY HABITS"}</small><h2 id="habitTrackerTitle">${"Build the day you want."}</h2><p>${"Check-ins stay available offline and update the Habit Log in Notion directly."}</p><div class="habit-head-actions"><button type="button" data-habit-reorder aria-pressed="${reorderMode}">${reorderMode?("Done"):("Reorder")}</button><a href="${NOTION_HABITS_URL}" target="_blank" rel="noopener">${"Open Habit Log"}</a></div></div><div class="habit-progress" role="progressbar" aria-label="${"Today's habit progress"}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">${miniRing(percent,"var(--acid)",54,6)}<strong>${done.length}/${ordered.length}</strong></div></div>
+    const section=document.createElement("details");section.open=Boolean(reorderMode||(state.habitsExpanded===undefined?["home-overview","wellbeing","care"].includes(state.view):state.habitsExpanded));section.addEventListener("toggle",()=>{state.habitsExpanded=section.open;});section.className="habit-tracker";section.setAttribute("aria-labelledby","habitTrackerTitle");
+    section.innerHTML=AWJ_SAFE_DOM.sanitize(`<summary class="habits-summary"><span><small>DAILY HABITS</small><strong>${done.length}/${ordered.length} complete</strong></span><span>View habits</span></summary><div class="habit-head"><div><small>${"DAILY HABITS"}</small><h2 id="habitTrackerTitle">${"Build the day you want."}</h2><p>${"Check-ins stay available offline and update the Habit Log in Notion directly."}</p><div class="habit-head-actions"><button type="button" data-habit-reorder aria-pressed="${reorderMode}">${reorderMode?("Done"):("Reorder")}</button><a href="${NOTION_HABITS_URL}" target="_blank" rel="noopener">${"Open Habit Log"}</a></div></div><div class="habit-progress" role="progressbar" aria-label="${"Today's habit progress"}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">${miniRing(percent,"var(--acid)",54,6)}<strong>${done.length}/${ordered.length}</strong></div></div>
       ${totalStreak()?`<div class="habit-streak-banner"><span>🔥</span><strong>${totalStreak()} ${"fully completed days"}</strong></div>`:""}
       <div class="habit-filter-bar" style="display:flex;gap:6px;margin:12px 0 10px;">
         <button type="button" class="filter-tab ${filter==="all"?"is-active":""}" data-filter-habits="all" style="flex:1;min-height:36px;border:1px solid var(--line);border-radius:10px;background:${filter==="all"?"rgba(201,255,61,.12)":"var(--panel)"};color:${filter==="all"?"var(--acid)":"var(--muted)"};font-size:11px;font-weight:850;cursor:pointer;">${"All"} (${ordered.length})</button>
@@ -162,9 +162,9 @@
     });
     return section;
   }
-  function renderHabitsPage(){if(state.view==='care'&&window.REP_TRAINING_UI)window.REP_TRAINING_UI.routines();else renderOverview();}
+  function renderHabitsPage(){if(window.AWJ_TRAINING_UI)window.AWJ_TRAINING_UI.refresh();else renderOverview();}
   function mount(){const existing=document.querySelector(".habit-tracker");existing?.remove();const section=render(),anchor=document.querySelector(".today-fuel-card")||document.querySelector(".home-today-card");const slot=document.querySelector("[data-daily-routines]");if(slot)slot.append(section);else if(anchor)anchor.insertAdjacentElement("afterend",section);else app.append(section);}
 
-  window.REP_HABITS={definitions:HABITS,orderedHabits,bucket,completed,streak,payloadForDate,payloadForHabit,hasEntries,notionUrl:NOTION_HABITS_URL,mount,render};
+  window.AWJ_HABITS={definitions:HABITS,orderedHabits,bucket,completed,streak,payloadForDate,payloadForHabit,hasEntries,notionUrl:NOTION_HABITS_URL,mount,render};
   if(state.view==="home-overview")mount();
 })();

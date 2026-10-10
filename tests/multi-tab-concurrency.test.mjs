@@ -1,3 +1,4 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -159,8 +160,8 @@ function createTabStorageContext(sharedIDB, sharedLS) {
   };
   sandbox.window = sandbox;
   const context = vm.createContext(sandbox);
-  vm.runInContext(storageCode, context);
-  return sandbox.window.REP_STORE;
+  vm.runInContext(compatibilitySource+"\n"+(storageCode), context);
+  return sandbox.window.AWJ_STORE;
 }
 
 test("Multi-tab concurrency: Independent tabs modifying disjoint LARGE_KEYS do not clobber each other in IndexedDB (using real storage.js)", async () => {

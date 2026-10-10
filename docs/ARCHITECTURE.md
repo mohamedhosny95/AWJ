@@ -20,7 +20,7 @@ The per-device alarm removes the global subscription scan. It stores the browser
 1. Durable Objects were selected instead of D1 because the hard problem is per-device serialization and alarms, not relational analytics.
 2. Cloudflare Queues were not added. The browser already provides a durable user-visible outbox, and the Notion write must return a verified receipt to that user-owned queue.
 3. Staging is a separate Worker environment with distinct KV, rate-limit namespaces, Durable Object namespace, secrets, and a dedicated Notion test source.
-4. No medical conclusion is computed by the server. Raw samples stay in Apple Health; only daily aggregates and coverage metadata enter Rep.
+4. No medical conclusion is computed by the server. Raw samples stay in Apple Health; only daily aggregates and coverage metadata enter AWJ.
 
 ## Performance analytics boundary
 

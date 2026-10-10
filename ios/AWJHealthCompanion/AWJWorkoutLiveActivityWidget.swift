@@ -5,14 +5,14 @@ import WidgetKit
 
 @available(iOSApplicationExtension 17.0, *)
 @main
-struct RepWorkoutWidgetBundle: WidgetBundle {
-    var body: some Widget { RepWorkoutLiveActivityWidget() }
+struct AWJWorkoutWidgetBundle: WidgetBundle {
+    var body: some Widget { AWJWorkoutLiveActivityWidget() }
 }
 
 @available(iOSApplicationExtension 17.0, *)
-struct RepWorkoutLiveActivityWidget: Widget {
+struct AWJWorkoutLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: RepWorkoutActivityAttributes.self) { context in
+        ActivityConfiguration(for: AWJWorkoutActivityAttributes.self) { context in
             VStack(alignment: .leading, spacing: 10) {
                 HStack { Text(context.attributes.workoutName).font(.headline); Spacer(); Text(context.state.status).foregroundStyle(.secondary) }
                 Text(context.state.exercise).font(.title3.bold())

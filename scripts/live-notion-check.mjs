@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import '../src/client/compatibility.js';
 
 const token=process.env.NOTION_TEST_TOKEN||"",sourceId=String(process.env.NOTION_TEST_DATA_SOURCE_ID||"").replace(/-/g,"");
 if(!token||!sourceId){console.log("Live Notion check skipped: configure NOTION_TEST_TOKEN and NOTION_TEST_DATA_SOURCE_ID.");process.exit(0);}
@@ -17,7 +18,7 @@ try{
   for(const [name,type] of Object.entries(required)){const actual=source.properties?.[name]?.type;if(!actual)missing.push(name);else if(actual!==type)incompatible.push(`${name}: ${actual} != ${type}`);}
   if(source.archived||source.in_trash)throw Error("The test Food Entries source is in Trash.");
   if(missing.length||incompatible.length)throw Error(`Food schema mismatch. Missing: ${missing.join(", ")||"none"}. Incompatible: ${incompatible.join(", ")||"none"}.`);
-  const marker=`Health OS live check ${new Date().toISOString()}`;
+  const marker=`AWJ live check ${new Date().toISOString()}`;
   const created=await notion("/pages",{method:"POST",body:JSON.stringify({parent:{type:"data_source_id",data_source_id:sourceId},properties:{Name:{title:[{type:"text",text:{content:marker}}]},Date:{date:{start:new Date().toISOString()}},"Meal Type":{select:{name:"Snack"}},"Log Method":{select:{name:"Ingredients"}},Notes:{rich_text:[{type:"text",text:{content:"Automated integration test; safe to archive."}}]}}})});
   createdPageId=created.id;
   const verified=await notion(`/pages/${createdPageId}`),parent=String(verified.parent?.data_source_id||verified.parent?.database_id||"").replace(/-/g,"");

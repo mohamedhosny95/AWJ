@@ -1,3 +1,18 @@
+// src/server/compatibility.ts
+var AWJ_COMPAT = Object.freeze({
+  pairingSecretName: "REP_SYNC_KEY",
+  syncHeader: "x-rep-sync-key",
+  idempotencyHeader: "x-rep-idempotency-key",
+  sessionCookie: "__Host-rep_session",
+  tokenVersion: "rep1",
+  notionSourceName: "Rep Gym Companion"
+});
+function pairingSecret(environment) {
+  const values = environment;
+  const value = values.AWJ_SYNC_KEY || values[AWJ_COMPAT.pairingSecretName];
+  return typeof value === "string" ? value : "";
+}
+
 // src/server/contracts.ts
 var SYNC_KINDS = ["food", "nutrition", "recovery", "sleep", "hygiene", "habit"];
 var PUSH_REMINDER_IDS = ["workout", "bedtime", "unfinished", "weekly"];
@@ -378,7 +393,7 @@ var DeviceCoordinator = class extends DurableObject {
       return;
     }
     const copy = { workout: { body: "Your training plan is ready when you are.", url: "/?quick=train", action: "open-workout", title: "Open workout" }, bedtime: { body: "Start your wind-down and protect tomorrow's recovery.", url: "/?quick=health&action=sleep", action: "log-sleep", title: "Log sleep" }, unfinished: { body: "An unfinished workout is saved exactly where you left it.", url: "/?quick=train&action=resume", action: "resume-workout", title: "Resume" }, weekly: { body: "Your weekly progress report and next action are ready.", url: "/?quick=insights", action: "open-weekly", title: "Review" } }[reminder.id];
-    const message = { title: "Health OS", body: copy.body, data: { url: copy.url }, actions: [{ action: copy.action, title: copy.title }] };
+    const message = { title: "AWJ", body: copy.body, data: { url: copy.url }, actions: [{ action: copy.action, title: copy.title }] };
     try {
       const response = await sendWebPush(this.env, this.subscription(row), message);
       if (response.status === 404 || response.status === 410) {
@@ -533,7 +548,7 @@ async function paired(request, env) {
   return Boolean(await authInfo(request, env));
 }
 async function automationPaired(request, env) {
-  const supplied = request.headers.get("x-rep-sync-key") || "", expected = env.VITALS_IMPORT_KEY || env.REP_SYNC_KEY || "";
+  const supplied = request.headers.get("x-awj-sync-key") || request.headers.get(AWJ_COMPAT.syncHeader) || "", expected = env.VITALS_IMPORT_KEY || pairingSecret(env) || "";
   return Boolean(supplied && expected.length >= 32 && await timingSafeEqual(supplied, expected));
 }
 var SECURITY_HEADERS = {
@@ -926,10 +941,10 @@ function validateFoodSchema(data) {
 function actionableNotionError(error, destination) {
   const detail = safeText(error?.message || error, 180);
   if (error?.status === 404 || /could not find|not found/i.test(detail)) {
-    return `Food Entries is unavailable to Rep Gym Sync. Restore the source if it is in Trash, then connect the integration to Food Entries. Your app destination remains ${destination.name}.`;
+    return `Food Entries is unavailable to AWJ Gym Sync. Restore the source if it is in Trash, then connect the integration to Food Entries. Your app destination remains ${destination.name}.`;
   }
   if (error?.status === 401 || error?.status === 403 || /unauthorized|restricted|permission/i.test(detail)) {
-    return `Rep Gym Sync cannot access Food Entries. Reconnect the integration to the original Food Entries database; the visible destination remains ${destination.name}.`;
+    return `AWJ Gym Sync cannot access Food Entries. Reconnect the integration to the original Food Entries database; the visible destination remains ${destination.name}.`;
   }
   return detail || "Notion destination validation failed.";
 }
@@ -996,7 +1011,7 @@ function notionProperties(workout, row) {
   return properties;
 }
 async function syncWorkoutBody(env, body) {
-  if (!env.NOTION_TOKEN || !env.REP_SYNC_KEY) {
+  if (!env.NOTION_TOKEN || !pairingSecret(env)) {
     return json({ ok: false, error: "Sync is not configured on the server." }, 503);
   }
   const source = requireDataSource(env, env.NOTION_DATA_SOURCE_ID, WORKOUT_DATA_SOURCE, "workout");
@@ -1115,7 +1130,7 @@ function habitProperties(payload) {
     "Habit ID": { rich_text: richText(payload.id) },
     "Completed": { checkbox: Boolean(payload.completed) },
     "Streak": { number: Math.max(0, Math.min(370, Number(payload.streak) || 0)) },
-    "Source": { select: { name: "Rep Gym Companion" } },
+    "Source": { select: { name: AWJ_COMPAT.notionSourceName } },
     "Updated At": { date: { start: safeText(payload.updatedAt, 40) || (/* @__PURE__ */ new Date()).toISOString() } },
     "Notes": { rich_text: richText(safeText(payload.notes, 500)) }
   };
@@ -1156,7 +1171,7 @@ async function syncFood(env, payload, source) {
   return json({ ok: true, ...receipt, kind: "food", entryId: safeText(payload.id, 100), created: 1, skipped: 0 });
 }
 async function syncHealthBody(env, body) {
-  if (!env.NOTION_TOKEN || !env.REP_SYNC_KEY) return json({ ok: false, error: "Sync is not configured on the server." }, 503);
+  if (!env.NOTION_TOKEN || !pairingSecret(env)) return json({ ok: false, error: "Sync is not configured on the server." }, 503);
   const kind = safeText(body?.kind, 20), payload = body?.payload, source = healthSource(env, kind);
   if (!source || !payload || !/^\d{4}-\d{2}-\d{2}$/.test(safeText(payload.date, 10))) return json({ ok: false, error: "Invalid health log payload." }, 400);
   if (kind === "food") return syncFood(env, payload, source);
@@ -1301,7 +1316,7 @@ async function hmacSha2562(keyBytes, dataBytes) {
 }
 var credentialEncoder = new TextEncoder();
 var credentialDecoder = new TextDecoder();
-var SESSION_COOKIE = "__Host-rep_session";
+var SESSION_COOKIE = "__Host-awj_session";
 var SESSION_MAX_AGE = 400 * 86400;
 var deviceKey = (id) => `device:${id}`;
 function cookieValue(request, name) {
@@ -1317,15 +1332,15 @@ function sessionCookie(token, maxAge = SESSION_MAX_AGE) {
 }
 async function signCredential(env, payload) {
   const encoded = b64urlEncode2(credentialEncoder.encode(JSON.stringify(payload)));
-  const signature = await hmacSha2562(credentialEncoder.encode(env.REP_SYNC_KEY || ""), credentialEncoder.encode(encoded));
-  return `rep1.${encoded}.${b64urlEncode2(signature)}`;
+  const signature = await hmacSha2562(credentialEncoder.encode(pairingSecret(env) || ""), credentialEncoder.encode(encoded));
+  return `awj1.${encoded}.${b64urlEncode2(signature)}`;
 }
 async function verifyCredential(env, token, expectedType = "device") {
   try {
-    if (!env.REP_SYNC_KEY || String(token || "").length > 1400) return null;
+    if (!pairingSecret(env) || String(token || "").length > 1400) return null;
     const [version, encoded, signature, ...extra] = String(token || "").split(".");
-    if (version !== "rep1" || !encoded || !signature || extra.length) return null;
-    const expected = b64urlEncode2(await hmacSha2562(credentialEncoder.encode(env.REP_SYNC_KEY), credentialEncoder.encode(encoded)));
+    if (!["awj1", AWJ_COMPAT.tokenVersion].includes(version) || !encoded || !signature || extra.length) return null;
+    const expected = b64urlEncode2(await hmacSha2562(credentialEncoder.encode(pairingSecret(env)), credentialEncoder.encode(encoded)));
     if (!await timingSafeEqual(signature, expected)) return null;
     const payload = JSON.parse(credentialDecoder.decode(b64urlDecode2(encoded))), now = Math.floor(Date.now() / 1e3);
     if (payload.typ !== expectedType || !Number.isFinite(payload.iat) || Number(payload.iat) > now + 60) return null;
@@ -1355,10 +1370,10 @@ async function registeredDevice(env, payload) {
   return Boolean(record && !record.revokedAt);
 }
 async function authInfo(request, env) {
-  if (!env.REP_SYNC_KEY || String(env.REP_SYNC_KEY).length < 32) return null;
-  const supplied = request.headers.get("x-rep-sync-key") || "";
-  if (supplied && await timingSafeEqual(supplied, env.REP_SYNC_KEY)) return { type: "master", token: supplied };
-  const candidates = [supplied, cookieValue(request, SESSION_COOKIE)].filter(Boolean);
+  if (!pairingSecret(env) || String(pairingSecret(env)).length < 32) return null;
+  const supplied = request.headers.get("x-awj-sync-key") || request.headers.get(AWJ_COMPAT.syncHeader) || "";
+  if (supplied && await timingSafeEqual(supplied, pairingSecret(env))) return { type: "master", token: supplied };
+  const candidates = [supplied, cookieValue(request, SESSION_COOKIE), cookieValue(request, AWJ_COMPAT.sessionCookie)].filter(Boolean);
   for (const token of candidates) {
     const payload = await verifyCredential(env, token, "device");
     if (payload && await registeredDevice(env, payload)) return { type: payload.reg ? "device" : "legacy-device", payload, token };
@@ -1422,7 +1437,7 @@ async function createPairHandoff(request, env) {
   return json({ ok: true, url: url.toString(), expiresAt: new Date(exp * 1e3).toISOString() });
 }
 async function claimPairHandoff(request, env) {
-  if (!env.REP_SYNC_KEY) return json({ ok: false, error: "Pairing is not configured." }, 503);
+  if (!pairingSecret(env)) return json({ ok: false, error: "Pairing is not configured." }, 503);
   const body = await request.json().catch(() => null), handoff = await verifyCredential(env, body?.token, "handoff");
   if (!handoff) return json({ ok: false, error: "This pairing link is invalid or expired." }, 401);
   if (!await handoffState(env, handoff.jti, "claim")) return json({ ok: false, error: "This pairing link was already used or expired." }, 401);
@@ -1511,12 +1526,12 @@ function infrastructureHealth(env) {
   return {
     push: { configured: Boolean((env.DEVICE_COORDINATOR || env.PUSH_KV) && publicKeyValid && privateKeyValid), scheduler: env.DEVICE_COORDINATOR ? "durable-object-alarm" : "legacy-kv", publicKeyValid, privateKeyValid, subjectConfigured: /^mailto:|^https:\/\//.test(env.VAPID_SUBJECT || "") },
     backups: { configured: true, mode: "client-aes-256-gcm" },
-    healthkit: { configured: Boolean(env.PUSH_KV && (env.VITALS_IMPORT_KEY || env.REP_SYNC_KEY)), endpoint: "/api/vitals/import" }
+    healthkit: { configured: Boolean(env.PUSH_KV && (env.VITALS_IMPORT_KEY || pairingSecret(env))), endpoint: "/api/vitals/import" }
   };
 }
 async function sendSystemHealthAlert(env, record) {
   if (!env.VAPID_PRIVATE_KEY_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0 };
-  const message = { title: "Health OS sync needs attention", body: record.notion?.error || "The direct Notion connection needs attention." };
+  const message = { title: "AWJ sync needs attention", body: record.notion?.error || "The direct Notion connection needs attention." };
   const registry = registryCoordinator(env);
   if (registry) {
     const devices = await registry.list(100);
@@ -1568,14 +1583,14 @@ async function testPush(request, env) {
   if (!infrastructureHealth(env).push.configured) return json({ ok: false, error: "Push is not fully configured." }, 503);
   const coordinator = deviceCoordinator(env, deviceAuth.payload.jti);
   if (coordinator) {
-    const result = await coordinator.sendNow({ title: "Health OS test", body: "Push notifications are working on this device." });
+    const result = await coordinator.sendNow({ title: "AWJ test", body: "Push notifications are working on this device." });
     return result.ok ? json({ ok: true, status: result.status }) : json({ ok: false, error: result.status === 404 ? "This device does not have an active push subscription." : `Push service rejected the test (${result.status}).` }, result.status === 404 ? 404 : 502);
   }
   const body = await request.json().catch(() => null), endpoint = safeText(body?.endpoint, 1800);
   if (!endpoint || !env.PUSH_KV) return json({ ok: false, error: "A subscribed device endpoint is required." }, 400);
   const key = await pushKvKey(endpoint), record = await env.PUSH_KV.get(key, "json");
   if (!record?.subscription) return json({ ok: false, error: "This device does not have an active push subscription." }, 404);
-  const response = await sendWebPush(env, record.subscription, { title: "Health OS test", "body": "Push notifications are working on this device." });
+  const response = await sendWebPush(env, record.subscription, { title: "AWJ test", "body": "Push notifications are working on this device." });
   if (response.status === 404 || response.status === 410) {
     await env.PUSH_KV.delete(key);
     return json({ ok: false, error: "The push subscription expired. Enable reminders again." }, 410);
@@ -1735,7 +1750,7 @@ async function route(request, env, ctx) {
       const deviceAuth = await authInfo(request, env);
       if (!deviceAuth) return json({ ok: false, error: "This device is not paired or was revoked." }, 401);
       try {
-        const idempotency = safeText(request.headers.get("x-rep-idempotency-key"), 180), raw = await request.text();
+        const idempotency = safeText(request.headers.get("x-awj-idempotency-key") || request.headers.get(AWJ_COMPAT.idempotencyHeader), 180), raw = await request.text();
         let parsed;
         try {
           parsed = JSON.parse(raw);
@@ -1810,7 +1825,7 @@ ${raw}`)))) : "";
     return new Response(null, { status: 204 });
   }
   if (env.ASSETS && typeof env.ASSETS.fetch === "function") return env.ASSETS.fetch(request);
-  return new Response("Rep Gym Companion", { headers: { "content-type": "text/plain; charset=utf-8" } });
+  return new Response("AWJ", { headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 var index_default = {
   async fetch(request, env, ctx) {

@@ -1,11 +1,12 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
 const context={window:{},esc:value=>String(value)};
-runInNewContext(await readFile(new URL("../src/client/recovery-map.js",import.meta.url),"utf8"),context);
-const map=context.window.REP_RECOVERY_MAP;
+runInNewContext(compatibilitySource+"\n"+(await readFile(new URL("../src/client/recovery-map.js",import.meta.url),"utf8")),context);
+const map=context.window.AWJ_RECOVERY_MAP;
 
 test("recent muscle load is unknown without completed exercise evidence",()=>{
   const empty=map.computeMuscleReadiness([]);

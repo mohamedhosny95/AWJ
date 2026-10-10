@@ -186,7 +186,7 @@ export class DeviceCoordinator extends DurableObject<Env> {
     const reminder=reminders.find(item=>item.id===row.next_reminder_id)||fallback,sentKey=`${today}:${reminder.id}`;
     if(row.last_sent_key===sentKey){const next=nextReminderEvent(reminders,zone,Date.now()+1_000);this.ctx.storage.sql.exec("UPDATE push_subscription SET next_reminder_id=? WHERE singleton=1",next.id);await this.ctx.storage.setAlarm(next.at);return;}
     const copy={workout:{body:"Your training plan is ready when you are.",url:"/?quick=train",action:"open-workout",title:"Open workout"},bedtime:{body:"Start your wind-down and protect tomorrow's recovery.",url:"/?quick=health&action=sleep",action:"log-sleep",title:"Log sleep"},unfinished:{body:"An unfinished workout is saved exactly where you left it.",url:"/?quick=train&action=resume",action:"resume-workout",title:"Resume"},weekly:{body:"Your weekly progress report and next action are ready.",url:"/?quick=insights",action:"open-weekly",title:"Review"}}[reminder.id];
-    const message={title:"Health OS",body:copy.body,data:{url:copy.url},actions:[{action:copy.action,title:copy.title}]};
+    const message={title:"AWJ",body:copy.body,data:{url:copy.url},actions:[{action:copy.action,title:copy.title}]};
     try {
       const response = await sendWebPush(this.env, this.subscription(row), message);
       if (response.status === 404 || response.status === 410) { await this.clearPush(); return; }

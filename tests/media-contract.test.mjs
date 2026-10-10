@@ -1,5 +1,14 @@
+import {compatibilitySource} from './compat-context.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
-const ctx={Response,Headers};vm.createContext(ctx);vm.runInContext(readFileSync('src/client/media-contract.js','utf8'),ctx);const contract=ctx.REP_MEDIA_CONTRACT;
+const ctx={Response,Headers};vm.createContext(ctx);vm.runInContext(compatibilitySource+"\n"+(readFileSync('src/client/media-contract.js','utf8')),ctx);const contract=ctx.AWJ_MEDIA_CONTRACT;
 test('offline ranges return exactly the requested bytes and proper 206 headers',async()=>{for(const [range,bytes] of [['bytes=2-5',[2,3,4,5]],['bytes=7-',[7,8,9]],['bytes=-3',[7,8,9]],['bytes=0-99',[0,1,2,3,4,5,6,7,8,9]]]){const response=await contract.rangeResponse(new Response(Uint8Array.from({length:10},(_,i)=>i),{headers:{'Content-Type':'video/mp4'}}),range);assert.equal(response.status,206);assert.equal(response.headers.get('Accept-Ranges'),'bytes');assert.deepEqual([...new Uint8Array(await response.arrayBuffer())],bytes);}}
 );
 test('unsatisfiable and multiple ranges cannot be mislabelled as complete downloads',async()=>{for(const range of ['bytes=20-30','bytes=5-2','bytes=0-1,3-4','bytes=-0'])assert.equal((await contract.rangeResponse(new Response(new Uint8Array(10)),range)).status,416);assert.equal(contract.complete(new Response(new Uint8Array(5),{status:206,headers:{'Content-Type':'video/mp4','Content-Range':'bytes 0-4/20'}}),'video'),false);});
+
+test('an installed previous worker can import the renamed media contract during an upgrade',()=>{
+ const older={Response,Headers};vm.createContext(older);
+ older.importScripts=filename=>{assert.equal(filename,'./compatibility.js');vm.runInContext(compatibilitySource,older);};
+ vm.runInContext(readFileSync('src/client/media-contract.js','utf8'),older);
+ assert.equal(older[AWJ_COMPAT.legacyMediaContractGlobal],older.AWJ_MEDIA_CONTRACT);
+ assert.equal(older.AWJ_MEDIA_CONTRACT.CACHE_NAME,AWJ_COMPAT.mediaCache);
+});

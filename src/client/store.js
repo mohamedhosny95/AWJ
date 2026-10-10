@@ -1,4 +1,4 @@
-/* Observable Reactive Micro-Store & Event Bus for Rep Gym Companion.
+/* Observable Reactive Micro-Store & Event Bus for AWJ.
    Provides granular slice subscriptions, reactive state tracking, and decoupled pub/sub events. */
 
 (function(){
@@ -112,9 +112,9 @@
   };
 
   if(typeof window !== "undefined"){
-    window.REP_STORE_ENGINE = engine;
+    window.AWJ_STORE_ENGINE = engine;
   }
   if(typeof globalThis !== "undefined"){
-    globalThis.REP_STORE_ENGINE = engine;
+    globalThis.AWJ_STORE_ENGINE = engine;
   }
 })();

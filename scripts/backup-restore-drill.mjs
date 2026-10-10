@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import '../src/client/compatibility.js';
 
 import { chromium } from "playwright";
 import http from "node:http";
@@ -18,7 +19,7 @@ const clientRoot = join(projectRoot, "dist", "client");
 const evidenceDir = join(projectRoot, "work", "certification");
 const backupPath = join(evidenceDir, "recovery-drill-backup.json");
 const tamperedPath = join(evidenceDir, "recovery-drill-tampered.json");
-const reportPath = process.env.REP_RECOVERY_REPORT || join(evidenceDir, "recovery-drill-report.json");
+const reportPath = process.env.AWJ_RECOVERY_REPORT || join(evidenceDir, "recovery-drill-report.json");
 const passphrase = "recovery-drill-passphrase";
 const port = 8935;
 const MIME = {
@@ -65,6 +66,14 @@ async function openApp(context) {
   return page;
 }
 
+async function openHabits(page) {
+  const tracker = page.locator(".habit-tracker");
+  if (!(await tracker.evaluate(element => element.open))) {
+    await tracker.locator(".habits-summary").click();
+  }
+  await tracker.locator('[data-habit-id="sleep"]').waitFor({ state: "visible", timeout: 10000 });
+}
+
 function acceptRestoreDialogs(page) {
   page.on("dialog", async dialog => {
     if (dialog.type() === "prompt") await dialog.accept(passphrase);
@@ -73,8 +82,8 @@ function acceptRestoreDialogs(page) {
 }
 
 await new Promise(resolve => server.listen(port, resolve));
-const browser = await chromium.launch({
-  channel: existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined,
+const browser = process.env.AWJ_E2E_CDP_URL?await chromium.connectOverCDP(process.env.AWJ_E2E_CDP_URL):await chromium.launch({
+  channel: process.env.AWJ_E2E_BROWSER_CHANNEL||(existsSync("/Applications/Google Chrome.app") ? "chrome" : undefined),
   args: ["--no-sandbox"]
 });
 
@@ -83,7 +92,7 @@ try {
   const sourceContext = await browser.newContext({ viewport: { width: 390, height: 900 }, acceptDownloads: true });
   const sourcePage = await openApp(sourceContext);
 
-  await sourcePage.locator('.habits-summary').click();
+  await openHabits(sourcePage);
   await sourcePage.click('[data-habit-id="sleep"]');
   await sourcePage.click('[data-app-tab="food"]');
   await sourcePage.click('[data-nutrition-log]');
@@ -91,10 +100,10 @@ try {
   await sourcePage.click("[data-manual-food]");
   await sourcePage.waitForTimeout(250);
   if (await sourcePage.locator("[data-save-food]").count()) await sourcePage.click("[data-save-food]");
-  await sourcePage.evaluate(() => window.REP_STORE.flush());
+  await sourcePage.evaluate(() => window.AWJ_STORE.flush());
   check(await sourcePage.evaluate(()=>state.foodEntries.some(entry=>entry.food_name==="recovery drill meal")), "Recovery fixture contains a meal");
 
-  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;REP_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');REP_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();REP_STORE.flush();});
+  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;AWJ_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');AWJ_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();return AWJ_STORE.flush();});
   await sourcePage.click("#settingsButton");
   await sourcePage.click('[data-settings-tab="security"]');
   await sourcePage.fill("[data-backup-passphrase]", passphrase);
@@ -105,8 +114,8 @@ try {
   await download.saveAs(backupPath);
 
   const encrypted = JSON.parse(readFileSync(backupPath, "utf8"));
-  check(encrypted.schema === 5 && encrypted.format === "rep-health-export/v5", "Downloaded backup uses authenticated schema 5");
-  writeFileSync(tamperedPath, JSON.stringify({ ...encrypted, format: "rep-health-export/v4" }, null, 2));
+  check(encrypted.schema === 5 && encrypted.format === AWJ_COMPAT.backupFormat, "Downloaded backup uses authenticated schema 5");
+  writeFileSync(tamperedPath, JSON.stringify({ ...encrypted, format: AWJ_COMPAT.legacyBackupFormat }, null, 2));
   await sourceContext.close();
 
   const restoreContext = await browser.newContext({ viewport: { width: 390, height: 900 } });
@@ -118,11 +127,11 @@ try {
   await restorePage.setInputFiles("[data-backup-import]", backupPath);
   await restoredLoad;
   await restorePage.waitForSelector('html[data-app-ready="true"]', { timeout: 10000 });
-  const restoredPreferences=await restorePage.evaluate(()=>({favourites:state.routineFavourites,display:state.displayPreferences,selected:REP_TRAINING_PREFERENCES.selectedExercise(state,{name:'Chest Press'}),performed:REP_TRAINING_PREFERENCES.performedExercise(state,{name:'Chest Press'},0)}));
+  const restoredPreferences=await restorePage.evaluate(()=>({favourites:state.routineFavourites,display:state.displayPreferences,selected:AWJ_TRAINING_PREFERENCES.selectedExercise(state,{name:'Chest Press'}),performed:AWJ_TRAINING_PREFERENCES.performedExercise(state,{name:'Chest Press'},0)}));
   check(restoredPreferences.favourites.includes('gym')&&restoredPreferences.display.expandedDemo,'Fresh profile restores favourites and display preferences');
   check(restoredPreferences.selected==='Push-ups'&&restoredPreferences.performed==='Push-ups','Encrypted backup preserves the active-session substitution and performed set');
   await restorePage.click("#homeButton");
-  await restorePage.locator('.habits-summary').click();
+  await openHabits(restorePage);
   await restorePage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await restorePage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Fresh profile restores the habit record");
   await restorePage.click('[data-app-tab="food"]');
@@ -140,7 +149,7 @@ try {
   const rejection = await tamperPage.locator(".toast").textContent();
   check(/incorrect|damaged|invalid/i.test(rejection), "Tampered backup is rejected through the real import UI");
   await tamperPage.click("#homeButton");
-  await tamperPage.locator('.habits-summary').click();
+  await openHabits(tamperPage);
   await tamperPage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await tamperPage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 0, "Rejected backup cannot replace local data");
   await tamperContext.close();
@@ -149,7 +158,7 @@ try {
   report = {
     ok: true,
     generatedAt: new Date().toISOString(),
-    build: buildSource.match(/REP_BUILD_VERSION="([^"]+)"/)?.[1] ?? "unknown",
+    build: buildSource.match(/AWJ_BUILD_VERSION="([^"]+)"/)?.[1] ?? "unknown",
     schema: encrypted.schema,
     checks
   };

@@ -1,9 +1,10 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 
 globalThis.window={};
 await import("../src/client/sync-outbox.js");
-const outbox=window.REP_SYNC_OUTBOX;
+const outbox=window.AWJ_SYNC_OUTBOX;
 
 test("durable outbox preserves intent through retry and verified removal",()=>{
   const item={id:"food:entry-1",kind:"food",payload:{id:"entry-1"}};

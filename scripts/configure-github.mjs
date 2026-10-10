@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import '../src/client/compatibility.js';
 
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-const repository = process.env.GITHUB_REPOSITORY || "mohamedhosny95/rep-gym-companion";
+const repository = process.env.GITHUB_REPOSITORY || "mohamedhosny95/AWJ";
 const checkOnly = process.argv.includes("--check");
 
 if (!token) {

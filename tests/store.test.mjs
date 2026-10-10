@@ -1,7 +1,8 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 await import("../src/client/store.js");
-const engine = globalThis.REP_STORE_ENGINE;
+const engine = globalThis.AWJ_STORE_ENGINE;
 
 test("ReactiveStore initializes and gets state", () => {
   const store = engine.createStore({ session: "gym", view: "home" });

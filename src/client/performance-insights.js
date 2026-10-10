@@ -4,7 +4,7 @@
 (function(root,factory){
   const api=factory();
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
-  root.REP_PERFORMANCE_INSIGHTS=api;
+  root.AWJ_PERFORMANCE_INSIGHTS=api;
 })(typeof globalThis!=="undefined"?globalThis:this,function(){
   const DAY=86400000,WEEK=7*DAY;
   const MUSCLES={

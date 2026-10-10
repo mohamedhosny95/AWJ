@@ -1,8 +1,10 @@
+import '../src/client/compatibility.js';
 // Audits the deployed PWA at the two primary device sizes. Override the target
-// with REP_DEVICE_AUDIT_URL when validating staging or a preview deployment.
+// with AWJ_DEVICE_AUDIT_URL when validating staging or a preview deployment.
 import {chromium} from "playwright";
+import {readFileSync} from "node:fs";
 
-const target=process.env.REP_DEVICE_AUDIT_URL||"https://rep-gym-companion.mohamedahmedhosny95.workers.dev";
+const target=process.env.AWJ_DEVICE_AUDIT_URL||"https://rep-gym-companion.mohamedahmedhosny95.workers.dev";
 const profiles=[
   {name:"Honor 20 Pro portrait",width:360,height:780,mobile:true},
   {name:"iPhone 15 Pro portrait",width:393,height:852,mobile:true},
@@ -10,7 +12,9 @@ const profiles=[
   {name:"iPhone 15 Pro landscape",width:852,height:393,mobile:true,landscape:true}
 ];
 const failures=[];
-const browser=await chromium.launch({headless:true});
+const expectedBuild=process.env.AWJ_DEVICE_AUDIT_MATCH_BUILD?readFileSync(new URL('../dist/client/build-meta.js',import.meta.url),'utf8').match(/AWJ_BUILD_VERSION="([a-f0-9]+)"/)?.[1]:null;
+if(process.env.AWJ_DEVICE_AUDIT_MATCH_BUILD&&!expectedBuild)throw Error('The expected staging build identifier is missing.');
+const browser=process.env.AWJ_E2E_CDP_URL?await chromium.connectOverCDP(process.env.AWJ_E2E_CDP_URL):await chromium.launch({headless:true,channel:process.env.AWJ_DEVICE_AUDIT_BROWSER_CHANNEL||undefined});
 
 for(const profile of profiles){
   const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},isMobile:true,hasTouch:true,deviceScaleFactor:profile.name.startsWith("iPhone")?3:2.625});
@@ -18,9 +22,9 @@ for(const profile of profiles){
   page.on("pageerror",error=>errors.push(error.message));
   page.on("console",message=>{if(message.type()==="error")errors.push(message.text());});
   await page.addInitScript(()=>{
-    window.__deviceAudit={lcp:0,cls:0,longTask:0};
+    window.__deviceAudit={lcp:0,cls:0,longTask:0,shifts:[]};
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>window.__deviceAudit.lcp=Math.max(window.__deviceAudit.lcp,entry.startTime))).observe({type:"largest-contentful-paint",buffered:true});}catch{}
-    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(!entry.hadRecentInput)window.__deviceAudit.cls+=entry.value;})).observe({type:"layout-shift",buffered:true});}catch{}
+    try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>{if(entry.hadRecentInput)return;window.__deviceAudit.cls+=entry.value;window.__deviceAudit.shifts.push({value:entry.value,sources:(entry.sources||[]).slice(0,4).map(source=>({node:source.node?`${source.node.tagName.toLowerCase()}#${source.node.id||""}.${String(source.node.className||"").split(" ").slice(0,2).join(".")}`:"unknown",previous:source.previousRect,current:source.currentRect}))});})).observe({type:"layout-shift",buffered:true});}catch{}
     try{new PerformanceObserver(list=>list.getEntries().forEach(entry=>window.__deviceAudit.longTask=Math.max(window.__deviceAudit.longTask,entry.duration))).observe({type:"longtask",buffered:true});}catch{}
   });
   const started=Date.now();
@@ -32,6 +36,7 @@ for(const profile of profiles){
     const nav=document.querySelector(".app-tabs"),navBox=nav.getBoundingClientRect(),buttons=[...nav.querySelectorAll("button")],timing=performance.getEntriesByType("navigation")[0];
     return {...window.__deviceAudit,readyMs:Math.round(timing?.domContentLoadedEventEnd||0),loadMs:Math.round(timing?.loadEventEnd||0),overflow:document.documentElement.scrollWidth-window.innerWidth,minTarget:Math.min(...buttons.map(button=>Math.min(button.getBoundingClientRect().width,button.getBoundingClientRect().height))),navBottom:window.innerHeight-navBox.bottom,direction:getComputedStyle(buttons[0]).flexDirection,safeAreaRules:["--safe-top","--safe-right","--safe-bottom","--safe-left"].every(name=>getComputedStyle(document.documentElement).getPropertyValue(name).trim()!=="")};
   });
+  if(expectedBuild){const actual=await page.evaluate(()=>window.AWJ_BUILD_VERSION);if(actual!==expectedBuild)failures.push(`${profile.name}: staging build ${actual} does not match ${expectedBuild}`);}
   const checks=[
     [response?.ok(),`HTTP ${response?.status()||"failure"}`],
     [errors.length===0,errors.join(" | ")||"no console errors"],
@@ -46,6 +51,7 @@ for(const profile of profiles){
   ];
   for(const [ok,detail] of checks){console.log(`${ok?"PASS":"FAIL"}: ${profile.name} · ${detail}`);if(!ok)failures.push(`${profile.name}: ${detail}`);}
   console.log(`INFO: ${profile.name} · wall ${Date.now()-started}ms · DOM ready ${result.readyMs}ms · load ${result.loadMs}ms`);
+  if(result.cls>0.1)console.log(`INFO: ${profile.name} · largest layout shifts ${JSON.stringify(result.shifts.sort((a,b)=>b.value-a.value).slice(0,3))}`);
   await context.close();
 }
 

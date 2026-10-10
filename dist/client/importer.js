@@ -1,4 +1,4 @@
-/* Universal Historical Data Importer for Rep Gym Companion.
+/* Universal Historical Data Importer for AWJ.
    Supports Apple Health XML, Strong CSV, Hevy CSV, and MyFitnessPal exports.
    Completely local, private, and deterministic. */
 
@@ -317,9 +317,9 @@
   };
 
   if(typeof window !== "undefined"){
-    window.REP_DATA_IMPORTER = importer;
+    window.AWJ_DATA_IMPORTER = importer;
   }
   if(typeof globalThis !== "undefined"){
-    globalThis.REP_DATA_IMPORTER = importer;
+    globalThis.AWJ_DATA_IMPORTER = importer;
   }
 })();

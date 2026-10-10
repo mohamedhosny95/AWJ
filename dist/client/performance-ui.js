@@ -1,6 +1,6 @@
 /* UI adapter for the deterministic performance-insights engine. */
 (function(){
-  const engine=window.REP_PERFORMANCE_INSIGHTS;if(!engine)return;
+  const engine=window.AWJ_PERFORMANCE_INSIGHTS;if(!engine)return;
   const pct=value=>value===null||value===undefined?"—":`${Math.round(value)}%`;
   const signed=value=>value===null||value===undefined?"—":`${value>0?"+":""}${value}`;
   const confidence=value=>({high:"High confidence",medium:"Medium confidence",low:"Low confidence"}[value]||value);
@@ -113,7 +113,7 @@
 
   function renderPerformance(){
     const model=engine.analyze(state),anchor=document.querySelector(".progress-analysis .trends-grid")||document.querySelector(".weekly-health-review")||document.querySelector(".health-subnav")||document.querySelector(".module-head");if(!anchor)return;
-    const container=document.createElement("section");container.className="performance-analytics";container.setAttribute("aria-label","Performance analytics");container.innerHTML=REP_SAFE_DOM.sanitize(`<details class="insights-more"><summary>Detailed training, nutrition & data quality</summary><div class="section-title performance-title"><h2>${"Performance Intelligence"}</h2><span>${"Deterministic · confidence-scored · local-first"}</span></div>${window.REP_RECOVERY_MAP?.renderRecoveryMap(state)||""}${goalPanel(model)}${inboxPanel(model)}${strengthPanel(model)}${nutritionPanel(model)}${qualityPanel(model)}${askPanel()}</details>`);anchor.insertAdjacentElement("afterend",container);bindPerformance();
+    const container=document.createElement("section");container.className="performance-analytics";container.setAttribute("aria-label","Performance analytics");container.innerHTML=AWJ_SAFE_DOM.sanitize(`<details class="insights-more"><summary>Detailed training, nutrition & data quality</summary><div class="section-title performance-title"><h2>${"Performance Intelligence"}</h2><span>${"Deterministic · confidence-scored · local-first"}</span></div>${window.AWJ_RECOVERY_MAP?.renderRecoveryMap(state)||""}${goalPanel(model)}${inboxPanel(model)}${strengthPanel(model)}${nutritionPanel(model)}${qualityPanel(model)}${askPanel()}</details>`);anchor.insertAdjacentElement("afterend",container);bindPerformance();
   }
 
   function bindPerformance(){
@@ -123,11 +123,11 @@
     document.querySelectorAll("[data-insight-snooze]").forEach(button=>button.onclick=()=>{state.insightControls.snoozed[button.dataset.insightSnooze]=new Date(Date.now()+7*86400000).toISOString();persist();renderInsights();});
     document.querySelectorAll("[data-insight-dismiss]").forEach(button=>button.onclick=()=>{state.insightControls.dismissed[button.dataset.insightDismiss]=new Date().toISOString();persist();renderInsights();});
     document.querySelector("[data-insight-restore]")?.addEventListener("click",()=>{state.insightControls={dismissed:{},snoozed:{}};persist();renderInsights();});
-    const askForm=document.querySelector("[data-ask-data]");askForm?.addEventListener("submit",event=>{event.preventDefault();const question=String(new FormData(event.currentTarget).get("question")||"").trim();if(!question)return;state.analyticsLastQuestion=question;state.analyticsQuestions=[question,...(state.analyticsQuestions||[]).filter(item=>item!==question)].slice(0,5);persist();const output=document.querySelector("[data-ask-answer]");if(output)output.innerHTML=REP_SAFE_DOM.sanitize(answerMarkup(engine.ask(state,question)));});
+    const askForm=document.querySelector("[data-ask-data]");askForm?.addEventListener("submit",event=>{event.preventDefault();const question=String(new FormData(event.currentTarget).get("question")||"").trim();if(!question)return;state.analyticsLastQuestion=question;state.analyticsQuestions=[question,...(state.analyticsQuestions||[]).filter(item=>item!==question)].slice(0,5);persist();const output=document.querySelector("[data-ask-answer]");if(output)output.innerHTML=AWJ_SAFE_DOM.sanitize(answerMarkup(engine.ask(state,question)));});
     document.querySelectorAll("[data-ask-example]").forEach(button=>button.onclick=()=>{const input=document.querySelector("#askDataQuestion");if(input){input.value=button.dataset.askExample;askForm?.requestSubmit();}});
     document.querySelectorAll("[data-ask-chip]").forEach(button=>button.onclick=()=>{const input=document.querySelector("#askDataQuestion");if(input){input.value=button.dataset.askChip;askForm?.requestSubmit();}});
   }
 
-  window.REP_PERFORMANCE_UI=Object.freeze({mount:renderPerformance});
+  window.AWJ_PERFORMANCE_UI=Object.freeze({mount:renderPerformance});
   if(state.activeTab==="insights")renderPerformance();
 })();

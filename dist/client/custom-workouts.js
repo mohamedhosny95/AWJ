@@ -1,8 +1,8 @@
-/* Custom Workout Routine Builder & Mesocycle Manager for Health OS.
+/* Custom Workout Routine Builder & Mesocycle Manager for AWJ.
    Allows creating, editing, and executing fully customized workout programs and splits. */
 
 (function(){
-  const MASTER_EXERCISES = window.REP_EXERCISES.list().filter(x=>['weighted','bodyweight'].includes(x.logMode)).map(x=>({name:x.name,category:x.targetMuscles||x.category||'Exercise',motion:x.motion,defaultSets:x.routineDefaults?.sets||3,defaultReps:x.routineDefaults?.reps||'10–12',defaultRpe:x.routineDefaults?.rpe||'7–8',defaultRest:x.routineDefaults?.rest??90}));
+  const MASTER_EXERCISES = window.AWJ_EXERCISES.list().filter(x=>['weighted','bodyweight'].includes(x.logMode)).map(x=>({name:x.name,category:x.targetMuscles||x.category||'Exercise',motion:x.motion,defaultSets:x.routineDefaults?.sets||3,defaultReps:x.routineDefaults?.reps||'10–12',defaultRpe:x.routineDefaults?.rpe||'7–8',defaultRest:x.routineDefaults?.rest??90}));
 
   function getCustomRoutines(){
     if(!window.state) return [];
@@ -37,8 +37,8 @@
       if(window.persistDebounced) window.persistDebounced();
       else if(window.persist) window.persist();
     }
-    window.state.customRoutines=window.REP_EXERCISES.normalizeRoutines(window.state.customRoutines);
-    window.REP_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
+    window.state.customRoutines=window.AWJ_EXERCISES.normalizeRoutines(window.state.customRoutines);
+    window.AWJ_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
     return window.state.customRoutines;
   }
 
@@ -47,14 +47,14 @@
     const routine = routines.find(r => r.id === routineId);
     if(!routine || !routine.exercises.length) return;
 
-    window.REP_EXERCISES.registerRoutines(routines,window.sessions);
+    window.AWJ_EXERCISES.registerRoutines(routines,window.sessions);
     if(window.startSession){
       window.showSessionPreview(routine.id);
     }
   }
 
   function openRoutineBuilderModal(existingId = null){
-    if(existingId&&window.REP_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,existingId)){window.showToast("Finish or exit this workout before editing its routine.");return;}
+    if(existingId&&window.AWJ_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,existingId)){window.showToast("Finish or exit this workout before editing its routine.");return;}
     if(document.querySelector(".routine-builder-modal")) return;
     const routines = getCustomRoutines();
     const routine = existingId ? routines.find(r => r.id === existingId) : {
@@ -74,7 +74,7 @@
     overlay.className = "timed-mode routine-builder-modal";
     
     function renderBuilderBody(){
-      overlay.innerHTML = REP_SAFE_DOM.sanitize(`
+      overlay.innerHTML = AWJ_SAFE_DOM.sanitize(`
         <div class="workout-preflight-panel" style="max-width:500px;margin:auto;max-height:90vh;overflow-y:auto;padding:16px;">
           <button class="dialog-close" data-builder-close aria-label="Close">×</button>
           <span class="set-log-kicker" style="color:var(--acid);">🛠️ ${"ROUTINE BUILDER"}</span>
@@ -124,8 +124,8 @@
     function bindEvents(){
       overlay.querySelector("[data-routine-title]").oninput=event=>{draft.title=event.target.value;};
       overlay.querySelector("[data-routine-emoji]").oninput=event=>{draft.emoji=event.target.value;};
-      overlay.querySelector("[data-builder-close]").onclick = () => (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
-      overlay.querySelector("[data-builder-cancel]").onclick = () => (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+      overlay.querySelector("[data-builder-close]").onclick = () => (window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
+      overlay.querySelector("[data-builder-cancel]").onclick = () => (window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
       
       overlay.querySelector("[data-add-ex-select]").onchange = e => {
         const name = e.target.value;
@@ -180,10 +180,10 @@
         } else {
           routines.push(draft);
         }
-        window.state.customRoutines = window.REP_EXERCISES.normalizeRoutines(routines);
-        window.REP_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
+        window.state.customRoutines = window.AWJ_EXERCISES.normalizeRoutines(routines);
+        window.AWJ_EXERCISES.registerRoutines(window.state.customRoutines,window.sessions);
         if(window.persist) window.persist();
-        (window.REP_MOTION?.dismiss(overlay)||overlay.remove());
+        (window.AWJ_MOTION?.dismiss(overlay)||overlay.remove());
         if(window.showToast) window.showToast( "Custom routine saved.");
         if(window.renderHome && window.state.view === "home") window.renderHome();
       };
@@ -219,7 +219,7 @@
               </div>
               <div style="display:flex;gap:6px;">
                 <button class="settings-primary" data-launch-custom="${r.id}" style="padding:8px 14px;font-size:12px;font-weight:900;background:var(--acid);color:var(--acid-ink);">
-                  ${window.REP_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,r.id)?"Resume":"Start"} ▶
+                  ${window.AWJ_TRAINING_SESSION.isResumableWorkout(window.state,window.sessions,r.id)?"Resume":"Start"} ▶
                 </button>
                 <button aria-label="Edit ${esc(r.title)}" class="quiet-setting" data-edit-custom="${r.id}" style="padding:8px 10px;font-size:12px;border:1px solid var(--line);border-radius:10px;">
                   ✏️
@@ -235,7 +235,7 @@
   function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
   getCustomRoutines();
-  window.REP_CUSTOM_WORKOUTS = {
+  window.AWJ_CUSTOM_WORKOUTS = {
     getCustomRoutines,
     launchRoutine,
     openRoutineBuilderModal,

@@ -1,3 +1,4 @@
+import {AWJ_COMPAT,pairingSecret} from "./compatibility.ts";
 import { validateDeviceId, validatePushSchedule, validateSyncBody, validateTelemetry } from "./contracts.ts";
 import { logEvent, SERVICE_LEVEL_OBJECTIVES } from "./observability.ts";
 import { sendWebPush } from "./integrations/web-push.ts";
@@ -93,7 +94,7 @@ async function paired(request, env) {
 }
 
 async function automationPaired(request, env) {
-  const supplied = request.headers.get("x-rep-sync-key") || "", expected = env.VITALS_IMPORT_KEY || env.REP_SYNC_KEY || "";
+  const supplied = (request.headers.get("x-awj-sync-key")||request.headers.get(AWJ_COMPAT.syncHeader)) || "", expected = env.VITALS_IMPORT_KEY || pairingSecret(env) || "";
   return Boolean(supplied && expected.length >= 32 && await timingSafeEqual(supplied, expected));
 }
 
@@ -115,7 +116,7 @@ function withSecurityHeaders(response, requestId = "") {
 
 // Best-effort per-colo fixed-window limiter using the edge Cache API. It is not
 // perfectly consistent across Cloudflare's network, but it materially raises the
-// cost of brute-forcing REP_SYNC_KEY or hammering the paid Gemini endpoint. For a
+// cost of brute-forcing the AWJ pairing secret or hammering the paid Gemini endpoint. For a
 // guaranteed limit, also enable a Cloudflare Rate Limiting Rule on /api/* in the dashboard.
 async function rateLimited(request, bucket, limit, windowSeconds, env) {
   const binding = bucket.includes("analyze") ? env?.AI_RATE_LIMITER : ["pair-check", "pair-claim", "push-subscribe", "pair-handoff", "push-test", "push-unsubscribe", "pair-devices-delete"].includes(bucket) ? env?.PAIR_RATE_LIMITER : null;
@@ -515,10 +516,10 @@ function validateFoodSchema(data) {
 function actionableNotionError(error, destination) {
   const detail = safeText(error?.message || error, 180);
   if (error?.status === 404 || /could not find|not found/i.test(detail)) {
-    return `Food Entries is unavailable to Rep Gym Sync. Restore the source if it is in Trash, then connect the integration to Food Entries. Your app destination remains ${destination.name}.`;
+    return `Food Entries is unavailable to AWJ Gym Sync. Restore the source if it is in Trash, then connect the integration to Food Entries. Your app destination remains ${destination.name}.`;
   }
   if (error?.status === 401 || error?.status === 403 || /unauthorized|restricted|permission/i.test(detail)) {
-    return `Rep Gym Sync cannot access Food Entries. Reconnect the integration to the original Food Entries database; the visible destination remains ${destination.name}.`;
+    return `AWJ Gym Sync cannot access Food Entries. Reconnect the integration to the original Food Entries database; the visible destination remains ${destination.name}.`;
   }
   return detail || "Notion destination validation failed.";
 }
@@ -590,7 +591,7 @@ function notionProperties(workout, row) {
 }
 
 async function syncWorkoutBody(env, body) {
-  if (!env.NOTION_TOKEN || !env.REP_SYNC_KEY) {
+  if (!env.NOTION_TOKEN || !pairingSecret(env)) {
     return json({ ok: false, error: "Sync is not configured on the server." }, 503);
   }
   const source = requireDataSource(env, env.NOTION_DATA_SOURCE_ID, WORKOUT_DATA_SOURCE, "workout");
@@ -691,7 +692,7 @@ function habitProperties(payload){
   if(!safeText(payload.id,80)||!allowed.has(name))return null;
   return {
     "Entry":{title:richText(`${safeText(payload.date,10)} · ${safeText(payload.id,80)}`)},"Date":{date:{start:safeText(payload.date,10)}},"Habit":{select:{name}},"Habit ID":{rich_text:richText(payload.id)},
-    "Completed":{checkbox:Boolean(payload.completed)},"Streak":{number:Math.max(0,Math.min(370,Number(payload.streak)||0))},"Source":{select:{name:"Rep Gym Companion"}},
+    "Completed":{checkbox:Boolean(payload.completed)},"Streak":{number:Math.max(0,Math.min(370,Number(payload.streak)||0))},"Source":{select:{name:AWJ_COMPAT.notionSourceName}},
     "Updated At":{date:{start:safeText(payload.updatedAt,40)||new Date().toISOString()}},"Notes":{rich_text:richText(safeText(payload.notes,500))}
   };
 }
@@ -724,7 +725,7 @@ async function syncFood(env,payload,source) {
 }
 
 async function syncHealthBody(env, body) {
-  if (!env.NOTION_TOKEN || !env.REP_SYNC_KEY) return json({ok:false,error:"Sync is not configured on the server."},503);
+  if (!env.NOTION_TOKEN || !pairingSecret(env)) return json({ok:false,error:"Sync is not configured on the server."},503);
   const kind=safeText(body?.kind,20),payload=body?.payload,source=healthSource(env,kind);
   if(!source||!payload||!/^\d{4}-\d{2}-\d{2}$/.test(safeText(payload.date,10)))return json({ok:false,error:"Invalid health log payload."},400);
   if(kind==="food")return syncFood(env,payload,source);
@@ -884,7 +885,7 @@ async function hmacSha256(keyBytes, dataBytes) {
 // The master pairing secret is accepted only for initial setup and external
 // automations. Browser clients exchange it for a signed device credential.
 const credentialEncoder = new TextEncoder(), credentialDecoder = new TextDecoder();
-const SESSION_COOKIE = "__Host-rep_session", SESSION_MAX_AGE = 400 * 86400;
+const SESSION_COOKIE = "__Host-awj_session", SESSION_MAX_AGE = 400 * 86400;
 const deviceKey = id => `device:${id}`;
 function cookieValue(request, name) {
   const prefix = `${name}=`;
@@ -899,15 +900,15 @@ function sessionCookie(token, maxAge = SESSION_MAX_AGE) {
 }
 async function signCredential(env, payload) {
   const encoded = b64urlEncode(credentialEncoder.encode(JSON.stringify(payload)));
-  const signature = await hmacSha256(credentialEncoder.encode(env.REP_SYNC_KEY || ""), credentialEncoder.encode(encoded));
-  return `rep1.${encoded}.${b64urlEncode(signature)}`;
+  const signature = await hmacSha256(credentialEncoder.encode(pairingSecret(env) || ""), credentialEncoder.encode(encoded));
+  return `awj1.${encoded}.${b64urlEncode(signature)}`;
 }
 async function verifyCredential(env, token, expectedType = "device") {
   try {
-    if (!env.REP_SYNC_KEY || String(token || "").length > 1400) return null;
+    if (!pairingSecret(env) || String(token || "").length > 1400) return null;
     const [version, encoded, signature, ...extra] = String(token || "").split(".");
-    if (version !== "rep1" || !encoded || !signature || extra.length) return null;
-    const expected = b64urlEncode(await hmacSha256(credentialEncoder.encode(env.REP_SYNC_KEY), credentialEncoder.encode(encoded)));
+    if (!["awj1",AWJ_COMPAT.tokenVersion].includes(version) || !encoded || !signature || extra.length) return null;
+    const expected = b64urlEncode(await hmacSha256(credentialEncoder.encode(pairingSecret(env)), credentialEncoder.encode(encoded)));
     if (!(await timingSafeEqual(signature, expected))) return null;
     const payload = JSON.parse(credentialDecoder.decode(b64urlDecode(encoded))), now = Math.floor(Date.now() / 1000);
     if (payload.typ !== expectedType || !Number.isFinite(payload.iat) || Number(payload.iat) > now + 60) return null;
@@ -938,10 +939,10 @@ async function registeredDevice(env, payload) {
   return Boolean(record && !record.revokedAt);
 }
 async function authInfo(request, env) {
-  if (!env.REP_SYNC_KEY || String(env.REP_SYNC_KEY).length < 32) return null;
-  const supplied = request.headers.get("x-rep-sync-key") || "";
-  if (supplied && await timingSafeEqual(supplied, env.REP_SYNC_KEY)) return { type: "master", token: supplied };
-  const candidates = [supplied, cookieValue(request, SESSION_COOKIE)].filter(Boolean);
+  if (!pairingSecret(env) || String(pairingSecret(env)).length < 32) return null;
+  const supplied = (request.headers.get("x-awj-sync-key")||request.headers.get(AWJ_COMPAT.syncHeader)) || "";
+  if (supplied && await timingSafeEqual(supplied, pairingSecret(env))) return { type: "master", token: supplied };
+  const candidates = [supplied, cookieValue(request, SESSION_COOKIE),cookieValue(request,AWJ_COMPAT.sessionCookie)].filter(Boolean);
   for (const token of candidates) {
     const payload = await verifyCredential(env, token, "device");
     if (payload && await registeredDevice(env, payload)) return { type: payload.reg ? "device" : "legacy-device", payload, token };
@@ -998,7 +999,7 @@ async function createPairHandoff(request, env) {
   return json({ ok: true, url: url.toString(), expiresAt: new Date(exp * 1000).toISOString() });
 }
 async function claimPairHandoff(request, env) {
-  if (!env.REP_SYNC_KEY) return json({ ok: false, error: "Pairing is not configured." }, 503);
+  if (!pairingSecret(env)) return json({ ok: false, error: "Pairing is not configured." }, 503);
   const body = await request.json().catch(() => null), handoff = await verifyCredential(env, body?.token, "handoff");
   if (!handoff) return json({ ok: false, error: "This pairing link is invalid or expired." }, 401);
   if (!(await handoffState(env, handoff.jti, "claim"))) return json({ ok: false, error: "This pairing link was already used or expired." }, 401);
@@ -1075,13 +1076,13 @@ function infrastructureHealth(env){
   return {
     push:{configured:Boolean((env.DEVICE_COORDINATOR||env.PUSH_KV)&&publicKeyValid&&privateKeyValid),scheduler:env.DEVICE_COORDINATOR?"durable-object-alarm":"legacy-kv",publicKeyValid,privateKeyValid,subjectConfigured:/^mailto:|^https:\/\//.test(env.VAPID_SUBJECT||"")},
     backups:{configured:true,mode:"client-aes-256-gcm"},
-    healthkit:{configured:Boolean(env.PUSH_KV&&(env.VITALS_IMPORT_KEY||env.REP_SYNC_KEY)),endpoint:"/api/vitals/import"}
+    healthkit:{configured:Boolean(env.PUSH_KV&&(env.VITALS_IMPORT_KEY||pairingSecret(env))),endpoint:"/api/vitals/import"}
   };
 }
 
 async function sendSystemHealthAlert(env,record){
   if(!env.VAPID_PRIVATE_KEY_JWK||!env.VAPID_PUBLIC_KEY)return {sent:0};
-  const message={title:"Health OS sync needs attention",body:record.notion?.error||"The direct Notion connection needs attention."};
+  const message={title:"AWJ sync needs attention",body:record.notion?.error||"The direct Notion connection needs attention."};
   const registry=registryCoordinator(env);
   if(registry){
     const devices=await registry.list(100);let sent=0;
@@ -1117,11 +1118,11 @@ async function testPush(request,env){
   if(await rateLimited(request,"push-test",20,60,env))return rateLimitResponse();
   if(!infrastructureHealth(env).push.configured)return json({ok:false,error:"Push is not fully configured."},503);
   const coordinator=deviceCoordinator(env,deviceAuth.payload.jti);
-  if(coordinator){const result=await coordinator.sendNow({title:"Health OS test",body:"Push notifications are working on this device."});return result.ok?json({ok:true,status:result.status}):json({ok:false,error:result.status===404?"This device does not have an active push subscription.":`Push service rejected the test (${result.status}).`},result.status===404?404:502);}
+  if(coordinator){const result=await coordinator.sendNow({title:"AWJ test",body:"Push notifications are working on this device."});return result.ok?json({ok:true,status:result.status}):json({ok:false,error:result.status===404?"This device does not have an active push subscription.":`Push service rejected the test (${result.status}).`},result.status===404?404:502);}
   const body=await request.json().catch(()=>null),endpoint=safeText(body?.endpoint,1800);
   if(!endpoint||!env.PUSH_KV)return json({ok:false,error:"A subscribed device endpoint is required."},400);
   const key=await pushKvKey(endpoint),record=await env.PUSH_KV.get(key,"json");if(!record?.subscription)return json({ok:false,error:"This device does not have an active push subscription."},404);
-  const response=await sendWebPush(env,record.subscription,{title:"Health OS test","body":"Push notifications are working on this device."});
+  const response=await sendWebPush(env,record.subscription,{title:"AWJ test","body":"Push notifications are working on this device."});
   if(response.status===404||response.status===410){await env.PUSH_KV.delete(key);return json({ok:false,error:"The push subscription expired. Enable reminders again."},410);}
   return response.ok?json({ok:true,status:response.status}):json({ok:false,error:`Push service rejected the test (${response.status}).`},502);
 }
@@ -1273,7 +1274,7 @@ async function route(request, env, ctx) {
       const deviceAuth = await authInfo(request, env);
       if (!deviceAuth) return json({ ok: false, error: "This device is not paired or was revoked." }, 401);
       try {
-        const idempotency = safeText(request.headers.get("x-rep-idempotency-key"), 180), raw = await request.text();
+        const idempotency = safeText((request.headers.get("x-awj-idempotency-key")||request.headers.get(AWJ_COMPAT.idempotencyHeader)), 180), raw = await request.text();
         let parsed;
         try { parsed = JSON.parse(raw); } catch { return json({ ok: false, error: "Invalid JSON format." }, 400); }
         const body = validateSyncBody(parsed);
@@ -1330,7 +1331,7 @@ async function route(request, env, ctx) {
     return new Response(null,{status:204});
   }
   if (env.ASSETS && typeof env.ASSETS.fetch === "function") return env.ASSETS.fetch(request);
-  return new Response("Rep Gym Companion", { headers: { "content-type": "text/plain; charset=utf-8" } });
+  return new Response("AWJ", { headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
 export default {

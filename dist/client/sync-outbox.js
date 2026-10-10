@@ -97,5 +97,5 @@
     return reclaimed.filter(entry=>all||entry.status==="pending"||(entry.status==="retryable_failed"&&(!entry.nextAttemptAt||Date.parse(entry.nextAttemptAt)<=now)));
   }
   const summary=queue=>(Array.isArray(queue)?queue:[]).map(normalize).filter(Boolean).reduce((result,entry)=>{result.total++;result[entry.status]=(result[entry.status]||0)+1;return result;},{total:0,pending:0,transmitting:0,retryable_failed:0,permanently_failed:0});
-  window.REP_SYNC_OUTBOX={SCHEMA,MAX_ATTEMPTS,TRANSMIT_TIMEOUT_MS,normalize,enqueue,transmitting,failed,remove,reclaim,due,summary,delayFor};
+  window.AWJ_SYNC_OUTBOX={SCHEMA,MAX_ATTEMPTS,TRANSMIT_TIMEOUT_MS,normalize,enqueue,transmitting,failed,remove,reclaim,due,summary,delayFor};
 })();

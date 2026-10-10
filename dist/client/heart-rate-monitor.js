@@ -1,4 +1,4 @@
-/* Web Bluetooth Heart Rate Monitor & Circadian Recovery Zones for Health OS.
+/* Web Bluetooth Heart Rate Monitor & Circadian Recovery Zones for AWJ.
    Supports Polar, Garmin, Apple Watch BLE broadcast, Scosche, Whoop, and standard GATT HR straps. */
 
 (function(){
@@ -164,7 +164,7 @@
     const maxHr = computeMaxHr();
     const zone = getZone(state.currentBpm || 120, maxHr);
 
-    overlay.innerHTML = REP_SAFE_DOM.sanitize(`
+    overlay.innerHTML = AWJ_SAFE_DOM.sanitize(`
       <div class="workout-preflight-panel" style="max-width:440px;margin:auto;">
         <button class="dialog-close" data-hr-close aria-label="Close">×</button>
         <span class="set-log-kicker" style="color:#f43f5e;">💓 ${"LIVE HEART RATE & RECOVERY ZONES"}</span>
@@ -263,7 +263,7 @@
 
   function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-  window.REP_HEART_RATE = {
+  window.AWJ_HEART_RATE = {
     getState: () => ({ ...state }),
     connectBluetooth,
     startSimulation,

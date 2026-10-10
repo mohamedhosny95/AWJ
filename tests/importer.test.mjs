@@ -1,7 +1,8 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 await import("../src/client/importer.js");
-const importer = globalThis.REP_DATA_IMPORTER;
+const importer = globalThis.AWJ_DATA_IMPORTER;
 
 test("parseStrongCsv correctly extracts workouts, sets, and converted kg weights", () => {
   const csv = `Date,Workout Name,Exercise Name,Set Order,Weight,Weight Unit,Reps,RPE

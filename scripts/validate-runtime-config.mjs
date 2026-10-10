@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {AWJ_COMPAT as AWJ_SERVER_COMPAT} from '../src/server/compatibility.ts';
+import '../src/client/compatibility.js';
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -7,7 +9,7 @@ const root = resolve(process.cwd());
 const configText = readFileSync(resolve(root, "wrangler.jsonc"), "utf8");
 const config = JSON.parse(configText);
 const healthKitSource = readFileSync(
-  resolve(root, "ios/RepHealthCompanion/HealthKitSyncCoordinator.swift"),
+  resolve(root, "ios/AWJHealthCompanion/HealthKitSyncCoordinator.swift"),
   "utf8"
 );
 
@@ -17,7 +19,7 @@ const expect = (condition, message) => {
 };
 
 const requiredSecrets = [
-  "REP_SYNC_KEY",
+  AWJ_SERVER_COMPAT.pairingSecretName,
   "NOTION_TOKEN",
   "NOTION_DATA_SOURCE_ID",
   "NOTION_RECOVERY_DATA_SOURCE_ID",

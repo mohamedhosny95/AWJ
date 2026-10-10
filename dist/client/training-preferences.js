@@ -38,5 +38,5 @@
     const target=state.trainingTargets?.[name],prior=state.logs?.[name]?.previousSets?.[setIndex]||state.logs?.[name]?.previousSets?.[0];
     return target?.acceptedAt?{weight:target.targetWeight,reps:target.repsLow,source:'Accepted target'}:prior?{weight:prior.weight,reps:prior.reps,source:'Last session'}:null;
   }
-  root.REP_TRAINING_PREFERENCES=Object.freeze({normalize,selectedExercise,performedExercise,choose,recordSet,toggleFavourite,suggestions});
+  root.AWJ_TRAINING_PREFERENCES=Object.freeze({normalize,selectedExercise,performedExercise,choose,recordSet,toggleFavourite,suggestions});
 })(typeof window==='undefined'?globalThis:window);

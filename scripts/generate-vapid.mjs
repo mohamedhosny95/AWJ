@@ -1,3 +1,4 @@
+import '../src/client/compatibility.js';
 const pair=await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]);
 const publicKey=new Uint8Array(await crypto.subtle.exportKey("raw",pair.publicKey));
 const privateJwk=await crypto.subtle.exportKey("jwk",pair.privateKey);

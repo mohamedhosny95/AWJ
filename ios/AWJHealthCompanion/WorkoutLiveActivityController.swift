@@ -6,7 +6,7 @@ import SwiftUI
 final class WorkoutLiveActivityController: ObservableObject {
     static let shared = WorkoutLiveActivityController()
     @Published private(set) var activityID: String?
-    @Published private(set) var state = RepWorkoutActivityAttributes.ContentState(
+    @Published private(set) var state = AWJWorkoutActivityAttributes.ContentState(
         exercise: "Chest Press", exerciseIndex: 1, exerciseCount: 5,
         currentSet: 1, setCount: 3, restEndsAt: nil, isPaused: false, status: "Training"
     )
@@ -16,7 +16,7 @@ final class WorkoutLiveActivityController: ObservableObject {
     func start(workoutName: String = "Gym Session") async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         if isActive { await end() }
-        let attributes = RepWorkoutActivityAttributes(workoutID: UUID().uuidString, workoutName: workoutName, startedAt: .now)
+        let attributes = AWJWorkoutActivityAttributes(workoutID: UUID().uuidString, workoutName: workoutName, startedAt: .now)
         do {
             let activity = try Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: nil), pushType: nil)
             activityID = activity.id
@@ -41,7 +41,7 @@ final class WorkoutLiveActivityController: ObservableObject {
     }
 
     func end() async {
-        for activity in Activity<RepWorkoutActivityAttributes>.activities {
+        for activity in Activity<AWJWorkoutActivityAttributes>.activities {
             var final = state; final.status = "Complete"; final.restEndsAt = nil
             await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
         }
@@ -49,7 +49,7 @@ final class WorkoutLiveActivityController: ObservableObject {
     }
 
     private func update() async {
-        for activity in Activity<RepWorkoutActivityAttributes>.activities {
+        for activity in Activity<AWJWorkoutActivityAttributes>.activities {
             await activity.update(ActivityContent(state: state, staleDate: nil))
         }
     }

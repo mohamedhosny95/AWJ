@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/mohamedhosny95/rep-gym-companion/data/health-plan.schema.json",
   "title": "RepGymHealthPlan",
-  "description": "Canonical schema for the Rep Gym Companion versioned health plan data artifact.",
+  "description": "Canonical schema for the AWJ versioned health plan data artifact.",
   "type": "object",
   "required": [
     "version",

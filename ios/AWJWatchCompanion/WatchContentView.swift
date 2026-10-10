@@ -1,6 +1,6 @@
 //
 //  WatchContentView.swift
-//  Rep Gym Companion - watchOS SwiftUI View
+//  AWJ - watchOS SwiftUI View
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ struct WatchContentView: View {
                         .font(.system(size: 38))
                         .foregroundColor(Color(red: 201/255, green: 255/255, blue: 61/255))
                     
-                    Text("Rep Companion")
+                    Text("AWJ")
                         .font(.headline)
                         .fontWeight(.bold)
 

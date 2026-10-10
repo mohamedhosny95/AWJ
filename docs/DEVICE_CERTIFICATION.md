@@ -14,7 +14,7 @@ Before production promotion, record a pass/fail result and evidence for:
 Test pairing/revocation between two real devices, an interrupted sync that later recovers, expired push permission, wrong backup passphrase, schema-5 header tamper, and Notion outage recovery. Store screenshots or screen recordings plus OS/browser/build version. A release is not “real-device certified” until this matrix is signed by a human operator.
 
 Open the repository's **Real-device certification** issue form for each build
-promoted to production. Attach the matching `health-os-certification-<sha>`
+promoted to production. Attach the matching `awj-certification-<sha>`
 workflow artifact and complete every required physical-device checkbox. The
 protected `production` environment provides the final human approval gate; an
 automated green run does not replace the issue's PASS decision.

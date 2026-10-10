@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct RepHealthCompanionApp: App {
+struct AWJHealthCompanionApp: App {
     @StateObject private var sync = HealthKitSyncCoordinator.shared
     @StateObject private var workout = WorkoutLiveActivityController.shared
     @State private var pairingMessage: String?
@@ -11,14 +11,14 @@ struct RepHealthCompanionApp: App {
             NavigationStack {
                 Form {
                     Section("Connection") {
-                        TextField("Rep origin, including https://", text: Binding(
-                            get: { UserDefaults.standard.string(forKey: "repOrigin") ?? "" },
-                            set: { UserDefaults.standard.set($0, forKey: "repOrigin") }
+                        TextField("AWJ origin, including https://", text: Binding(
+                            get: { UserDefaults.standard.string(forKey: AWJCompatibility.originKey) ?? "" },
+                            set: { UserDefaults.standard.set($0, forKey: AWJCompatibility.originKey) }
                         )).textInputAutocapitalization(.never).keyboardType(.URL)
                         
                         SecureField("Vitals import key", text: Binding(
-                            get: { KeychainStore.read("repVitalsImportKey") ?? "" },
-                            set: { try? KeychainStore.write($0, account: "repVitalsImportKey") }
+                            get: { KeychainStore.read(AWJCompatibility.importKeyAccount) ?? "" },
+                            set: { try? KeychainStore.write($0, account: AWJCompatibility.importKeyAccount) }
                         ))
 
                         if let pairingMessage {
@@ -46,10 +46,10 @@ struct RepHealthCompanionApp: App {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     Section {
-                        Text("Rep uploads daily aggregates, sample counts, and coverage indicators. Raw heart-rate samples remain in Apple Health on this iPhone.")
+                        Text("AWJ uploads daily aggregates, sample counts, and coverage indicators. Raw heart-rate samples remain in Apple Health on this iPhone.")
                     }
                 }
-                .navigationTitle("Rep Health")
+                .navigationTitle("AWJ Health")
                 .task { try? await sync.bootstrap() }
                 .onOpenURL { url in
                     if url.host == "workout" { Task { await workout.start() } }
@@ -61,14 +61,14 @@ struct RepHealthCompanionApp: App {
 
     private func handlePairingUrl(_ url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
-        if url.scheme == "rep-pair" || url.scheme == "healthos" {
+        if let scheme = url.scheme, AWJCompatibility.pairingSchemes.contains(scheme) {
             if let host = components.host {
                 let scheme = components.scheme == "https" ? "https" : "https"
                 let origin = "\(scheme)://\(host)"
-                UserDefaults.standard.set(origin, forKey: "repOrigin")
+                UserDefaults.standard.set(origin, forKey: AWJCompatibility.originKey)
             }
             if let keyItem = components.queryItems?.first(where: { $0.name == "key" || $0.name == "pairingKey" })?.value {
-                try? KeychainStore.write(keyItem, account: "repVitalsImportKey")
+                try? KeychainStore.write(keyItem, account: AWJCompatibility.importKeyAccount)
                 pairingMessage = "Connected via pairing QR code!"
                 Task {
                     try? await sync.syncRecentDays()

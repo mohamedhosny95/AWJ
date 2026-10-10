@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import '../src/client/compatibility.js';
 // Validates canonical data/health-plan.json and deterministically renders src/client/health-data.js.
 // Canonical SHA-256 covers LF-normalized canonical JSON text across all platforms.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -205,7 +206,7 @@ export function renderHealthData(plan, sha256) {
 // Canonical SHA-256: ${sha256}
 // Note: Hash covers LF-normalized canonical JSON text across all platforms.
 
-window.REP_HEALTH_GUIDE = Object.freeze({
+window.AWJ_HEALTH_GUIDE = Object.freeze({
   version: ${JSON.stringify(plan.version)},
   updatedAt: ${JSON.stringify(plan.updatedAt)},
   provenance: {

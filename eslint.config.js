@@ -18,7 +18,7 @@ export default tseslint.config(
   {
     // Classic (non-module) browser scripts, each an IIFE that shares state
     // with the others through implicit globals (state, app, sessions, U(),
-    // REP_SAFE_DOM, etc.). We don't attempt no-undef here: doing that
+    // AWJ_SAFE_DOM, etc.). We don't attempt no-undef here: doing that
     // accurately would mean hand-maintaining a global registry across ~40
     // files, and a false positive there is worse than the bug it'd catch.
     // no-unused-vars needs no such registry - it only looks at local
@@ -34,5 +34,9 @@ export default tseslint.config(
     rules: {
       "no-unused-vars": ["warn", { args: "after-used", varsIgnorePattern: "^_" }]
     }
+  },
+  {
+    files: ["src/client/app-shell.js", "src/client/screens/**/*.js"],
+    languageOptions: { sourceType: "module" }
   }
 );

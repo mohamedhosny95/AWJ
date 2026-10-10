@@ -1,5 +1,5 @@
 # Comprehensive Adversarial QA Audit Report
-**Target Application:** Health OS / Gym Rep & Recomp Companion (`rep-gym-companion`)  
+**Target Application:** AWJ
 **Audit Scope:** Full static analysis, logic tracing, and simulated execution across all 14 target architectural areas.
 
 > [!NOTE]
@@ -78,7 +78,7 @@
   3. The workout restarts at exercise 1. Perform and check off sets, then complete the workout.
 - **Expected vs Actual:**
   - *Expected:* Reset session captures a fresh `sessionStartedAt` timestamp and computes non-zero workout duration and active calories.
-  - *Actual:* `REP_TRAINING_SESSION.resetWorkout(state)` sets `state.sessionStartedAt = null`. When the reset workout is completed, `completeWorkout` evaluates `const startTime = state.sessionStartedAt || now; const duration = Math.max(0, Math.floor((now - startTime) / 1000));`, which yields **`duration = 0s`** and **`calories = 0`**.
+  - *Actual:* `AWJ_TRAINING_SESSION.resetWorkout(state)` sets `state.sessionStartedAt = null`. When the reset workout is completed, `completeWorkout` evaluates `const startTime = state.sessionStartedAt || now; const duration = Math.max(0, Math.floor((now - startTime) / 1000));`, which yields **`duration = 0s`** and **`calories = 0`**.
 - **Suggested Fix:**
   Initialize `state.sessionStartedAt = Date.now()` and call `startSessionClock()` upon reset.
 
@@ -91,7 +91,7 @@
 - **Repro Steps:**
   1. Complete a set to trigger a 90-second rest timer.
   2. Lock device or switch to another app (e.g. Spotify) for 60 seconds.
-  3. Return to Health OS.
+  3. Return to AWJ.
 - **Expected vs Actual:**
   - *Expected:* Timer displays ~30 seconds remaining (real-time elapsed delta).
   - *Actual:* `setInterval(..., 1000)` relies on `state.timer.remaining--` without timestamp drift calculation. Mobile background CPU throttling caps intervals to 1 tick/min, resulting in 88–89 seconds still on the clock after 1 minute of actual rest.
@@ -125,9 +125,9 @@
   2. Press `Tab` repeatedly or press `Escape`.
 - **Expected vs Actual:**
   - *Expected:* Focus remains trapped inside the modal sheet; `Escape` closes the calculator.
-  - *Actual:* `dialogObserver` only observes `.timed-mode, .exit-confirm, .install-help`. `plate-calculator.js` uses `.rep-modal-backdrop.plate-calc-backdrop`. Focus escapes to background navigation, and `Escape` is ignored.
+  - *Actual:* `dialogObserver` only observes `.timed-mode, .exit-confirm, .install-help`. `plate-calculator.js` uses `.awj-modal-backdrop.plate-calc-backdrop`. Focus escapes to background navigation, and `Escape` is ignored.
 - **Suggested Fix:**
-  Add `.rep-modal-backdrop` and `.plate-calc-backdrop` to `dialogObserver` selector list in `enhancements.js:428`.
+  Add `.awj-modal-backdrop` and `.plate-calc-backdrop` to `dialogObserver` selector list in `enhancements.js:428`.
 
 ---
 
@@ -136,13 +136,13 @@
 - **Area:** Area 11 — Data Persistence & Storage
 - **Location:** `src/client/storage.js:102-124`, `src/client/store.js:45`
 - **Repro Steps:**
-  1. Load app with 200+ historical workouts stored in IndexedDB (`health-os-state-v1`).
+  1. Load app with 200+ historical workouts stored in IndexedDB (the state store identified by `AWJ_COMPAT.stateDb`).
   2. Measure initial load on slow device.
 - **Expected vs Actual:**
-  - *Expected:* App waits for asynchronous `REP_STORE.hydrate()` to resolve before evaluating insights and training volume.
+  - *Expected:* App waits for asynchronous `AWJ_STORE.hydrate()` to resolve before evaluating insights and training volume.
   - *Actual:* Synchronous view rendering occurs immediately with empty initial arrays while IndexedDB reads asynchronously, causing flash of 0% progress and empty heatmap before populating.
 - **Suggested Fix:**
-  Dispatch a `rep:store-hydrated` event when `REP_STORE.hydrate()` completes, re-triggering active tab renderers.
+  Dispatch a `awj:store-hydrated` event when `AWJ_STORE.hydrate()` completes, re-triggering active tab renderers.
 
 ---
 
@@ -170,9 +170,9 @@
   2. Trigger countdown chime while voice coach tone plays.
 - **Expected vs Actual:**
   - *Expected:* Shared AudioContext handles all web audio oscillators.
-  - *Actual:* Two separate instances (`audioCtx` in `app.js` and `_repAudioCtx` in `audio-coach.js`) are instantiated. iOS WebKit enforces strict context limits, muting one or both audio pipelines.
+  - *Actual:* Two separate instances (`audioCtx` in `app.js` and `_awjAudioCtx` in `audio-coach.js`) are instantiated. iOS WebKit enforces strict context limits, muting one or both audio pipelines.
 - **Suggested Fix:**
-  Consolidate into `window._repAudioCtx` globally across both modules.
+  Consolidate into `window._awjAudioCtx` globally across both modules.
 
 ---
 

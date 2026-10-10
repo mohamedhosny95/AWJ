@@ -1,4 +1,4 @@
-/* Native Barcode Scanner & Nutrition Lens for Health OS.
+/* Native Barcode Scanner & Nutrition Lens for AWJ.
    Fast camera-driven grocery and barcode scanning for instant macro logging. */
 
 (function(){
@@ -88,7 +88,7 @@
     if(document.querySelector(".barcode-modal-overlay")) return;
     const overlay = document.createElement("div");
     overlay.className = "timed-mode barcode-modal-overlay";
-    overlay.innerHTML = REP_SAFE_DOM.sanitize(`
+    overlay.innerHTML = AWJ_SAFE_DOM.sanitize(`
       <div class="workout-preflight-panel barcode-scanner-panel" style="max-width:440px;margin:auto;padding:16px;">
         <button class="dialog-close" data-barcode-close aria-label="Close">×</button>
         <span class="set-log-kicker" style="color:var(--acid);">📷 ${"SMART BARCODE SCANNER"}</span>
@@ -151,7 +151,7 @@
               if(barcodes && barcodes.length > 0){
                 const code = barcodes[0].rawValue;
                 if(code){
-                  if(window.REP_AUDIO_COACH?.playTone) window.REP_AUDIO_COACH.playTone(1000, "sine", 0.15);
+                  if(window.AWJ_AUDIO_COACH?.playTone) window.AWJ_AUDIO_COACH.playTone(1000, "sine", 0.15);
                   handleFound(code);
                   return;
                 }
@@ -196,7 +196,7 @@
     });
   }
 
-  window.REP_BARCODE_SCANNER = {
+  window.AWJ_BARCODE_SCANNER = {
     lookupBarcode,
     openScannerModal
   };

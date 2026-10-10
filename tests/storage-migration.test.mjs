@@ -1,3 +1,4 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -5,9 +6,11 @@ function createMockIndexedDB() {
   const stores = new Map();
   return {
     _stores: stores,
+    _failOpen: false,
     open(name, version) {
       const request = { result: null, error: null, onsuccess: null, onerror: null, onupgradeneeded: null };
       setTimeout(() => {
+        if(this._failOpen){request.error=Error("Device storage unavailable");request.onerror?.();return;}
         if (!stores.has("records")) stores.set("records", new Map());
         const db = {
           createObjectStore(storeName) {
@@ -95,10 +98,10 @@ test("storage.js single-step migration backfills missing LARGE_KEYS from legacy 
 
   // 2. Load storage.js
   await import("../src/client/storage.js");
-  const store = globalThis.REP_STORE;
+  const store = globalThis.AWJ_STORE;
 
   // 3. Hydrate state
-  const hydrated = await store.hydrate("rep-gym-companion-v1");
+  const hydrated = await store.hydrate(AWJ_COMPAT.stateKey);
 
   // 4. Verify backfill of LARGE_KEYS
   assert.equal(hydrated.history.length, 1);
@@ -109,9 +112,40 @@ test("storage.js single-step migration backfills missing LARGE_KEYS from legacy 
 
   // 5. When a mutation is made, persist updates the individual partitioned record
   hydrated.history.push({ date: "2026-08-02", session: "cardio", exercises: [] });
-  store.persist("rep-gym-companion-v1", hydrated);
+  store.persist(AWJ_COMPAT.stateKey, hydrated);
   await store.flush();
 
   assert.equal(records.get("state:history").length, 2);
   assert.equal(records.get("state:history")[1].session, "cardio");
+
+  // A full device store must never be presented as a successful local save.
+  mockStorage.setItem = () => { throw Error("Quota exceeded"); };
+  assert.equal(store.persist(AWJ_COMPAT.stateKey, hydrated), false);
+  assert.equal(store.saveStatus, "failed");
+});
+
+test("unavailable storage preserves legacy data instead of hydrating an empty success",async()=>{
+  const mockIDB=createMockIndexedDB(),mockStorage=createMockLocalStorage();
+  globalThis.window=globalThis;globalThis.indexedDB=mockIDB;globalThis.localStorage=mockStorage;
+  globalThis.document={addEventListener(){}};globalThis.addEventListener=()=>{};
+  const legacy=JSON.stringify({history:[{id:"keep-me",session:"gym"}],preferences:{weightUnit:"lb"}});
+  mockStorage.setItem(AWJ_COMPAT.stateKey,legacy);mockIDB._failOpen=true;
+  await import("../src/client/storage.js?unavailable-test");
+  await assert.rejects(globalThis.AWJ_STORE.hydrate(AWJ_COMPAT.stateKey),/unavailable/);
+  assert.equal(mockStorage.getItem(AWJ_COMPAT.stateKey),legacy);
+  assert.equal(globalThis.AWJ_STORE.saveStatus,"failed");
+});
+
+test("a failed durable write stays retryable and is confirmed only after recovery",async()=>{
+  const mockIDB=createMockIndexedDB(),mockStorage=createMockLocalStorage();
+  globalThis.window=globalThis;globalThis.indexedDB=mockIDB;globalThis.localStorage=mockStorage;
+  globalThis.document={addEventListener(){}};globalThis.addEventListener=()=>{};
+  await import("../src/client/storage.js?retry-test");const store=globalThis.AWJ_STORE;
+  await store.hydrate(AWJ_COMPAT.stateKey);mockIDB._failOpen=true;
+  store.persist(AWJ_COMPAT.stateKey,{history:[{id:"new-set",session:"gym"}]});
+  assert.equal(store.saveStatus,"saving");
+  await assert.rejects(store.flush(),/unavailable/);assert.equal(store.saveStatus,"failed");
+  mockIDB._failOpen=false;await store.flush();
+  assert.equal(mockIDB._stores.get("records").get("state:history")[0].id,"new-set");
+  assert.equal(store.saveStatus,"saved");
 });

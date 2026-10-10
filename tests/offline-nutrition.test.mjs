@@ -1,3 +1,4 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -5,7 +6,7 @@ import { readFileSync } from "node:fs";
 // Load offline-nutrition module into global environment
 const code = readFileSync("src/client/offline-nutrition.js", "utf8");
 new Function(code)();
-const engine = globalThis.REP_OFFLINE_NUTRITION;
+const engine = globalThis.AWJ_OFFLINE_NUTRITION;
 
 test("offline nutrition engine exposes estimate and database", () => {
   assert.ok(engine);

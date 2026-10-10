@@ -118,7 +118,7 @@ final class HealthKitSyncCoordinator: ObservableObject {
             wrist_temperature_c: tempVal, sleep_deep_hours: sleepResult.deep,
             sleep_rem_hours: sleepResult.rem, coverage_minutes: coverageResult.minutes,
             heart_rate_samples: Double(coverageResult.count), workout_hr_samples: Double(workoutVal),
-            watch_battery_pct: batteryPct, source: "Rep HealthKit Companion"
+            watch_battery_pct: batteryPct, source: "AWJ HealthKit Companion"
         )
     }
 
@@ -331,12 +331,12 @@ enum SyncError: Error, Equatable { case healthUnavailable, configurationMissing,
 final class RepVitalsUploader {
     static let shared = RepVitalsUploader()
     func upload(_ vitals: RepDailyVitals, maxAttempts: Int = 3) async throws {
-        guard let origin = UserDefaults.standard.string(forKey: "repOrigin"),
-              let key = KeychainStore.read("repVitalsImportKey"),
+        guard let origin = UserDefaults.standard.string(forKey: AWJCompatibility.originKey),
+              let key = KeychainStore.read(AWJCompatibility.importKeyAccount),
               let url = URL(string: "/api/vitals/import", relativeTo: URL(string: origin))?.absoluteURL else { throw SyncError.configurationMissing }
         var request = URLRequest(url: url); request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
-        request.setValue(key, forHTTPHeaderField: "x-rep-sync-key")
+        request.setValue(key, forHTTPHeaderField: "x-awj-sync-key")
         request.httpBody = try JSONEncoder().encode(vitals)
         
         var lastError: Error?
@@ -362,13 +362,13 @@ final class RepVitalsUploader {
 
 enum KeychainStore {
     static func read(_ account: String) -> String? {
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "RepHealthCompanion", kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
+        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: AWJCompatibility.keychainService, kSecAttrAccount as String: account, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data else { return nil }
         return String(data: data, encoding: .utf8)
     }
     static func write(_ value: String, account: String) throws {
-        let base: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "RepHealthCompanion", kSecAttrAccount as String: account]
+        let base: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: AWJCompatibility.keychainService, kSecAttrAccount as String: account]
         SecItemDelete(base as CFDictionary)
         var record = base; record[kSecValueData as String] = Data(value.utf8); record[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         guard SecItemAdd(record as CFDictionary, nil) == errSecSuccess else { throw SyncError.configurationMissing }

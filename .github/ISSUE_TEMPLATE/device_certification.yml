@@ -6,12 +6,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        Complete this on physical hardware. Automated evidence is attached to the matching `health-os-certification-*` workflow artifact.
+        Complete this on physical hardware. Automated evidence is attached to the matching `awj-certification-*` workflow artifact.
   - type: input
     id: build
     attributes:
       label: Build ID
-      description: Copy `window.REP_BUILD_VERSION` from the deployed build.
+      description: Copy `window.AWJ_BUILD_VERSION` from the deployed build.
       placeholder: c841e3094821
     validations:
       required: true

@@ -1,3 +1,4 @@
+import '../src/client/compatibility.js';
 import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { existsSync, createReadStream } from "node:fs";
@@ -130,9 +131,9 @@ try {
   // Seed dataset into IndexedDB before applying CPU throttling
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.evaluate(async ({ dataset }) => {
-    localStorage.setItem("rep-gym-companion-v1", JSON.stringify({ version: 6 }));
+    localStorage.setItem(AWJ_COMPAT.stateKey, JSON.stringify({ version: 6 }));
     await new Promise((resolve, reject) => {
-      const req = indexedDB.open("health-os-state-v1", 1);
+      const req = indexedDB.open(AWJ_COMPAT.stateDb, 1);
       req.onupgradeneeded = () => req.result.createObjectStore("records");
       req.onsuccess = () => {
         const db = req.result;
@@ -155,7 +156,7 @@ try {
   await client.send("Emulation.setCPUThrottlingRate", { rate: 4 });
 
   await page.addInitScript(() => {
-    window.__repVitals = {
+    window.__awjVitals = {
       lcp: 0,
       cls: 0,
       longTask: 0,
@@ -167,7 +168,7 @@ try {
       new PerformanceObserver(list => {
         const entries = list.getEntries();
         if (entries.length) {
-          window.__repVitals.lcp = entries[entries.length - 1].startTime;
+          window.__awjVitals.lcp = entries[entries.length - 1].startTime;
         }
       }).observe({ type: "largest-contentful-paint", buffered: true });
     } catch {}
@@ -176,7 +177,7 @@ try {
       new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (!entry.hadRecentInput) {
-            window.__repVitals.cls += entry.value;
+            window.__awjVitals.cls += entry.value;
           }
         }
       }).observe({ type: "layout-shift", buffered: true });
@@ -184,9 +185,9 @@ try {
 
     try {
       new PerformanceObserver(list => list.getEntries().forEach(entry => {
-        window.__repVitals.longTask = Math.max(window.__repVitals.longTask, entry.duration);
-        window.__repVitals.longTasks.push({
-          phase: window.__repVitals.phase,
+        window.__awjVitals.longTask = Math.max(window.__awjVitals.longTask, entry.duration);
+        window.__awjVitals.longTasks.push({
+          phase: window.__awjVitals.phase,
           startTime: Math.round(entry.startTime),
           duration: Math.round(entry.duration),
           name: entry.name
@@ -212,7 +213,7 @@ try {
 
   console.log("\n=== Benchmarking Tab Switches with 1+ Year Dataset ===");
   for (const tab of ["train", "food", "health", "insights", "home"]) {
-    await page.evaluate(p => { if(window.__repVitals) window.__repVitals.phase = "tab:" + p; }, tab);
+    await page.evaluate(p => { if(window.__awjVitals) window.__awjVitals.phase = "tab:" + p; }, tab);
     const startTab = Date.now();
     await page.evaluate(t => document.querySelector(`[data-app-tab="${t}"]`)?.click(), tab);
     await page.waitForTimeout(350);
@@ -224,16 +225,16 @@ try {
   console.log("\n=== Benchmarking Large-State Write / Persist ===");
   const writeDuration = await page.evaluate(async () => {
     const start = performance.now();
-    if (window.REP_STORE && window.state) {
+    if (window.AWJ_STORE && window.state) {
       window.state.foodEntries.unshift({ id: "bench-new", date: new Date().toISOString(), food_name: "Protein shake", calories: 200 });
-      window.REP_STORE.persist("rep-gym-companion-v1", window.state);
-      await window.REP_STORE.flush();
+      window.AWJ_STORE.persist(AWJ_COMPAT.stateKey, window.state);
+      await window.AWJ_STORE.flush();
     }
     return Math.round(performance.now() - start);
   });
   console.log(`Write + Flush duration: ${writeDuration}ms`);
 
-  const vitals = await page.evaluate(() => window.__repVitals);
+  const vitals = await page.evaluate(() => window.__awjVitals);
   console.log("\n=== Scale Benchmark Summary (4x CPU Slowdown + 365 Days) ===");
   console.log(`LCP: ${Math.round(vitals.lcp)}ms (budget <= 2500ms)`);
   console.log(`CLS: ${vitals.cls.toFixed(4)} (budget <= 0.1)`);

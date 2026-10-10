@@ -1,9 +1,10 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 
 globalThis.window = globalThis;
 await import("../src/client/sync-outbox.js");
-const outbox = globalThis.REP_SYNC_OUTBOX;
+const outbox = globalThis.AWJ_SYNC_OUTBOX;
 
 test("Sync Outbox: Rapid queuing and state transitions under rapid connection flapping", () => {
   let queue = [];

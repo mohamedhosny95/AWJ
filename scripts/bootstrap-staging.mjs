@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {AWJ_COMPAT as AWJ_SERVER_COMPAT} from '../src/server/compatibility.ts';
+import '../src/client/compatibility.js';
 
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -6,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const requiredSecrets = [
-  "REP_SYNC_KEY",
+  AWJ_SERVER_COMPAT.pairingSecretName,
   "NOTION_TOKEN",
   "NOTION_DATA_SOURCE_ID",
   "NOTION_RECOVERY_DATA_SOURCE_ID",
@@ -30,12 +32,12 @@ if (origin.protocol !== "https:" || !origin.hostname.includes("staging")) {
   console.error("CANONICAL_ORIGIN must be an HTTPS staging hostname containing 'staging'.");
   process.exit(2);
 }
-if (process.env.REP_SYNC_KEY.length < 32 || process.env.VITALS_IMPORT_KEY.length < 32) {
-  console.error("REP_SYNC_KEY and VITALS_IMPORT_KEY must each contain at least 32 characters.");
+if (process.env[AWJ_SERVER_COMPAT.pairingSecretName].length < 32 || process.env.VITALS_IMPORT_KEY.length < 32) {
+  console.error("The pairing and vitals-import secrets must each contain at least 32 characters.");
   process.exit(2);
 }
-if (process.env.REP_SYNC_KEY === process.env.VITALS_IMPORT_KEY) {
-  console.error("REP_SYNC_KEY and VITALS_IMPORT_KEY must be independent staging credentials.");
+if (process.env[AWJ_SERVER_COMPAT.pairingSecretName] === process.env.VITALS_IMPORT_KEY) {
+  console.error("The pairing and vitals-import secrets must be independent staging credentials.");
   process.exit(2);
 }
 
@@ -62,8 +64,8 @@ run("npx", ["wrangler", "secret", "list", "--env", "staging"]);
 run("npm", ["run", "test:staging"], {
   env: {
     ...process.env,
-    REP_STAGING_URL: origin.origin,
-    REP_STAGING_SYNC_KEY: process.env.REP_SYNC_KEY,
+    AWJ_STAGING_URL: origin.origin,
+    AWJ_STAGING_SYNC_KEY: process.env[AWJ_SERVER_COMPAT.pairingSecretName],
     NOTION_TEST_TOKEN: process.env.NOTION_TOKEN
   }
 });

@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-struct RepWorkoutActivityAttributes: ActivityAttributes {
+struct AWJWorkoutActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         var exercise: String
         var exerciseIndex: Int

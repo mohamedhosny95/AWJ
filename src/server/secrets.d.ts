@@ -1,5 +1,5 @@
 interface Env {
-  REP_SYNC_KEY?: string;
+  AWJ_SYNC_KEY?: string;
   VITALS_IMPORT_KEY?: string;
   NOTION_TOKEN?: string;
   NOTION_DATA_SOURCE_ID?: string;

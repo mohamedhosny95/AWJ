@@ -21,7 +21,7 @@ Busy-equipment swaps default to the active session. Existing permanent substitut
 
 Favourites, display preferences and active-session choices use the existing persisted state and encrypted exports. A fresh-profile restore preserved these fields, habits and meals; damaged exports were rejected. Save labels distinguish local records, pending sync and previously synced records without claiming preferences were remotely synced. Missing wearable observations allow manual logging; existing pain/illness warnings remain accessible from Today and routine previews.
 
-Screen composition has an explicit owner in `training-first-ui.js`. Existing modules export their reusable views and bindings. The general product-UI mutation observer and layered Today/Train decorators have been removed. Legacy page implementations remain for gradual reuse. Main navigation uses 180 ms opacity/transform transitions, exercise media 220 ms, sheets 240 ms and local feedback 160 ms, with reduced-motion support. Superseded transitions cancel; workout controls do not animate with every field change.
+Screen composition has an explicit owner in `app-shell.js`. Existing modules export their reusable views and bindings. The general product-UI mutation observer and layered Today/Train decorators have been removed. Legacy page implementations remain for gradual reuse. Main navigation uses 180 ms opacity/transform transitions, exercise media 220 ms, sheets 240 ms and local feedback 160 ms, with reduced-motion support. Superseded transitions cancel; workout controls do not animate with every field change.
 
 ## Media coverage
 
@@ -71,6 +71,6 @@ The first hosted run exposed a contrast check made during the media entrance ani
 
 ## Reproduction
 
-Run `npm run sync`, `npm run verify`, `npm run test:e2e` and `npm run test:recovery`. To retain screenshots, video and metrics, set `REP_E2E_CAPTURE_DIR` to an output folder when running the browser suite.
+Run `npm run sync`, `npm run verify`, `npm run test:e2e` and `npm run test:recovery`. To retain screenshots, video and metrics, set `AWJ_E2E_CAPTURE_DIR` to an output folder when running the browser suite.
 
-`node scripts/record-redesign.mjs` captures a fresh-profile local walkthrough. `REP_RECORD_CLIENT_ROOT` can point at a `git archive` extraction of the baseline's `dist/client`; `REP_RECORD_VARIANT` names the capture and `REP_RECORD_OUTPUT` selects its output folder. The recording helper uses port 8937, separate from the regression and recovery fixtures, and never publishes the app.
+`node scripts/record-redesign.mjs` captures a fresh-profile local walkthrough. `AWJ_RECORD_CLIENT_ROOT` can point at a `git archive` extraction of the baseline's `dist/client`; `AWJ_RECORD_VARIANT` names the capture and `AWJ_RECORD_OUTPUT` selects its output folder. The recording helper uses port 8937, separate from the regression and recovery fixtures, and never publishes the app.

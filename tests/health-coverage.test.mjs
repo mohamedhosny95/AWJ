@@ -1,8 +1,9 @@
+import './compat-context.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 await import("../src/client/health-coverage.js");
-const coverage=globalThis.REP_HEALTH_COVERAGE;
+const coverage=globalThis.AWJ_HEALTH_COVERAGE;
 
 function state(days=28){
   const healthMetrics={},sleepLogs=[],recoveryCheckins=[],bodyWeights=[];
@@ -180,7 +181,7 @@ test("Cairo post-midnight legacy illness record with only date timestamp maps to
       `
       import assert from "node:assert/strict";
       await import("./src/client/health-coverage.js");
-      const coverage = globalThis.REP_HEALTH_COVERAGE;
+      const coverage = globalThis.AWJ_HEALTH_COVERAGE;
       function state(days=28){
         const healthMetrics={},sleepLogs=[],recoveryCheckins=[],bodyWeights=[];
         for(let offset=days-1;offset>=0;offset--){
