@@ -66,6 +66,14 @@ async function openApp(context) {
   return page;
 }
 
+async function openHabits(page) {
+  const tracker = page.locator(".habit-tracker");
+  if (!(await tracker.evaluate(element => element.open))) {
+    await tracker.locator(".habits-summary").click();
+  }
+  await tracker.locator('[data-habit-id="sleep"]').waitFor({ state: "visible", timeout: 10000 });
+}
+
 function acceptRestoreDialogs(page) {
   page.on("dialog", async dialog => {
     if (dialog.type() === "prompt") await dialog.accept(passphrase);
@@ -84,7 +92,7 @@ try {
   const sourceContext = await browser.newContext({ viewport: { width: 390, height: 900 }, acceptDownloads: true });
   const sourcePage = await openApp(sourceContext);
 
-  await sourcePage.locator('.habits-summary').click();
+  await openHabits(sourcePage);
   await sourcePage.click('[data-habit-id="sleep"]');
   await sourcePage.click('[data-app-tab="food"]');
   await sourcePage.click('[data-nutrition-log]');
@@ -95,7 +103,7 @@ try {
   await sourcePage.evaluate(() => window.AWJ_STORE.flush());
   check(await sourcePage.evaluate(()=>state.foodEntries.some(entry=>entry.food_name==="recovery drill meal")), "Recovery fixture contains a meal");
 
-  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;AWJ_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');AWJ_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();AWJ_STORE.flush();});
+  await sourcePage.evaluate(()=>{state.routineFavourites=['gym'];state.displayPreferences={expandedDemo:true};state.session='gym';state.sessionStartedAt=Date.now();state.index=3;AWJ_TRAINING_PREFERENCES.choose(state,'Chest Press','Push-ups');AWJ_TRAINING_PREFERENCES.recordSet(state,'Chest Press',0,'Push-ups');state.completed['gym-3']=[0];persist();return AWJ_STORE.flush();});
   await sourcePage.click("#settingsButton");
   await sourcePage.click('[data-settings-tab="security"]');
   await sourcePage.fill("[data-backup-passphrase]", passphrase);
@@ -106,8 +114,8 @@ try {
   await download.saveAs(backupPath);
 
   const encrypted = JSON.parse(readFileSync(backupPath, "utf8"));
-  check(encrypted.schema === 5 && encrypted.format === "rep-health-export/v5", "Downloaded backup uses authenticated schema 5");
-  writeFileSync(tamperedPath, JSON.stringify({ ...encrypted, format: "rep-health-export/v4" }, null, 2));
+  check(encrypted.schema === 5 && encrypted.format === AWJ_COMPAT.backupFormat, "Downloaded backup uses authenticated schema 5");
+  writeFileSync(tamperedPath, JSON.stringify({ ...encrypted, format: AWJ_COMPAT.legacyBackupFormat }, null, 2));
   await sourceContext.close();
 
   const restoreContext = await browser.newContext({ viewport: { width: 390, height: 900 } });
@@ -123,7 +131,7 @@ try {
   check(restoredPreferences.favourites.includes('gym')&&restoredPreferences.display.expandedDemo,'Fresh profile restores favourites and display preferences');
   check(restoredPreferences.selected==='Push-ups'&&restoredPreferences.performed==='Push-ups','Encrypted backup preserves the active-session substitution and performed set');
   await restorePage.click("#homeButton");
-  await restorePage.locator('.habits-summary').click();
+  await openHabits(restorePage);
   await restorePage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await restorePage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 1, "Fresh profile restores the habit record");
   await restorePage.click('[data-app-tab="food"]');
@@ -141,7 +149,7 @@ try {
   const rejection = await tamperPage.locator(".toast").textContent();
   check(/incorrect|damaged|invalid/i.test(rejection), "Tampered backup is rejected through the real import UI");
   await tamperPage.click("#homeButton");
-  await tamperPage.locator('.habits-summary').click();
+  await openHabits(tamperPage);
   await tamperPage.waitForSelector('[data-habit-id="sleep"]', { timeout: 10000 });
   check(await tamperPage.locator('[data-habit-id="sleep"][aria-pressed="true"]').count() === 0, "Rejected backup cannot replace local data");
   await tamperContext.close();
